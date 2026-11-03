@@ -26,7 +26,7 @@ function Router() {
   let content
   if (typeof screen === 'object') {
     // Тук се добавят следващите атракциони.
-    content = <MagicTokensGame grade={grade} onExit={() => setScreen('map')} />
+    content = <MagicTokensGame grade={grade} onGradeChange={setGrade} onExit={() => setScreen('map')} />
   } else {
     switch (screen) {
       case 'home':

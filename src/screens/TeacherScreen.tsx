@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useApp } from '../core/AppContext'
 import { useStage } from '../core/Stage'
-import type { TaskCount } from '../core/storage'
+import type { TaskCount, TokensRangeLevel, TokensRegrouping } from '../core/storage'
 import { SkyAndHills, SkyDefs } from '../components/scenery/Scenery'
 import { GameButton, RoundButton } from '../components/ui/GameButton'
 import { Icon } from '../components/ui/Icon'
 import { Toggle } from '../components/ui/SoundControl'
 import { DIFFICULTIES, DIFFICULTY_LABELS, GRADES, type Grade } from '../games/magic-tokens/logic'
+import { GRADE_RANGES, RANGES, REGROUPING_LABELS } from '../games/magic-tokens/tasks'
 
 function Segmented<T extends string | number>({ options, value, onChange, label }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void; label: string }) {
   const { play } = useApp()
@@ -87,14 +88,26 @@ export function TeacherScreen({ onBack, onGradeChange }: { onBack: () => void; o
             options={[5, 10, 15].map((n) => ({ value: n as TaskCount, label: String(n) }))}
             onChange={(n) => updateSettings({ taskCount: n })}
           />
+          <Segmented<TokensRangeLevel>
+            label="Числов обхват"
+            value={settings.tokensRange}
+            options={(['small', 'large'] as TokensRangeLevel[]).map((v, i) => ({ value: v, label: RANGES[GRADE_RANGES[settings.grade][i]].label }))}
+            onChange={(v) => updateSettings({ tokensRange: v })}
+          />
+          <Segmented<TokensRegrouping>
+            label="Преминаване"
+            value={settings.tokensRegrouping}
+            options={(['none', 'with', 'mixed'] as TokensRegrouping[]).map((v) => ({ value: v, label: REGROUPING_LABELS[v] }))}
+            onChange={(v) => updateSettings({ tokensRegrouping: v })}
+          />
           <div className="teacher-toggles">
             <Toggle label="Подсказки" icon="help" on={settings.hintsOn} onChange={(v) => updateSettings({ hintsOn: v })} />
             <Toggle label="Звук" icon="sound" on={settings.soundOn} onChange={(v) => updateSettings({ soundOn: v })} />
             <Toggle label="Музика" icon="music" on={settings.musicOn} disabled={!settings.soundOn} onChange={(v) => updateSettings({ musicOn: v })} />
-            <Toggle label="Учениците сами избират клас и трудност" on={settings.studentCanChoose} onChange={(v) => updateSettings({ studentCanChoose: v })} />
+            <Toggle label="Ученикът избира сам" on={settings.studentCanChoose} onChange={(v) => updateSettings({ studentCanChoose: v })} />
           </div>
           <p className="teacher-note">
-            Настройките се запазват автоматично на това устройство. Когато изборът е заключен, учениците играят в избраните от вас клас и трудност.
+            Запазва се автоматично. Обхватът и преминаването са за „Вълшебните жетони“. При заключен избор учениците избират само режима.
           </p>
         </section>
 
@@ -125,6 +138,7 @@ export function TeacherScreen({ onBack, onGradeChange }: { onBack: () => void; o
                   <tr>
                     <th>Дата</th>
                     <th>Клас</th>
+                    <th>Режим</th>
                     <th>Ниво</th>
                     <th>Решени</th>
                     <th>От 1. опит</th>
@@ -136,6 +150,7 @@ export function TeacherScreen({ onBack, onGradeChange }: { onBack: () => void; o
                     <tr key={r.id}>
                       <td>{formatDate(r.date)}</td>
                       <td>{r.grade}.</td>
+                      <td className="results-table__mode">{r.mode ?? 'С различни жетони'}</td>
                       <td>{DIFFICULTY_LABELS[r.difficulty]}</td>
                       <td>
                         {r.solved}/{r.total}

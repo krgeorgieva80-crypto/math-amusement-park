@@ -15,18 +15,22 @@ function formatDuration(sec: number): string {
 export function GameSummary({
   grade,
   difficulty,
+  modeName,
   outcomes,
   durationSec,
   onAgain,
   onChooseLevel,
+  onChooseMode,
   onExit,
 }: {
   grade: Grade
   difficulty: Difficulty
+  modeName?: string
   outcomes: TaskOutcome[]
   durationSec: number
   onAgain: () => void
   onChooseLevel: () => void
+  onChooseMode?: () => void
   onExit: () => void
 }) {
   const stars = outcomes.reduce((a, o) => a + o.stars, 0)
@@ -48,7 +52,8 @@ export function GameSummary({
         <Mascot mood={overall >= 2 ? 'cheer' : 'happy'} size={160} className="summary-card__mascot" />
         <div className="summary-card__title">{title}</div>
         <div className="summary-card__level">
-          {grade}. клас · {DIFFICULTY_LABELS[difficulty]}
+          {grade}. клас · {modeName ? `${modeName} · ` : ''}
+          {DIFFICULTY_LABELS[difficulty]}
         </div>
         <StarRow stars={overall} size={96} animate />
         <div className="summary-stats">
@@ -80,6 +85,11 @@ export function GameSummary({
           <GameButton color="turquoise" size="lg" icon="star" onClick={onChooseLevel}>
             Друго ниво
           </GameButton>
+          {onChooseMode && (
+            <GameButton color="purple" size="lg" icon="play" onClick={onChooseMode}>
+              Друга игра
+            </GameButton>
+          )}
           <GameButton color="yellow" size="lg" icon="map" onClick={onExit}>
             Към парка
           </GameButton>
