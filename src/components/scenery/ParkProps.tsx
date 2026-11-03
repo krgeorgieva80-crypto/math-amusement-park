@@ -43,17 +43,18 @@ export function SunGlow({ x, y, r = 360 }: { x: number; y: number; r?: number })
 }
 
 /** Далечни планини с бели върхове (най-задният план). */
-export function FarMountains({ w, base }: { w: number; base: number }) {
+export function FarMountains({ w, base, height = 150 }: { w: number; base: number; height?: number }) {
+  const k = height / 150
   const peaks = Math.max(4, Math.round(w / 320))
   const step = w / peaks
   let d = `M0 ${base}`
   const caps: string[] = []
   for (let i = 0; i < peaks; i++) {
     const x0 = i * step
-    const top = base - 150 - ((i * 53) % 70)
+    const top = base - height - ((i * 53) % 70) * k
     const px = x0 + step * 0.5
     d += ` L${px} ${top} L${x0 + step} ${base}`
-    caps.push(`M${px - 30} ${top + 36} L${px} ${top} L${px + 30} ${top + 36} q-10 -6 -15 4 q-8 -10 -15 0 q-6 -10 -15 -4z`)
+    caps.push(`M${px - 30 * k} ${top + 36 * k} L${px} ${top} L${px + 30 * k} ${top + 36 * k} q${-10 * k} ${-6 * k} ${-15 * k} ${4 * k} q${-8 * k} ${-10 * k} ${-15 * k} 0 q${-6 * k} ${-10 * k} ${-15 * k} ${-4 * k}z`)
   }
   d += ` V${base + 40} H0 Z`
   return (
