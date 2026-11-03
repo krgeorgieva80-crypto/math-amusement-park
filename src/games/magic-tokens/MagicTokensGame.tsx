@@ -55,7 +55,7 @@ export function MagicTokensGame({ grade, onGradeChange, onExit }: { grade: Grade
     const durationSec = Math.round((Date.now() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
-      mode: modeLabel(config),
+      mode: modeLabel(config, settings.tokensWorkMode),
       grade: config.grade,
       difficulty: config.difficulty,
       total: outcomes.length,
@@ -86,14 +86,14 @@ export function MagicTokensGame({ grade, onGradeChange, onExit }: { grade: Grade
       return phase.kind === 'free' ? (
         <PlayBoard key={phase.startedAt} grade={config.grade} difficulty={config.difficulty} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
       ) : (
-        <TokenBoard key={phase.startedAt} grade={config.grade} difficulty={config.difficulty} mode={config.mode} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+        <TokenBoard key={phase.startedAt} grade={config.grade} difficulty={config.difficulty} mode={config.mode} tasks={phase.tasks} workMode={settings.tokensWorkMode} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
       )
     case 'summary':
       return (
         <GameSummary
           grade={config.grade}
           difficulty={config.difficulty}
-          modeName={modeLabel(config)}
+          modeName={modeLabel(config, settings.tokensWorkMode)}
           outcomes={phase.outcomes}
           durationSec={phase.durationSec}
           onAgain={() => start()}

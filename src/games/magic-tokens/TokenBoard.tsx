@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useApp } from '../../core/AppContext'
 import { useStage } from '../../core/Stage'
 import { Mascot, type MascotMood } from '../../components/art/Mascot'
@@ -42,6 +42,21 @@ import {
   type TokenTask,
 } from './tasks'
 import { usePointerDrag } from './usePointerDrag'
+import {
+  backspace,
+  checkComputedAnswer,
+  computeHint,
+  expressionText,
+  firstStage,
+  hasComputeStage,
+  hasModelStage,
+  isArithmetic,
+  typeDigit,
+  visibleInfo,
+  type ArithTask,
+  type Stage,
+  type WorkMode,
+} from './compute'
 
 type Feedback = null | { kind: 'correct'; stars: 1 | 2 | 3 } | { kind: 'wrong'; message: string } | { kind: 'info'; message: string }
 
@@ -50,6 +65,8 @@ interface Props {
   difficulty: Difficulty
   mode: ModeId
   tasks: TokenTask[]
+  /** Начин на работа при събиране и изваждане. */
+  workMode?: WorkMode
   onFinish: (outcomes: TaskOutcome[]) => void
   onExit: () => void
 }
@@ -112,7 +129,7 @@ function withRow(s: BoardState, row: RowKey, c: Counts): BoardState {
 const needsSupply = (t: TokenTask) => t.kind === 'compose' || t.kind === 'otherWay' || t.kind === 'missingMinuend' || t.kind === 'missingAddend'
 const buildRow = (t: TokenTask): RowKey => (t.kind === 'missingAddend' ? 'added' : 'built')
 
-export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }: Props) {
+export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensAndCompute', onFinish, onExit }: Props) {
   const { settings, play } = useApp()
   const { width: W, portrait } = useStage()
   const [index, setIndex] = useState(0)
@@ -125,17 +142,24 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
   const [outcomes, setOutcomes] = useState<TaskOutcome[]>([])
   const [flash, setFlash] = useState<{ row: RowKey; places: Place[]; n: number } | null>(null)
   const [shake, setShake] = useState(0)
+  const [stage, setStage] = useState<Stage>(() => firstStage(tasks[0], workMode))
+  const [answer, setAnswer] = useState('')
+  const [computeTries, setComputeTries] = useState(0)
 
   const task = tasks[index]
   const hintsOn = settings.hintsOn
   const autoHints = hintsOn && difficulty === 'explorer'
   const isLast = index === tasks.length - 1
-  const canNext = solved || mistakes >= 2
+  // „Следваща задача“ се активира само след успешно решена задача.
+  const canNext = solved
   const starsSoFar = outcomes.reduce((a, o) => a + o.stars, 0)
   const rows = rowsFor(task)
   const places = 'places' in task ? task.places : []
   const counts = countsOfState(state)
   const supply = needsSupply(task)
+  const arith: ArithTask | null = isArithmetic(task) ? task : null
+  /** Дъската с жетони остава видима и при пресмятане (освен „без жетони“). */
+  const showMat = !arith || hasModelStage(arith, workMode)
 
   // Размер на жетоните според ширината на колоните.
   const centerW = (portrait ? W - 40 : W - 48 - 360 - 260 - 48) - 128
@@ -235,32 +259,63 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
     },
   })
 
+  const succeed = () => {
+    const stars = starsForTask(mistakes, usedHint)
+    setSolved(true)
+    setStage('done')
+    setOutcomes((o) => [...o, { stars, firstTry: mistakes === 0, solved: true }])
+    setFeedback({ kind: 'correct', stars })
+    play('success')
+    for (let i = 0; i < stars; i++) window.setTimeout(() => play('star'), 650 + i * 230)
+  }
+
+  const fail = (message: string) => {
+    setMistakes((m) => m + 1)
+    setFeedback({ kind: 'wrong', message })
+    setShake((n) => n + 1)
+    play('tryAgain')
+  }
+
   const check = () => {
     if (solved) return
-    const res = checkTask(task, state, hintsOn)
     setHint(null)
+    // Етап „Пресметни“: проверяваме въведения от ученика отговор.
+    if (stage === 'compute' && isArithmetic(task)) {
+      const r = checkComputedAnswer(task, answer, hintsOn)
+      if (r.status === 'incomplete') {
+        play('hint')
+        return setFeedback({ kind: 'info', message: r.message })
+      }
+      if (r.status === 'correct') return succeed()
+      setComputeTries((n) => n + 1)
+      return fail(r.message)
+    }
+    const res = checkTask(task, state, hintsOn)
     if (res.status === 'incomplete') {
       play('hint')
       return setFeedback({ kind: 'info', message: res.message })
     }
     if (res.status === 'correct') {
-      const stars = starsForTask(mistakes, usedHint)
-      setSolved(true)
-      setOutcomes((o) => [...o, { stars, firstTry: mistakes === 0, solved: true }])
-      setFeedback({ kind: 'correct', stars })
-      play('success')
-      for (let i = 0; i < stars; i++) window.setTimeout(() => play('star'), 650 + i * 230)
-      return
+      // Жетоните са подредени вярно → етап „Пресметни“ (ако има такъв).
+      if (hasComputeStage(task, workMode)) {
+        play('star')
+        setStage('compute')
+        return setFeedback({ kind: 'info', message: 'Жетоните са готови! Сега пресметни сам и напиши отговора.' })
+      }
+      return succeed()
     }
-    setMistakes((m) => m + 1)
-    setFeedback({ kind: 'wrong', message: res.message })
-    setShake((n) => n + 1)
-    play('tryAgain')
+    fail(res.message)
   }
 
   const reset = () => {
     if (solved) return
     play('remove')
+    if (stage === 'compute') {
+      setAnswer('')
+      setHint(null)
+      if (feedback?.kind !== 'correct') setFeedback(null)
+      return
+    }
     changed(initialState(task))
   }
 
@@ -269,8 +324,47 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
     play('hint')
     setUsedHint(true)
     setFeedback(null)
+    if (stage === 'compute' && isArithmetic(task)) {
+      const board = workMode === 'computeOnly' ? null : state.kind === 'add' ? state.result : state.kind === 'subtract' ? state.board : null
+      return setHint({ message: computeHint(task, board, computeTries) })
+    }
     setHint(hintFor(task, state))
   }
+
+  const pressDigit = (d: string) => {
+    if (solved || stage !== 'compute') return
+    play('click')
+    setAnswer((a) => typeDigit(a, d))
+    if (feedback?.kind === 'wrong' || feedback?.kind === 'info') setFeedback(null)
+    setHint(null)
+  }
+  const pressBack = () => {
+    if (solved || stage !== 'compute') return
+    play('remove')
+    setAnswer((a) => backspace(a))
+  }
+
+  // Физическа клавиатура в етап „Пресметни“: цифри, Backspace, Enter.
+  useEffect(() => {
+    if (stage !== 'compute' || solved) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      if (/^\d$/.test(e.key)) {
+        e.preventDefault()
+        pressDigit(e.key)
+      } else if (e.key === 'Backspace') {
+        e.preventDefault()
+        pressBack()
+      } else if (e.key === 'Delete' || e.key === 'Escape') {
+        setAnswer('')
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        check()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   const next = () => {
     const final = solved ? outcomes : [...outcomes, { stars: 0, firstTry: false, solved: false }]
@@ -288,10 +382,13 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
     setFeedback(null)
     setHint(null)
     setFlash(null)
+    setStage(firstStage(t, workMode))
+    setAnswer('')
+    setComputeTries(0)
   }
 
   // Звездичката: обратна връзка → подсказка → автоматична подсказка (Откривател) → указание
-  const auto = autoHints && !solved && task.kind !== 'compare' && task.kind !== 'findError' ? hintFor(task, state) : null
+  const auto = autoHints && !solved && stage === 'model' && task.kind !== 'compare' && task.kind !== 'findError' ? hintFor(task, state) : null
   const shownHint = hint ?? auto
   let mood: MascotMood = 'happy'
   let bubble: ReactNode
@@ -318,7 +415,12 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
       </>
     )
   } else {
-    bubble = task.kind === 'compare' || task.kind === 'findError' ? 'Помисли спокойно и избери.' : 'Докосни или влачи жетоните. Ти можеш!'
+    bubble =
+      stage === 'compute'
+        ? 'Сега пресметни сам! Напиши отговора с цифрите.'
+        : task.kind === 'compare' || task.kind === 'findError'
+          ? 'Помисли спокойно и избери.'
+          : 'Докосни или влачи жетоните. Ти можеш!'
   }
 
   const title = taskTitle(task)
@@ -358,7 +460,13 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
             <span className="marquee__label">{title.label}</span>
             <span className={`marquee__number tb-marquee__text ${textSize(title.text)}`}>{title.text}</span>
           </div>
-          <div className="tb-instruction">{taskInstruction(task)}</div>
+          <div className="tb-instruction">
+            {arith && stage !== 'model'
+              ? showMat
+                ? 'Погледни жетоните и пресметни сам. Напиши отговора.'
+                : 'Пресметни сам и напиши отговора.'
+              : taskInstruction(task)}
+          </div>
           <div className="mascot-area">
             <Mascot mood={mood} size={110} />
             <div className={`speech-bubble speech-bubble--game ${feedback?.kind === 'wrong' ? 'is-wrong' : ''}`} key={`${feedback?.kind}-${shownHint?.message}-${shake}`}>
@@ -373,11 +481,15 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
               <CompareScale task={task} choice={state.choice} solved={solved} onChoose={(c) => !solved && (play('pick'), changed({ kind: 'compare', choice: c }))} />
             ) : task.kind === 'findError' && state.kind === 'findError' ? (
               <ErrorCards task={task} choice={state.choice} solved={solved} onChoose={(i) => !solved && (play('pick'), changed({ kind: 'findError', choice: i }))} />
+            ) : arith && stage !== 'model' && !showMat ? (
+              <ComputePanel task={arith} answer={answer} solved={solved} wrong={feedback?.kind === 'wrong'} big onDigit={pressDigit} onBack={pressBack} onClear={() => !solved && setAnswer('')} />
             ) : (
+              <div className={`tb-split ${arith && stage !== 'model' && hasComputeStage(arith, workMode) ? 'has-panel' : ''}`}>
               <PlaceMat
                 places={places}
-                rows={rows}
+                rows={arith && stage !== 'model' ? rows.filter((r) => r.key === 'result' || r.key === 'board') : rows}
                 counts={counts}
+                rowValues={arith ? visibleInfo(arith, state, solved).rowValues : undefined}
                 bind={bind}
                 dragOver={drag?.over ?? null}
                 onExchange={exchange}
@@ -386,11 +498,15 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
                 flash={flash}
                 tokenSize={tokenSize}
                 cap={20}
-                disabled={solved}
+                disabled={solved || stage !== 'model'}
               />
+              {arith && stage !== 'model' && hasComputeStage(arith, workMode) && (
+                <ComputePanel task={arith} answer={answer} solved={solved} wrong={feedback?.kind === 'wrong'} onDigit={pressDigit} onBack={pressBack} onClear={() => !solved && setAnswer('')} />
+              )}
+              </div>
             )}
           </div>
-          <Representation task={task} state={state} />
+          {arith ? <StepsBar stage={stage} model={hasModelStage(arith, workMode)} compute={hasComputeStage(arith, workMode)} info={showMat || solved ? visibleInfo(arith, state, solved).info : `Пресметни ${expressionText(arith).replace(/ =$/, '')}.`} /> : <Representation task={task} state={state} />}
         </section>
 
         <section className="actions">
@@ -398,7 +514,7 @@ export function TokenBoard({ grade, difficulty, mode, tasks, onFinish, onExit }:
             Провери
           </GameButton>
           <GameButton color="orange" size="lg" icon="clear" onClick={reset} disabled={solved} silent>
-            Изчисти
+            {stage === 'compute' ? 'Изтрий' : 'Изчисти'}
           </GameButton>
           <GameButton color="turquoise" size="lg" icon="help" onClick={help} disabled={!hintsOn || solved} title={hintsOn ? 'Подсказка' : 'Подсказките са изключени от учителя'} silent>
             Помощ
@@ -498,6 +614,62 @@ function solvedText(task: TokenTask): string {
       return `Вярно е: ${exprText(e)} = ${f(evalExpr(e))}`
     }
   }
+}
+
+/** Трите етапа на задачата: 1. Представи → 2. Пресметни → 3. Провери. */
+function StepsBar({ stage, model, compute, info }: { stage: Stage; model: boolean; compute: boolean; info: string }) {
+  const state = (n: 1 | 2 | 3): 'done' | 'active' | 'todo' | 'skip' => {
+    if (n === 1) return !model ? 'skip' : stage === 'model' ? 'active' : 'done'
+    if (n === 2) return !compute ? 'skip' : stage === 'compute' ? 'active' : stage === 'done' ? 'done' : 'todo'
+    return stage === 'done' ? 'done' : 'todo'
+  }
+  const labels = ['Представи', 'Пресметни', 'Провери'] as const
+  return (
+    <div className="steps-bar" aria-label="Етапи на задачата">
+      {labels.map((l, i) => {
+        const st = state((i + 1) as 1 | 2 | 3)
+        return (
+          <span key={l} className={`step step--${st}`} aria-current={st === 'active' ? 'step' : undefined}>
+            <span className="step__num">{st === 'done' ? <Icon name="check" size={22} /> : i + 1}</span>
+            <span className="step__label">{l}</span>
+          </span>
+        )
+      })}
+      <span className="steps-bar__info">{info}</span>
+    </div>
+  )
+}
+
+/** „Сега пресметни сам!“ — изразът, полето за отговор и голяма цифрова клавиатура. */
+function ComputePanel({ task, answer, solved, wrong, big, onDigit, onBack, onClear }: { task: ArithTask; answer: string; solved: boolean; wrong: boolean; big?: boolean; onDigit: (d: string) => void; onBack: () => void; onClear: () => void }) {
+  const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3']
+  return (
+    <div className={`compute-panel ${big ? 'is-big' : ''}`}>
+      <div className="compute-panel__title">{solved ? 'Браво! Пресметна вярно.' : 'Сега пресметни сам!'}</div>
+      <div className="compute-panel__expr" aria-live="polite">
+        <span>{expressionText(task)}</span>
+        <span className={`answer-box ${wrong ? 'is-wrong' : ''} ${solved ? 'is-correct' : ''} ${answer ? '' : 'is-empty'}`} aria-label={answer ? `Твоят отговор: ${answer}` : 'Празно поле за отговор'}>
+          {answer ? formatNumber(Number(answer)) : '?'}
+        </span>
+      </div>
+      <div className="keypad" role="group" aria-label="Цифрова клавиатура">
+        {keys.map((k) => (
+          <button key={k} type="button" className="keypad__key" onClick={() => onDigit(k)} disabled={solved}>
+            {k}
+          </button>
+        ))}
+        <button type="button" className="keypad__key keypad__key--clear" onClick={onClear} disabled={solved || !answer} aria-label="Изтрий всичко">
+          <Icon name="clear" size={34} />
+        </button>
+        <button type="button" className="keypad__key" onClick={() => onDigit('0')} disabled={solved}>
+          0
+        </button>
+        <button type="button" className="keypad__key keypad__key--back" onClick={onBack} disabled={solved || !answer} aria-label="Изтрий последната цифра">
+          <Icon name="back" size={34} />
+        </button>
+      </div>
+    </div>
+  )
 }
 
 /** Ред с текущото математическо представяне на дъската. */

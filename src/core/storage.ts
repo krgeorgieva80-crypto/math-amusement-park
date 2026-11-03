@@ -7,6 +7,8 @@ import type { Difficulty, Grade } from '../games/magic-tokens/logic'
 export type TokensRegrouping = 'none' | 'with' | 'mixed'
 /** По-малкият или по-големият числов обхват за класа. */
 export type TokensRangeLevel = 'small' | 'large'
+/** Начин на работа при събиране и изваждане. */
+export type TokensWorkMode = 'tokensAndCompute' | 'computeOnly' | 'tokensOnly'
 
 const SETTINGS_KEY = 'map.settings.v1'
 const RESULTS_KEY = 'map.results.v1'
@@ -30,6 +32,8 @@ export interface Settings {
   tokensRegrouping: TokensRegrouping
   /** „Вълшебните жетони“: числов обхват по подразбиране. */
   tokensRange: TokensRangeLevel
+  /** „Вълшебните жетони“: жетони и/или самостоятелно пресмятане. */
+  tokensWorkMode: TokensWorkMode
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -44,6 +48,7 @@ export const DEFAULT_SETTINGS: Settings = {
   animationsOn: true,
   tokensRegrouping: 'mixed',
   tokensRange: 'large',
+  tokensWorkMode: 'tokensAndCompute',
 }
 
 export interface GameResult {
@@ -89,6 +94,7 @@ export function loadSettings(): Settings {
   if (![5, 10, 15].includes(merged.taskCount)) merged.taskCount = DEFAULT_SETTINGS.taskCount
   if (!['none', 'with', 'mixed'].includes(merged.tokensRegrouping)) merged.tokensRegrouping = DEFAULT_SETTINGS.tokensRegrouping
   if (!['small', 'large'].includes(merged.tokensRange)) merged.tokensRange = DEFAULT_SETTINGS.tokensRange
+  if (!['tokensAndCompute', 'computeOnly', 'tokensOnly'].includes(merged.tokensWorkMode)) merged.tokensWorkMode = DEFAULT_SETTINGS.tokensWorkMode
   if (typeof merged.volume !== 'number' || merged.volume < 0 || merged.volume > 1) merged.volume = DEFAULT_SETTINGS.volume
   return merged
 }

@@ -3886,3 +3886,308 @@ button:focus-visible {
 .is-portrait .teacher-layout {
   grid-template-rows: auto minmax(360px, 1fr);
 }
+
+/* ═════════════ Задание 04: самостоятелно пресмятане ═════════════ */
+
+.tb-split {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.tb-split > .place-mat {
+  min-width: 0;
+}
+
+.tb-split.has-panel > .place-mat {
+  flex: 1 1 0;
+  opacity: 0.95;
+}
+
+.compute-panel {
+  flex: 0 0 430px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px 20px;
+  border-radius: 34px;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 6px solid var(--ink);
+  box-shadow: 0 10px 0 var(--yellow-d), 0 18px 30px rgba(0, 0, 0, 0.35);
+  animation: card-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.compute-panel.is-big {
+  flex: 1;
+  justify-content: center;
+  gap: 22px;
+}
+
+.compute-panel__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 34px;
+  color: var(--pink);
+  -webkit-text-stroke: 7px var(--ink);
+  paint-order: stroke fill;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.compute-panel.is-big .compute-panel__title {
+  font-size: 48px;
+}
+
+.compute-panel__expr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 40px;
+  white-space: nowrap;
+}
+
+.compute-panel.is-big .compute-panel__expr {
+  font-size: 66px;
+}
+
+.answer-box {
+  min-width: 150px;
+  padding: 2px 18px;
+  border-radius: 20px;
+  background: #fff;
+  border: 5px solid var(--ink);
+  box-shadow: inset 0 4px 0 rgba(59, 42, 90, 0.12), 0 0 0 5px var(--yellow);
+  text-align: center;
+  color: var(--purple-d);
+  font-variant-numeric: tabular-nums;
+  animation: answer-blink 1.6s ease-in-out infinite;
+}
+
+.answer-box.is-empty {
+  color: #c7bddc;
+}
+
+.answer-box.is-wrong {
+  box-shadow: inset 0 4px 0 rgba(59, 42, 90, 0.12), 0 0 0 5px var(--orange);
+  animation: shake 0.45s ease;
+}
+
+.answer-box.is-correct {
+  background: #d8fbd0;
+  box-shadow: 0 0 0 5px var(--green);
+  animation: none;
+}
+
+@keyframes answer-blink {
+  50% {
+    box-shadow: inset 0 4px 0 rgba(59, 42, 90, 0.12), 0 0 0 5px rgba(255, 210, 63, 0.35);
+  }
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.compute-panel.is-big .keypad {
+  max-width: 470px;
+  gap: 14px;
+}
+
+.keypad__key {
+  height: 76px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff, #f2ecff);
+  border: 4px solid var(--ink);
+  box-shadow: 0 6px 0 #c9bfdc;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 40px;
+  display: grid;
+  place-items: center;
+  transition: transform 0.08s;
+  touch-action: manipulation;
+}
+
+.compute-panel.is-big .keypad__key {
+  height: 92px;
+  font-size: 48px;
+}
+
+.keypad__key:active:not(:disabled) {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 #c9bfdc;
+}
+
+.keypad__key:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.keypad__key--clear {
+  background: #ffd8a8;
+  color: var(--orange-d);
+}
+
+.keypad__key--back {
+  background: #ffd6e8;
+  color: var(--pink-d);
+}
+
+/* Етапи */
+.steps-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 6px 18px;
+  border-radius: 28px;
+  background: var(--cream);
+  border: 5px solid var(--ink);
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.3);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 6px;
+  border-radius: 99px;
+  border: 3px solid var(--ink);
+  background: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 21px;
+  white-space: nowrap;
+}
+
+.step__num {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: #eee6f7;
+  font-weight: 900;
+}
+
+.step--active {
+  background: var(--yellow);
+  box-shadow: 0 0 0 4px rgba(255, 210, 63, 0.45);
+}
+
+.step--active .step__num {
+  background: var(--pink);
+  color: #fff;
+}
+
+.step--done .step__num {
+  background: var(--green);
+  color: #103d16;
+}
+
+.step--skip {
+  opacity: 0.35;
+  text-decoration: line-through;
+}
+
+.steps-bar__info {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 22px;
+  color: #5d4c7d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.is-portrait .tb-split.has-panel {
+  flex-direction: column;
+}
+
+.is-portrait .compute-panel {
+  flex: none;
+}
+
+.is-portrait .steps-bar__info {
+  display: none;
+}
+
+/* Етап „Пресметни“ с жетони: дъската отгоре, панелът отдолу */
+.tb-split.has-panel {
+  flex-direction: column;
+}
+
+.tb-split.has-panel > .place-mat {
+  flex: 1 1 0;
+  min-height: 200px;
+}
+
+.compute-panel:not(.is-big) {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-areas:
+    'title keypad'
+    'expr keypad';
+  align-items: center;
+  justify-items: center;
+  gap: 6px 24px;
+  padding: 14px 22px;
+}
+
+.compute-panel:not(.is-big) .compute-panel__title {
+  grid-area: title;
+  align-self: end;
+  font-size: 40px;
+}
+
+.compute-panel:not(.is-big) .compute-panel__expr {
+  grid-area: expr;
+  align-self: start;
+  font-size: 50px;
+}
+
+.compute-panel:not(.is-big) .keypad {
+  grid-area: keypad;
+  gap: 8px;
+}
+
+.compute-panel:not(.is-big) .keypad__key {
+  height: 64px;
+  font-size: 36px;
+}
+
+.is-portrait .compute-panel:not(.is-big) {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.is-portrait .compute-panel:not(.is-big) .compute-panel__expr {
+  font-size: 40px;
+  white-space: normal;
+}
+
+/* Учителски панел — място за „Начин на работа“ */
+.teacher-card {
+  gap: 9px;
+}
+
+.teacher-card .segmented__opt {
+  min-height: 52px;
+}
+
+.teacher-toggles .toggle {
+  min-height: 56px;
+}

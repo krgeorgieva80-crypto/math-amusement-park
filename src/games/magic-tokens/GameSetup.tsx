@@ -5,6 +5,7 @@ import { StarRow } from '../../components/ui/Effects'
 import { GameButton } from '../../components/ui/GameButton'
 import { SoundControl } from '../../components/ui/SoundControl'
 import { BoothBackdrop } from './BoothBackdrop'
+import { WORK_MODE_LABELS } from './compute'
 import { DIFFICULTIES, DIFFICULTY_DESCRIPTIONS, DIFFICULTY_LABELS, GRADES, type Difficulty, type Grade } from './logic'
 import {
   CHALLENGE_KINDS,
@@ -131,7 +132,15 @@ export function GameSetup({ config, onChange, onStart, onBack, onExit }: { confi
           <span className="setup-card__best">
             Най-добър резултат: <StarRow stars={bestStars(results, 'magic-tokens', config.grade, config.difficulty) ?? 0} size={28} />
           </span>
-          <span className="setup-card__meta">{settings.hintsOn ? 'С подсказки' : 'Подсказките са изключени'}</span>
+          <span className="setup-card__meta">
+            {settings.hintsOn ? 'С подсказки' : 'Подсказките са изключени'}
+            {(config.mode === 'add' || config.mode === 'subtract') && (
+              <>
+                <br />
+                Начин на работа: <b>{WORK_MODE_LABELS[settings.tokensWorkMode]}</b>
+              </>
+            )}
+          </span>
           <GameButton color="green" size="xl" icon="play" onClick={onStart} className="game-intro__start">
             Започни
           </GameButton>

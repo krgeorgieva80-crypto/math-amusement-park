@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useApp } from '../core/AppContext'
 import { useStage } from '../core/Stage'
-import type { TaskCount, TokensRangeLevel, TokensRegrouping } from '../core/storage'
+import type { TaskCount, TokensRangeLevel, TokensRegrouping, TokensWorkMode } from '../core/storage'
 import { SkyAndHills, SkyDefs } from '../components/scenery/Scenery'
 import { GameButton, RoundButton } from '../components/ui/GameButton'
 import { Icon } from '../components/ui/Icon'
 import { Toggle } from '../components/ui/SoundControl'
 import { DIFFICULTIES, DIFFICULTY_LABELS, GRADES, type Grade } from '../games/magic-tokens/logic'
 import { GRADE_RANGES, RANGES, REGROUPING_LABELS } from '../games/magic-tokens/tasks'
+import { WORK_MODE_LABELS, WORK_MODE_SHORT } from '../games/magic-tokens/compute'
 
-function Segmented<T extends string | number>({ options, value, onChange, label }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void; label: string }) {
+function Segmented<T extends string | number>({ options, value, onChange, label }: { options: { value: T; label: string; title?: string }[]; value: T; onChange: (v: T) => void; label: string }) {
   const { play } = useApp()
   return (
     <div className="setting-row">
@@ -21,6 +22,7 @@ function Segmented<T extends string | number>({ options, value, onChange, label 
             type="button"
             role="radio"
             aria-checked={o.value === value}
+            title={o.title}
             className={`segmented__opt ${o.value === value ? 'is-on' : ''}`}
             onClick={() => {
               play('click')
@@ -100,6 +102,12 @@ export function TeacherScreen({ onBack, onGradeChange }: { onBack: () => void; o
             options={(['none', 'with', 'mixed'] as TokensRegrouping[]).map((v) => ({ value: v, label: REGROUPING_LABELS[v] }))}
             onChange={(v) => updateSettings({ tokensRegrouping: v })}
           />
+          <Segmented<TokensWorkMode>
+            label="Начин на работа"
+            value={settings.tokensWorkMode}
+            options={(['tokensAndCompute', 'computeOnly', 'tokensOnly'] as TokensWorkMode[]).map((v) => ({ value: v, label: WORK_MODE_SHORT[v], title: WORK_MODE_LABELS[v] }))}
+            onChange={(v) => updateSettings({ tokensWorkMode: v })}
+          />
           <div className="teacher-toggles">
             <Toggle label="Подсказки" icon="help" on={settings.hintsOn} onChange={(v) => updateSettings({ hintsOn: v })} />
             <Toggle label="Звук" icon="sound" on={settings.soundOn} onChange={(v) => updateSettings({ soundOn: v })} />
@@ -107,7 +115,7 @@ export function TeacherScreen({ onBack, onGradeChange }: { onBack: () => void; o
             <Toggle label="Ученикът избира сам" on={settings.studentCanChoose} onChange={(v) => updateSettings({ studentCanChoose: v })} />
           </div>
           <p className="teacher-note">
-            Запазва се автоматично. Обхватът и преминаването са за „Вълшебните жетони“. При заключен избор учениците избират само режима.
+            Запазва се автоматично. Обхватът, преминаването и начинът на работа са за „Вълшебните жетони“ (начинът — при събиране и изваждане). При заключен избор учениците избират само режима.
           </p>
         </section>
 

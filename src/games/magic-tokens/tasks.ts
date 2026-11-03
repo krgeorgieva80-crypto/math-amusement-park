@@ -91,7 +91,11 @@ export interface TokensConfig {
 }
 
 /** Етикет на режима за обобщението и учителските резултати. */
-export function modeLabel(c: TokensConfig): string {
+export function modeLabel(c: TokensConfig, workMode?: 'tokensAndCompute' | 'computeOnly' | 'tokensOnly'): string {
+  if ((c.mode === 'add' || c.mode === 'subtract') && workMode) {
+    const how = { tokensAndCompute: 'жетони и пресмятане', computeOnly: 'само пресмятане', tokensOnly: 'само жетони' }[workMode]
+    return `${MODE_LABELS[c.mode]} (${how})`
+  }
   if (c.mode === 'compose') return `${MODE_LABELS.compose}: ${COMPOSE_TOPIC_LABELS[c.composeTopic]}`
   if (c.mode === 'challenge') return `${MODE_LABELS.challenge}: ${c.challenge === 'mixed' ? 'смесени' : CHALLENGE_LABELS[c.challenge]}`
   return MODE_LABELS[c.mode]

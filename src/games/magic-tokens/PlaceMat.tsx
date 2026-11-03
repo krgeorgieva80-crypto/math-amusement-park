@@ -43,6 +43,8 @@ interface Props {
   /** Колко жетона максимум да се рисуват в клетка (останалите — с число). */
   cap: number
   disabled?: boolean
+  /** Текст до етикета на реда вместо стойността (напр. „?“ — за да не се разкрива резултатът). */
+  rowValues?: Partial<Record<RowKey, string>>
 }
 
 /** Разрядна дъска: колони по разряди, редове по групи. */
@@ -79,14 +81,14 @@ function CellTokens({ n, maxSize, bottom, className, render, ...rest }: { n: num
   )
 }
 
-export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onKeyTap, highlight, flash, tokenSize, cap, disabled }: Props) {
+export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onKeyTap, highlight, flash, tokenSize, cap, disabled, rowValues }: Props) {
   return (
     <div className="place-mat" style={{ gridTemplateColumns: `128px repeat(${places.length}, minmax(0, 1fr))`, gridTemplateRows: `auto ${rows.map((r) => `minmax(0, ${r.weight}fr)`).join(' ')}` }}>
       <div className="place-mat__corner" />
       {places.map((p) => (
         <div key={p} className={`place-mat__head place-mat__head--${p}`}>
           <TokenCoin value={p} size={34} />
-          <span>{PLACE_NAMES[p].header}</span>
+          <span>{p === 10000 && places.length >= 5 ? 'Дес. хиляди' : PLACE_NAMES[p].header}</span>
         </div>
       ))}
       {rows.map((row) => {
@@ -95,7 +97,7 @@ export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onK
         return [
           <div key={`${row.key}-label`} className={`place-mat__label place-mat__label--${row.tone}`}>
             <span className="place-mat__label-name">{row.label}</span>
-            <span className="place-mat__label-value">{formatNumber(valueOf(c))}</span>
+            <span className="place-mat__label-value">{rowValues ? (rowValues[row.key] ?? '') : formatNumber(valueOf(c))}</span>
           </div>,
           ...places.map((p) => {
             const n = c[p]
