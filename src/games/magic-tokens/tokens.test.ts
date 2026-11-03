@@ -26,6 +26,7 @@ import {
   RANGES,
   answerOf,
   applicableOptions,
+  configForGrade,
   checkTask,
   evalExpr,
   generatePair,
@@ -430,5 +431,41 @@ describe('приложими настройки', () => {
     expect(applicableOptions('add', 'place', 'mixed')).toEqual({ composeTopic: false, challenge: false, range: true, regrouping: true })
     expect(applicableOptions('challenge', 'place', 'otherWay').regrouping).toBe(false)
     expect(applicableOptions('challenge', 'place', 'compare').regrouping).toBe(true)
+  })
+})
+
+describe('общ клас за всички игри', () => {
+  const base: TokensConfig = { grade: 2, mode: 'add', range: 'r20', regrouping: 'with', difficulty: 'master', count: 10, composeTopic: 'place', challenge: 'mixed' }
+
+  it('при смяна на класа неподходящият обхват се заменя', () => {
+    expect(configForGrade(base, 4)).toMatchObject({ grade: 4, range: 'r100000' })
+    expect(configForGrade(base, 4, 'small')).toMatchObject({ grade: 4, range: 'r10000' })
+    expect(configForGrade({ ...base, range: 'r100' }, 3, 'small')).toMatchObject({ grade: 3, range: 'r100' })
+    // същият клас — запазва избора на ученика
+    expect(configForGrade(base, 2)).toMatchObject({ grade: 2, range: 'r20' })
+    // останалите настройки (трудност, преминаване, брой) не се губят
+    expect(configForGrade(base, 3)).toMatchObject({ regrouping: 'with', difficulty: 'master', count: 10 })
+  })
+
+  it('задачите винаги са в обхвата на избрания клас', () => {
+    for (const grade of [2, 3, 4] as const) {
+      const max = Math.max(...GRADE_RANGES[grade].map((r) => RANGES[r].max))
+      for (const mode of ['compose', 'add', 'subtract', 'challenge'] as const) {
+        const cfg = configForGrade({ ...base, mode }, grade)
+        expect(GRADE_RANGES[grade]).toContain(cfg.range)
+        for (const t of generateTokenTasks(cfg, seededRng(grade * 10 + mode.length))) {
+          const nums: number[] = []
+          if ('a' in t) nums.push(t.a)
+          if ('b' in t) nums.push(t.b)
+          if ('c' in t) nums.push(t.c)
+          if ('target' in t) nums.push(t.target)
+          if (t.kind === 'compare') nums.push(t.left.a, t.left.b, t.right.a, t.right.b)
+          if (t.kind === 'findError') for (const e of t.items) nums.push(e.a, e.b)
+          for (const n of nums) expect(n).toBeLessThanOrEqual(max)
+          const ans = answerOf(t)
+          if (typeof ans === 'number' && t.kind !== 'findError') expect(ans).toBeLessThanOrEqual(RANGES[cfg.range].max)
+        }
+      }
+    }
   })
 })

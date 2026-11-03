@@ -103,6 +103,18 @@ export function saveSettings(settings: Settings): void {
   write(SETTINGS_KEY, settings)
 }
 
+const GRADE_KEY = 'map.grade.v1'
+
+/** Последно избраният от билетите клас (общ за всички игри). */
+export function loadPlayerGrade(): Grade | null {
+  const g = read<number>(GRADE_KEY)
+  return g === 2 || g === 3 || g === 4 ? g : null
+}
+
+export function savePlayerGrade(grade: Grade): void {
+  write(GRADE_KEY, grade)
+}
+
 export function loadResults(): GameResult[] {
   const saved = read<GameResult[]>(RESULTS_KEY)
   return Array.isArray(saved) ? saved : []

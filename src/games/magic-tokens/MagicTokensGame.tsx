@@ -5,10 +5,12 @@ import { GameSummary } from './GameSummary'
 import { getLevelConfig, generateSession, type Grade, type Task } from './logic'
 import { ModeSelect } from './ModeSelect'
 import { PlayBoard, type TaskOutcome } from './PlayBoard'
-import { GRADE_RANGES, generateTokenTasks, modeLabel, type ModeId, type TokenTask, type TokensConfig } from './tasks'
+import { GRADE_RANGES, configForGrade, generateTokenTasks, modeLabel, type ModeId, type TokenTask, type TokensConfig } from './tasks'
 import { TokenBoard } from './TokenBoard'
 
 const GAME_ID = 'magic-tokens'
+/** Текущо време (вика се само от обработчици на събития). */
+const nowMs = () => Date.now()
 
 type Phase =
   | { name: 'modes' }
@@ -21,14 +23,13 @@ type Phase =
  * „Вълшебните жетони“: избор на режим → настройки → задачи → обобщение.
  * Режимът „С различни жетони“ е досегашната игра за съставяне на числа.
  */
-export function MagicTokensGame({ grade, onGradeChange, onExit }: { grade: Grade; onGradeChange: (g: Grade) => void; onExit: () => void }) {
+export function MagicTokensGame({ grade, onExit }: { grade: Grade; onExit: () => void }) {
   const { settings, saveResult } = useApp()
-  const locked = !settings.studentCanChoose
-  const effectiveGrade = locked ? settings.grade : grade
-  const [config, setConfig] = useState<TokensConfig>(() => ({
-    grade: effectiveGrade,
+  // Класът идва само от общото състояние (избран веднъж с билетите).
+  const [stored, setConfig] = useState<TokensConfig>(() => ({
+    grade,
     mode: 'compose',
-    range: GRADE_RANGES[effectiveGrade][settings.tokensRange === 'small' ? 0 : 1],
+    range: GRADE_RANGES[grade][settings.tokensRange === 'small' ? 0 : 1],
     regrouping: settings.tokensRegrouping,
     difficulty: settings.difficulty,
     count: settings.taskCount,
@@ -36,23 +37,21 @@ export function MagicTokensGame({ grade, onGradeChange, onExit }: { grade: Grade
     challenge: 'mixed',
   }))
   const [phase, setPhase] = useState<Phase>({ name: 'modes' })
-
-  const changeConfig = (c: TokensConfig) => {
-    if (c.grade !== config.grade) onGradeChange(c.grade)
-    setConfig(c)
-  }
+  // Винаги в съответствие с текущия общ клас — без параметри от друг клас.
+  const config = configForGrade(stored, grade, settings.tokensRange)
+  const changeConfig = (c: TokensConfig) => setConfig(configForGrade(c, grade, settings.tokensRange))
 
   const start = (c: TokensConfig = config) => {
     if (c.mode === 'compose' && c.composeTopic === 'free') {
       const tasks = generateSession(getLevelConfig(c.grade, c.difficulty), c.count)
-      setPhase({ name: 'play', kind: 'free', tasks, startedAt: Date.now() })
+      setPhase({ name: 'play', kind: 'free', tasks, startedAt: nowMs() })
     } else {
-      setPhase({ name: 'play', kind: 'tokens', tasks: generateTokenTasks(c), startedAt: Date.now() })
+      setPhase({ name: 'play', kind: 'tokens', tasks: generateTokenTasks(c), startedAt: nowMs() })
     }
   }
 
   const finish = (outcomes: TaskOutcome[], startedAt: number) => {
-    const durationSec = Math.round((Date.now() - startedAt) / 1000)
+    const durationSec = Math.round((nowMs() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
       mode: modeLabel(config, settings.tokensWorkMode),

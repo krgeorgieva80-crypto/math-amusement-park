@@ -9,6 +9,7 @@ import { HomeScreen } from './screens/HomeScreen'
 import { ParkMap } from './screens/ParkMap'
 import { TeacherScreen } from './screens/TeacherScreen'
 import type { AttractionId } from './attractions/registry'
+import { loadPlayerGrade, savePlayerGrade } from './core/storage'
 
 export type ScreenName = 'home' | 'about' | 'teacher' | 'grade' | 'map' | { game: AttractionId }
 
@@ -16,7 +17,16 @@ function Router() {
   const { settings } = useApp()
   const [screen, setScreen] = useState<ScreenName>('home')
   const [returnTo, setReturnTo] = useState<ScreenName>('home')
-  const [grade, setGrade] = useState<Grade>(settings.grade)
+  // Класът се избира само веднъж — с билетите — и се пази локално.
+  const [savedGrade, setSavedGrade] = useState<Grade | null>(loadPlayerGrade)
+  const [chosenGrade, setChosenGrade] = useState<Grade>(() => savedGrade ?? settings.grade)
+  // Когато учителят е заключил избора, всички игри използват неговия клас.
+  const grade: Grade = settings.studentCanChoose ? chosenGrade : settings.grade
+  const chooseGrade = (g: Grade) => {
+    setChosenGrade(g)
+    setSavedGrade(g)
+    savePlayerGrade(g)
+  }
 
   const openOverlay = (target: 'about' | 'teacher') => {
     setReturnTo(screen)
@@ -26,7 +36,7 @@ function Router() {
   let content
   if (typeof screen === 'object') {
     // Тук се добавят следващите атракциони.
-    content = <MagicTokensGame grade={grade} onGradeChange={setGrade} onExit={() => setScreen('map')} />
+    content = <MagicTokensGame grade={grade} onExit={() => setScreen('map')} />
   } else {
     switch (screen) {
       case 'home':
@@ -42,8 +52,9 @@ function Router() {
         content = (
           <GradeScreen
             selected={grade}
+            lastGrade={savedGrade}
             onSelect={(g) => {
-              setGrade(g)
+              chooseGrade(g)
               setScreen('map')
             }}
             onBack={() => setScreen('home')}
@@ -67,12 +78,7 @@ function Router() {
       case 'teacher':
         content = (
           <TeacherScreen
-            onBack={() => {
-              // Ако учителят е заключил избора, ученикът играе в избрания клас.
-              if (!settings.studentCanChoose) setGrade(settings.grade)
-              setScreen(returnTo)
-            }}
-            onGradeChange={setGrade}
+            onBack={() => setScreen(returnTo)}
           />
         )
         break

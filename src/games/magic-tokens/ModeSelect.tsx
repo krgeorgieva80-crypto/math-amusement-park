@@ -1,8 +1,10 @@
 import { useApp } from '../../core/AppContext'
+import { useStage } from '../../core/Stage'
 import { MascotSays } from '../../components/art/Mascot'
 import { TokenCoin } from '../../components/art/TokenCoin'
 import { GameButton } from '../../components/ui/GameButton'
 import { SoundControl } from '../../components/ui/SoundControl'
+import { GradeTicket } from '../../components/ui/GradeTicket'
 import { BoothBackdrop } from './BoothBackdrop'
 import type { Grade } from './logic'
 import { MODE_DESCRIPTIONS, MODE_LABELS, type ModeId } from './tasks'
@@ -69,6 +71,10 @@ function ModeArt({ mode }: { mode: ModeId }) {
 
 export function ModeSelect({ grade, onChoose, onExit }: { grade: Grade; onChoose: (m: ModeId) => void; onExit: () => void }) {
   const { play } = useApp()
+  const { width, portrait } = useStage()
+  // ширина на картата → най-едрият шрифт, при който името се събира на един ред
+  const cardW = portrait ? (width - 60 - 26) / 2 : (width - 120 - 78) / 4
+  const nameSize = (name: string) => Math.max(18, Math.min(31, Math.floor((cardW - 48) / (name.length * 0.66))))
   return (
     <div className="screen mode-select">
       <BoothBackdrop />
@@ -76,7 +82,7 @@ export function ModeSelect({ grade, onChoose, onExit }: { grade: Grade; onChoose
         <GameButton color="yellow" size="md" icon="map" onClick={onExit}>
           Към парка
         </GameButton>
-        <div className="level-chip">{grade}. клас</div>
+        <GradeTicket grade={grade} />
         <div className="top-bar__spacer" />
         <SoundControl />
       </div>
@@ -101,7 +107,9 @@ export function ModeSelect({ grade, onChoose, onExit }: { grade: Grade; onChoose
             >
               <span className="mode-card__num">{i + 1}</span>
               <ModeArt mode={m.id} />
-              <span className="mode-card__name">{MODE_LABELS[m.id]}</span>
+              <span className="mode-card__name" style={{ fontSize: nameSize(MODE_LABELS[m.id]) }}>
+                {MODE_LABELS[m.id]}
+              </span>
               <span className="mode-card__desc">{MODE_DESCRIPTIONS[m.id]}</span>
             </button>
           ))}

@@ -7,6 +7,7 @@ import { Confetti, StarRow, StarShape } from '../../components/ui/Effects'
 import { GameButton } from '../../components/ui/GameButton'
 import { Icon } from '../../components/ui/Icon'
 import { SoundControl } from '../../components/ui/SoundControl'
+import { GradeTicket } from '../../components/ui/GradeTicket'
 import { BoothBackdrop } from './BoothBackdrop'
 import {
   DIFFICULTY_LABELS,
@@ -246,9 +247,8 @@ export function PlayBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
         <GameButton color="yellow" size="md" icon="map" onClick={onExit}>
           Към парка
         </GameButton>
-        <div className="level-chip">
-          {grade}. клас · {DIFFICULTY_LABELS[difficulty]}
-        </div>
+        <GradeTicket grade={grade} />
+        <div className="level-chip">{DIFFICULTY_LABELS[difficulty]}</div>
         <div className="top-bar__spacer" />
         <div className="progress" aria-label={`Задача ${index + 1} от ${tasks.length}`}>
           <span className="progress__label">

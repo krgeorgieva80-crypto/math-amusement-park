@@ -43,7 +43,7 @@ function formatDate(iso: string): string {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-export function TeacherScreen({ onBack, onGradeChange }: { onBack: () => void; onGradeChange: (g: Grade) => void }) {
+export function TeacherScreen({ onBack }: { onBack: () => void }) {
   const { width: w, height: h } = useStage()
   const { settings, updateSettings, results, resetResults } = useApp()
   const [confirmClear, setConfirmClear] = useState(false)
@@ -73,10 +73,7 @@ export function TeacherScreen({ onBack, onGradeChange }: { onBack: () => void; o
             label="Клас"
             value={settings.grade}
             options={GRADES.map((g) => ({ value: g, label: `${g}. клас` }))}
-            onChange={(g) => {
-              updateSettings({ grade: g })
-              onGradeChange(g)
-            }}
+            onChange={(g) => updateSettings({ grade: g })}
           />
           <Segmented
             label="Степен на трудност"

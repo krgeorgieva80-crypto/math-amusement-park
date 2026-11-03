@@ -2,6 +2,7 @@ import { Mascot } from '../../components/art/Mascot'
 import { Confetti, StarRow } from '../../components/ui/Effects'
 import { GameButton } from '../../components/ui/GameButton'
 import { SoundControl } from '../../components/ui/SoundControl'
+import { GradeTicket } from '../../components/ui/GradeTicket'
 import { BoothBackdrop } from './BoothBackdrop'
 import { DIFFICULTY_LABELS, type Difficulty, type Grade } from './logic'
 import type { TaskOutcome } from './PlayBoard'
@@ -45,6 +46,7 @@ export function GameSummary({
       <BoothBackdrop />
       {overall >= 2 && <Confetti count={80} seed={7} />}
       <div className="top-bar">
+        <GradeTicket grade={grade} />
         <div className="top-bar__spacer" />
         <SoundControl />
       </div>

@@ -101,6 +101,17 @@ export function modeLabel(c: TokensConfig, workMode?: 'tokensAndCompute' | 'comp
   return MODE_LABELS[c.mode]
 }
 
+/**
+ * Прилага общия (избрания от билетите) клас към настройките на играта.
+ * Параметри, неподходящи за новия клас (напр. обхват „до 20“ в 4. клас),
+ * се заменят с подходящите за него — нищо не се пренася от стария клас.
+ */
+export function configForGrade(c: TokensConfig, grade: Grade, rangeLevel: 'small' | 'large' = 'large'): TokensConfig {
+  const ranges = GRADE_RANGES[grade]
+  const range = c.grade === grade && ranges.includes(c.range) ? c.range : ranges[rangeLevel === 'small' ? 0 : 1]
+  return { ...c, grade, range }
+}
+
 /** Кои настройки имат смисъл за даден режим (показват се само те). */
 export function applicableOptions(mode: ModeId, composeTopic: ComposeTopic, challenge: ChallengeKind | 'mixed') {
   const regroupingChallenge = challenge === 'mixed' || ['missingAddend', 'missingSubtrahend', 'missingMinuend', 'compare', 'findError'].includes(challenge)

@@ -10,6 +10,7 @@ import { StarRow } from '../components/ui/Effects'
 import { RoundButton } from '../components/ui/GameButton'
 import { Icon } from '../components/ui/Icon'
 import { SoundControl } from '../components/ui/SoundControl'
+import { GradeTicket } from '../components/ui/GradeTicket'
 import { DIFFICULTIES, type Grade } from '../games/magic-tokens/logic'
 
 interface Props {
@@ -261,15 +262,11 @@ export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher }: Pro
 
       <div className="top-bar">
         <RoundButton icon="home" label="Начало" color="yellow" onClick={onHome} />
-        <button
-          type="button"
-          className="grade-badge"
+        <GradeTicket
+          grade={grade}
           onClick={settings.studentCanChoose ? onChangeGrade : undefined}
-          disabled={!settings.studentCanChoose}
           title={settings.studentCanChoose ? 'Смени класа' : 'Класът е избран от учителя'}
-        >
-          {grade}. клас
-        </button>
+        />
         {w >= 1500 && (
           <div className="map-title">
             <Icon name="map" size={34} />

@@ -1,12 +1,14 @@
+import type { ReactNode } from 'react'
 import { useApp } from '../../core/AppContext'
 import { bestStars } from '../../core/storage'
 import { Mascot } from '../../components/art/Mascot'
 import { StarRow } from '../../components/ui/Effects'
 import { GameButton } from '../../components/ui/GameButton'
 import { SoundControl } from '../../components/ui/SoundControl'
+import { GradeTicket } from '../../components/ui/GradeTicket'
 import { BoothBackdrop } from './BoothBackdrop'
 import { WORK_MODE_LABELS } from './compute'
-import { DIFFICULTIES, DIFFICULTY_DESCRIPTIONS, DIFFICULTY_LABELS, GRADES, type Difficulty, type Grade } from './logic'
+import { DIFFICULTIES, DIFFICULTY_DESCRIPTIONS, DIFFICULTY_LABELS, type Difficulty } from './logic'
 import {
   CHALLENGE_KINDS,
   CHALLENGE_LABELS,
@@ -62,10 +64,6 @@ export function GameSetup({ config, onChange, onStart, onBack, onExit }: { confi
   const show = applicableOptions(config.mode, config.composeTopic, config.challenge)
   const set = (patch: Partial<TokensConfig>) => onChange({ ...config, ...patch })
 
-  const setGrade = (g: Grade) => {
-    const ranges = GRADE_RANGES[g]
-    set({ grade: g, range: ranges.includes(config.range) ? config.range : ranges[settings.tokensRange === 'small' ? 0 : 1] })
-  }
 
   return (
     <div className="screen game-setup">
@@ -74,6 +72,7 @@ export function GameSetup({ config, onChange, onStart, onBack, onExit }: { confi
         <GameButton color="yellow" size="md" icon="back" onClick={onBack}>
           Игри
         </GameButton>
+        <GradeTicket grade={config.grade} />
         <div className="level-chip">{MODE_LABELS[config.mode]}</div>
         <div className="top-bar__spacer" />
         <GameButton color="yellow" size="md" icon="map" onClick={onExit}>
@@ -82,51 +81,79 @@ export function GameSetup({ config, onChange, onStart, onBack, onExit }: { confi
         <SoundControl />
       </div>
 
-      <div className="setup-card">
+      <div className={`setup-card ${show.challenge || show.composeTopic ? 'is-compact' : ''}`}>
         <div className="setup-card__title">
           <Mascot mood="happy" size={92} />
           <span>{MODE_LABELS[config.mode]}</span>
         </div>
         <div className="setup-grid">
-          <Pills<Grade> label="Клас" value={config.grade} locked={locked} options={GRADES.map((g) => ({ value: g, label: `${g}. клас` }))} onChange={setGrade} />
-          {show.range && (
-            <Pills<RangeId> label="Числов обхват" value={config.range} locked={locked} options={GRADE_RANGES[config.grade].map((r) => ({ value: r, label: RANGES[r].label }))} onChange={(range) => set({ range })} />
-          )}
-          {show.composeTopic && (
-            <Pills<ComposeTopic>
-              label="Вид задачи"
-              wide
-              value={config.composeTopic}
-              options={(Object.keys(COMPOSE_TOPIC_LABELS) as ComposeTopic[]).map((t) => ({ value: t, label: COMPOSE_TOPIC_LABELS[t] }))}
-              onChange={(composeTopic) => set({ composeTopic })}
-            />
-          )}
-          {show.challenge && (
-            <Pills<ChallengeKind | 'mixed'>
-              label="Вид предизвикателство"
-              wide
-              value={config.challenge}
-              options={[{ value: 'mixed' as const, label: 'Смесени' }, ...CHALLENGE_KINDS.map((k) => ({ value: k, label: CHALLENGE_LABELS[k] }))]}
-              onChange={(challenge) => set({ challenge })}
-            />
-          )}
-          {show.regrouping && (
-            <Pills<Regrouping>
-              label="Преминаване през десетицата"
-              value={config.regrouping}
-              locked={locked}
-              options={(['none', 'with', 'mixed'] as Regrouping[]).map((r) => ({ value: r, label: REGROUPING_LABELS[r] }))}
-              onChange={(regrouping) => set({ regrouping })}
-            />
-          )}
-          <Pills<Difficulty>
-            label="Трудност"
-            value={config.difficulty}
-            locked={locked}
-            options={DIFFICULTIES.map((d) => ({ value: d, label: DIFFICULTY_LABELS[d], hint: DIFFICULTY_DESCRIPTIONS[d] }))}
-            onChange={(difficulty) => set({ difficulty })}
-          />
-          <Pills<number> label="Брой задачи" value={config.count} locked={locked} options={[5, 10, 15].map((n) => ({ value: n, label: String(n) }))} onChange={(count) => set({ count })} />
+          {(() => {
+            // Широките опции са най-отгоре; при нечетен брой останалите —
+            // последната заема целия ред, за да няма празно място.
+            const wide: ReactNode[] = []
+            const narrow: { key: string; node: (wideRow: boolean) => ReactNode }[] = []
+            if (show.composeTopic)
+              wide.push(
+                <Pills<ComposeTopic>
+                  key="topic"
+                  label="Вид задачи"
+                  wide
+                  value={config.composeTopic}
+                  options={(Object.keys(COMPOSE_TOPIC_LABELS) as ComposeTopic[]).map((t) => ({ value: t, label: COMPOSE_TOPIC_LABELS[t] }))}
+                  onChange={(composeTopic) => set({ composeTopic })}
+                />,
+              )
+            if (show.challenge)
+              wide.push(
+                <Pills<ChallengeKind | 'mixed'>
+                  key="challenge"
+                  label="Вид предизвикателство"
+                  wide
+                  value={config.challenge}
+                  options={[{ value: 'mixed' as const, label: 'Смесени' }, ...CHALLENGE_KINDS.map((k) => ({ value: k, label: CHALLENGE_LABELS[k] }))]}
+                  onChange={(challenge) => set({ challenge })}
+                />,
+              )
+            if (show.range)
+              narrow.push({
+                key: 'range',
+                node: (w) => <Pills<RangeId> key="range" wide={w} label="Числов обхват" value={config.range} locked={locked} options={GRADE_RANGES[config.grade].map((r) => ({ value: r, label: RANGES[r].label }))} onChange={(range) => set({ range })} />,
+              })
+            if (show.regrouping)
+              narrow.push({
+                key: 'regrouping',
+                node: (w) => (
+                  <Pills<Regrouping>
+                    key="regrouping"
+                    wide={w}
+                    label="Преминаване през десетицата"
+                    value={config.regrouping}
+                    locked={locked}
+                    options={(['none', 'with', 'mixed'] as Regrouping[]).map((r) => ({ value: r, label: REGROUPING_LABELS[r] }))}
+                    onChange={(regrouping) => set({ regrouping })}
+                  />
+                ),
+              })
+            narrow.push({
+              key: 'difficulty',
+              node: (w) => (
+                <Pills<Difficulty>
+                  key="difficulty"
+                  wide={w}
+                  label="Трудност"
+                  value={config.difficulty}
+                  locked={locked}
+                  options={DIFFICULTIES.map((d) => ({ value: d, label: DIFFICULTY_LABELS[d], hint: DIFFICULTY_DESCRIPTIONS[d] }))}
+                  onChange={(difficulty) => set({ difficulty })}
+                />
+              ),
+            })
+            narrow.push({
+              key: 'count',
+              node: (w) => <Pills<number> key="count" wide={w} label="Брой задачи" value={config.count} locked={locked} options={[5, 10, 15].map((n) => ({ value: n, label: String(n) }))} onChange={(count) => set({ count })} />,
+            })
+            return [...wide, ...narrow.map((n, i) => n.node(narrow.length % 2 === 1 && i === narrow.length - 1))]
+          })()}
         </div>
         <div className="setup-card__footer">
           <span className="setup-card__best">

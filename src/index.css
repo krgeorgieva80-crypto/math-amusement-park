@@ -4191,3 +4191,211 @@ button:focus-visible {
 .teacher-toggles .toggle {
   min-height: 56px;
 }
+
+/* ═════════════ Общ клас: билет-индикатор и „Продължи“ ═════════════ */
+
+.grade-ticket {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 16px 0 12px;
+  border-radius: 14px;
+  background: #fffaf0;
+  border: 3px solid var(--ink);
+  box-shadow: 0 4px 0 rgba(59, 42, 90, 0.35);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink);
+  white-space: nowrap;
+  /* назъбени краища като на билет */
+  -webkit-mask: radial-gradient(circle at 0 50%, transparent 7px, #000 7.5px) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
+  mask: radial-gradient(circle at 0 50%, transparent 7px, #000 7.5px) left / 51% 100% no-repeat, radial-gradient(circle at 100% 50%, transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
+}
+
+.grade-ticket.is-button {
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.grade-ticket.is-button:hover {
+  transform: translateY(-2px) rotate(-2deg);
+}
+
+.grade-ticket.is-button:active {
+  transform: translateY(3px);
+}
+
+.grade-ticket__icon {
+  flex: none;
+}
+
+/* Продължи с последно избрания клас */
+.grade-screen.has-continue .screen-title {
+  top: 108px;
+}
+
+.grade-screen.has-continue .tickets {
+  top: 230px;
+}
+
+.grade-screen.has-continue .ticket {
+  height: 440px;
+}
+
+.grade-continue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.grade-continue__btn {
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+.grade-continue__btn .game-btn__face {
+  min-height: 96px;
+  font-size: 42px;
+}
+
+.grade-continue__or {
+  padding: 4px 18px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 3px solid var(--ink);
+  font-size: 20px;
+}
+
+.no-motion .grade-continue__btn {
+  animation: none !important;
+}
+
+.is-portrait .grade-screen.has-continue .tickets {
+  top: 220px;
+  gap: 26px;
+}
+
+.is-portrait .grade-screen.has-continue .ticket {
+  height: 290px;
+}
+
+/* Настройки на играта без избора на клас — по-едри и без празни места */
+.setup-grid {
+  align-content: center;
+  gap: 22px 34px;
+}
+
+.setup-pill {
+  min-height: 74px;
+  font-size: 25px;
+}
+
+.setup-row__label {
+  font-size: 25px;
+}
+
+.setup-pills {
+  flex-wrap: nowrap;
+}
+
+.setup-pill {
+  min-width: 0;
+  padding: 4px 12px;
+  line-height: 1.1;
+}
+
+.setup-row.is-wide .setup-pills {
+  flex-wrap: wrap;
+}
+
+.setup-row.is-wide .setup-pill {
+  min-width: max-content;
+}
+
+.setup-card__best {
+  white-space: nowrap;
+}
+
+/* По-компактни настройки, когато има широк ред с много опции */
+.setup-card {
+  top: 112px;
+  bottom: 20px;
+  gap: 12px;
+}
+
+.setup-card .setup-card__title {
+  font-size: 40px;
+}
+
+.setup-card .setup-card__title .mascot {
+  width: 76px;
+  height: 76px;
+}
+
+.setup-grid {
+  min-height: 0;
+}
+
+.setup-card.is-compact .setup-grid {
+  gap: 12px 28px;
+}
+
+.setup-card.is-compact .setup-pill {
+  min-height: 62px;
+  font-size: 21px;
+}
+
+.setup-card.is-compact .setup-row__label {
+  font-size: 21px;
+}
+
+.setup-card.is-compact .setup-row {
+  gap: 6px;
+}
+
+.setup-card__footer .game-btn--xl .game-btn__face {
+  min-height: 96px;
+  font-size: 44px;
+}
+
+/* По-тесни хоризонтални екрани (4:3) */
+.is-landscape .setup-card {
+  left: 40px;
+  right: 40px;
+}
+
+/* Вертикално: две колони и за обикновените опции */
+.is-portrait .setup-grid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.is-portrait .setup-row.is-wide {
+  grid-column: 1 / 3;
+}
+
+.is-portrait .setup-pill {
+  font-size: 20px;
+  padding: 4px 8px;
+}
+
+.setup-grid,
+.is-portrait .setup-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.setup-row,
+.setup-pills {
+  min-width: 0;
+}
+
+.setup-pill {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+}

@@ -7,6 +7,7 @@ import { Confetti, StarRow } from '../../components/ui/Effects'
 import { GameButton } from '../../components/ui/GameButton'
 import { Icon } from '../../components/ui/Icon'
 import { SoundControl } from '../../components/ui/SoundControl'
+import { GradeTicket } from '../../components/ui/GradeTicket'
 import { BoothBackdrop } from './BoothBackdrop'
 import { DIFFICULTY_LABELS, formatNumber, starsForTask, type Difficulty, type Grade } from './logic'
 import { PlaceMat, type DragPayload, type MatRow, type RowKey } from './PlaceMat'
@@ -432,8 +433,9 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
         <GameButton color="yellow" size="md" icon="map" onClick={onExit}>
           Към парка
         </GameButton>
+        <GradeTicket grade={grade} />
         <div className="level-chip">
-          {grade}. клас · {MODE_LABELS[mode]} · {DIFFICULTY_LABELS[difficulty]}
+          {MODE_LABELS[mode]} · {DIFFICULTY_LABELS[difficulty]}
         </div>
         <div className="top-bar__spacer" />
         <div className="progress" aria-label={`Задача ${index + 1} от ${tasks.length}`}>
