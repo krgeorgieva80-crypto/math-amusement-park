@@ -1,32 +1,54 @@
-# React + TypeScript + Vite
+# Математически увеселителен парк
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Образователна уеб игра по математика за ученици от 2. до 4. клас. Направена е като приказен увеселителен парк с атракциони. Всеки атракцион е отделна математическа игра.
 
-Currently, two official plugins are available:
+## Стартиране
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev        # сървър за разработка
+npm test           # тестове на математическата логика
+npm run build      # production build в папка dist/
+npm run preview    # преглед на production build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Папката `dist/` е статичен сайт с относителни пътища. Може да се отвори от всеки уеб сървър и работи без интернет: шрифтовете са вградени, а звуците се синтезират в браузъра.
+
+## Какво съдържа
+
+- **Начален екран**: панорама на парка с бутоните „Играй“, „За играта“, „За учителя“ и настройки за звука.
+- **Избор на клас**: 2., 3. и 4. клас.
+- **Карта на парка**: осем атракциона, всеки с собствена SVG илюстрация. Засега е активен само „Вълшебните жетони“, останалите са отбелязани с „Очаквай скоро“.
+- **„Вълшебните жетони“**: съставяне на число с жетони. Жетоните се влачат с мишка или пръст или се слагат с докосване. Има бутони „Провери“, „Изчисти“, „Помощ“, „Следваща задача“ и „Към парка“.
+  - 2. клас: числа до 100, жетони 1, 2, 5, 10, 20.
+  - 3. клас: числа до 1000, жетони 1, 5, 10, 50, 100.
+  - 4. клас: числа до 100 000, жетони 1, 10, 100, 1000, 10 000.
+  - Степени на трудност: **Откривател** (с подсказки на екрана), **Изследовател**, **Майстор** (с условия: най-малко жетони, точно N жетона или забранен жетон).
+- **Учителски панел**: клас, трудност, брой задачи (5/10/15), подсказки, звук, музика, заключване на избора. Показва и анонимни резултати.
+
+## Структура
+
+```
+src/
+  core/          сцена и мащабиране, настройки, localStorage, звук (Web Audio)
+  attractions/   регистър на атракционите
+  components/    SVG илюстрации, талисман, декор, бутони и ефекти
+  screens/       начален екран, клас, карта, „За играта“, „За учителя“
+  games/
+    magic-tokens/  логика (+ тестове), игрален екран, влачене, обобщение
+```
+
+### Добавяне на нов атракцион
+
+1. Създайте игра в `src/games/<id>/`.
+2. В `src/attractions/registry.ts` сменете `status` на `'ready'`.
+3. В `src/App.tsx` изберете компонента според `screen.game`.
+
+### Замяна на графика и звуци
+
+- Всяка илюстрация е отделен компонент в `src/components/art/`. Може да се замени с професионално изображение (`<image href="...">`), без да се пипа останалият код.
+- Звуците се синтезират в `src/core/sound.ts`. С `sound.registerSample('success', '/sounds/success.mp3')` всеки звук може да се замени с аудио файл.
+
+## Поверителност
+
+В `localStorage` на устройството се пазят само настройките и анонимни резултати: дата, клас, ниво и брой решени задачи. Не се събират имена или лични данни. Не се използват външни услуги.

@@ -1,7 +1,13 @@
+/// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// https://vite.dev/config/
+// Относителен base: приложението работи от всяка папка или статичен хостинг.
 export default defineConfig({
+  base: './',
   plugins: [react()],
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+  },
 })
