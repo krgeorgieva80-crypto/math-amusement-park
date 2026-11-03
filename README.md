@@ -12,7 +12,13 @@ npm run build      # production build в папка dist/
 npm run preview    # преглед на production build
 ```
 
-Папката `dist/` е статичен сайт с относителни пътища. Може да се отвори от всеки уеб сървър и работи без интернет: шрифтовете са вградени, а звуците се синтезират в браузъра.
+Папката `dist/` е статичен сайт, който работи без интернет: шрифтовете са вградени, а звуците се синтезират в браузъра. Сборката е настроена за адрес `/math-amusement-park/` (base path във `vite.config.ts`).
+
+## Публикуване
+
+Играта е публикувана на https://krgeorgieva80-crypto.github.io/math-amusement-park/
+
+Всяка промяна в клон `main` се публикува автоматично чрез GitHub Actions (`.github/workflows/deploy.yml`). В Settings → Pages полето Source трябва да е **GitHub Actions**.
 
 ## Какво съдържа
 
