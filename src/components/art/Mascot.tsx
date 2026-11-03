@@ -1,12 +1,12 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { OUTLINE as O } from './Attractions'
 
-export type MascotMood = 'happy' | 'cheer' | 'think' | 'encourage'
+export type MascotMood = 'happy' | 'cheer' | 'think' | 'encourage' | 'wave'
 
 /** Звездичка — талисманът на парка, който дава инструкции и насърчава. */
 export function Mascot({ mood = 'happy', size = 180, className = '' }: { mood?: MascotMood; size?: number; className?: string }) {
   const mouth =
-    mood === 'cheer' ? (
+    mood === 'cheer' || mood === 'wave' ? (
       <path d="M-16 8 Q0 30 16 8 Z" fill="#c2185b" stroke={O} strokeWidth="3" strokeLinejoin="round" />
     ) : mood === 'think' ? (
       <path d="M-8 14 Q2 10 10 14" fill="none" stroke={O} strokeWidth="4" strokeLinecap="round" />
@@ -26,10 +26,14 @@ export function Mascot({ mood = 'happy', size = 180, className = '' }: { mood?: 
       <g className="mascot__body">
         {/* ръчички */}
         <g className={mood === 'cheer' ? 'mascot__arms--up' : 'mascot__arms'}>
-          <path d="M-42 4 q-18 -6 -24 -22" fill="none" stroke={O} strokeWidth="9" strokeLinecap="round" />
-          <path d="M-42 4 q-18 -6 -24 -22" fill="none" stroke="#ffc928" strokeWidth="5" strokeLinecap="round" />
-          <path d="M42 4 q18 -6 24 -22" fill="none" stroke={O} strokeWidth="9" strokeLinecap="round" />
-          <path d="M42 4 q18 -6 24 -22" fill="none" stroke="#ffc928" strokeWidth="5" strokeLinecap="round" />
+          <g className="mascot__arm-l">
+            <path d="M-42 4 q-18 -6 -24 -22" fill="none" stroke={O} strokeWidth="9" strokeLinecap="round" />
+            <path d="M-42 4 q-18 -6 -24 -22" fill="none" stroke="#ffc928" strokeWidth="5" strokeLinecap="round" />
+          </g>
+          <g className={mood === 'wave' ? 'mascot__arm-r is-waving' : 'mascot__arm-r'}>
+            <path d="M42 4 q18 -6 24 -22" fill="none" stroke={O} strokeWidth="9" strokeLinecap="round" />
+            <path d="M42 4 q18 -6 24 -22" fill="none" stroke="#ffc928" strokeWidth="5" strokeLinecap="round" />
+          </g>
         </g>
         <path
           d="M0 -62 L16 -22 L59 -19 L26 9 L37 52 L0 29 L-37 52 L-26 9 L-59 -19 L-16 -22 Z"
@@ -63,6 +67,25 @@ export function MascotSays({ children, mood, size = 150, side = 'left' }: { chil
     <div className={`mascot-says mascot-says--${side}`}>
       <Mascot mood={mood} size={size} />
       <div className="speech-bubble">{children}</div>
+    </div>
+  )
+}
+
+/**
+ * Звездичката като герой-водач: стои в ъгъла на екрана, говори с кратки
+ * изречения и при докосване казва следващия съвет.
+ */
+export function GuideStar({ tips, size = 130, mood = 'wave', className = '', message }: { tips: string[]; size?: number; mood?: MascotMood; className?: string; message?: string | null }) {
+  const [i, setI] = useState(0)
+  const text = message ?? tips[i % tips.length]
+  return (
+    <div className={`guide-star ${className}`}>
+      <button type="button" className="guide-star__btn" aria-label="Звездичка — докосни за съвет" onClick={() => setI((n) => n + 1)}>
+        <Mascot mood={mood} size={size} />
+      </button>
+      <div className="speech-bubble guide-star__bubble" key={text} role="status">
+        {text}
+      </div>
     </div>
   )
 }

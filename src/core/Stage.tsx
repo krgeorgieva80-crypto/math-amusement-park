@@ -1,4 +1,5 @@
 import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useApp } from './AppContext'
 
 /**
  * Игрова сцена с логическа резолюция и мащабиране.
@@ -37,6 +38,7 @@ function measure() {
 export function Stage({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
   const [dims, setDims] = useState(measure)
+  const { settings } = useApp()
 
   useLayoutEffect(() => {
     const onResize = () => setDims(measure())
@@ -65,7 +67,7 @@ export function Stage({ children }: { children: ReactNode }) {
     <div className="stage-viewport">
       <div
         ref={ref}
-        className={`stage ${dims.portrait ? 'is-portrait' : 'is-landscape'}`}
+        className={`stage ${dims.portrait ? 'is-portrait' : 'is-landscape'} ${settings.animationsOn ? '' : 'no-motion'}`}
         style={{ width: dims.width, height: dims.height, left: dims.left, top: dims.top, transform: `scale(${dims.scale})` }}
       >
         <StageContext.Provider value={info}>{children}</StageContext.Provider>

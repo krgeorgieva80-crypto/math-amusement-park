@@ -5,6 +5,7 @@
  * За замяна с професионална графика е достатъчно компонентът да върне <image>.
  */
 import type { ReactNode } from 'react'
+import { useApp } from '../../core/AppContext'
 
 export const OUTLINE = '#3b2a5a'
 const O = OUTLINE
@@ -181,91 +182,212 @@ export function MagicTokensArt(p: ArtProps) {
 
 // ───────────────────────── 3. Колелото на умножението ─────────────────────────
 export function FerrisWheelArt(p: ArtProps) {
-  const cabins = ['#ff5fa2', '#ffd23f', '#2ed1c4', '#9b5de5', '#6bd66b', '#ff9f43', '#ff5fa2', '#2ed1c4']
-  const R = 76
+  const cabins = ['#ff5fa2', '#ffd23f', '#2ed1c4', '#9b5de5', '#6bd66b', '#ff9f43']
+  const R = 82
+  const N = 12
+  const truss = Array.from({ length: N * 2 + 1 }, (_, i) => {
+    const a = (i * Math.PI) / N
+    const r = i % 2 === 0 ? R : R - 11
+    return `${(r * Math.cos(a)).toFixed(1)},${(r * Math.sin(a)).toFixed(1)}`
+  }).join(' ')
   return (
     <Frame {...p} label="Колелото на умножението">
-      <Shadow rx={78} />
-      {/* крака */}
-      <path d="M120 100 L64 214 M120 100 L176 214" stroke={O} strokeWidth="14" strokeLinecap="round" />
-      <path d="M120 100 L64 214 M120 100 L176 214" stroke="#9b5de5" strokeWidth="8" strokeLinecap="round" />
-      <path d="M84 174 L156 174" stroke={O} strokeWidth="9" strokeLinecap="round" />
-      <path d="M84 174 L156 174" stroke="#b67cff" strokeWidth="4" strokeLinecap="round" />
-      <g transform="translate(120 100)">
+      <defs>
+        <linearGradient id="fw-leg" x1="0" x2="1">
+          <stop offset="0" stopColor="#c39bff" />
+          <stop offset="1" stopColor="#7d45d0" />
+        </linearGradient>
+        <radialGradient id="fw-hub" cx="0.35" cy="0.35">
+          <stop offset="0" stopColor="#ffc2dc" />
+          <stop offset="1" stopColor="#d63384" />
+        </radialGradient>
+        <radialGradient id="fw-glow">
+          <stop offset="0.55" stopColor="#fff6a8" stopOpacity="0" />
+          <stop offset="0.8" stopColor="#fff6a8" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#fff6a8" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <Shadow rx={86} cy={226} />
+      {/* задни крака */}
+      <path d="M120 96 L78 212 M120 96 L162 212" stroke="#5e2fb0" strokeWidth="7" strokeLinecap="round" opacity="0.7" />
+      <circle cx="120" cy="96" r="104" fill="url(#fw-glow)" />
+      <g transform="translate(120 96)">
         <g className="spin-slow">
-          <circle r={R} fill="none" stroke={O} strokeWidth="12" />
-          <circle r={R} fill="none" stroke="#2ed1c4" strokeWidth="6" />
-          <circle r={R - 18} fill="none" stroke={O} strokeWidth="7" />
-          <circle r={R - 18} fill="none" stroke="#ffd23f" strokeWidth="3" />
-          {Array.from({ length: 8 }, (_, i) => {
-            const a = (i * Math.PI) / 4
-            return <line key={i} x1="0" y1="0" x2={R * Math.cos(a)} y2={R * Math.sin(a)} stroke={O} strokeWidth="3" />
-          })}
-          {Array.from({ length: 16 }, (_, i) => {
-            const a = (i * Math.PI) / 8 + Math.PI / 16
-            return <circle key={i} className="bulb" style={{ animationDelay: `${(i % 4) * 0.15}s` }} cx={R * Math.cos(a)} cy={R * Math.sin(a)} r="2.6" fill="#fff6a8" />
-          })}
-          {cabins.map((c, i) => {
-            const a = (i * Math.PI) / 4
+          <polyline points={truss} fill="none" stroke={O} strokeWidth="4.5" strokeLinejoin="round" />
+          <polyline points={truss} fill="none" stroke="#7ff5ea" strokeWidth="2" strokeLinejoin="round" />
+          <circle r={R} fill="none" stroke={O} strokeWidth="9" />
+          <circle r={R} fill="none" stroke="#2ed1c4" strokeWidth="4.5" />
+          <circle r={R - 11} fill="none" stroke={O} strokeWidth="6" />
+          <circle r={R - 11} fill="none" stroke="#ffd23f" strokeWidth="2.5" />
+          {Array.from({ length: N }, (_, i) => {
+            const a = (i * 2 * Math.PI) / N
             return (
-              <g key={i} transform={`translate(${R * Math.cos(a)} ${R * Math.sin(a)})`}>
+              <g key={i}>
+                <line x1={15 * Math.cos(a)} y1={15 * Math.sin(a)} x2={(R - 11) * Math.cos(a)} y2={(R - 11) * Math.sin(a)} stroke={O} strokeWidth="3.5" />
+                <line x1={15 * Math.cos(a)} y1={15 * Math.sin(a)} x2={(R - 11) * Math.cos(a)} y2={(R - 11) * Math.sin(a)} stroke="#e9dcff" strokeWidth="1.3" />
+              </g>
+            )
+          })}
+          <circle r="34" fill="none" stroke={O} strokeWidth="4" />
+          <circle r="34" fill="none" stroke="#ff8cc0" strokeWidth="1.8" />
+          {Array.from({ length: 24 }, (_, i) => {
+            const a = (i * Math.PI) / 12 + Math.PI / 24
+            return <circle key={i} className="bulb" style={{ animationDelay: `${(i % 4) * 0.3}s` }} cx={R * Math.cos(a)} cy={R * Math.sin(a)} r="2.4" fill="#fff6a8" stroke={O} strokeWidth="0.8" />
+          })}
+          {Array.from({ length: N }, (_, i) => {
+            const a = (i * 2 * Math.PI) / N
+            const c = cabins[i % cabins.length]
+            return (
+              <g key={i} transform={`translate(${(R * Math.cos(a)).toFixed(1)} ${(R * Math.sin(a)).toFixed(1)})`}>
                 <g className="spin-slow-reverse">
-                  <line x1="0" y1="0" x2="0" y2="6" stroke={O} strokeWidth="2.5" />
-                  <path d="M-12 6 h24 v12 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z" fill={c} stroke={O} strokeWidth="2.5" strokeLinejoin="round" />
-                  <rect x="-8" y="9" width="16" height="6" rx="2" fill="#fff" opacity="0.75" />
+                  <line x1="0" y1="0" x2="0" y2="5" stroke={O} strokeWidth="2.5" />
+                  <path d="M-10 5 Q0 0 10 5 V7 H-10 Z" fill={c} stroke={O} strokeWidth="2" strokeLinejoin="round" />
+                  <path d="M-9 7 h18 v9 a5 5 0 0 1 -5 5 h-8 a5 5 0 0 1 -5 -5 z" fill={c} stroke={O} strokeWidth="2" strokeLinejoin="round" />
+                  <rect x="-6.5" y="9" width="13" height="5" rx="1.5" fill="#fff" opacity="0.85" />
+                  <path d="M-9 16 h18" stroke={O} strokeWidth="1.2" opacity="0.4" />
                 </g>
               </g>
             )
           })}
         </g>
-        <circle r="13" fill="#ff5fa2" stroke={O} strokeWidth={SW} />
-        <text y="5" textAnchor="middle" fontSize="15" className="art-text" fill="#fff">
-          ×
-        </text>
+        <circle r="15" fill="url(#fw-hub)" stroke={O} strokeWidth={SW} />
+        <path d="M0 -9 l2.6 5.4 5.9.8-4.3 4.1 1 5.9L0 14.4l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z" transform="scale(0.8) translate(0 -2)" fill="#fff6a8" stroke={O} strokeWidth="1.5" strokeLinejoin="round" />
       </g>
-      <rect x="56" y="206" width="128" height="16" rx="7" fill="#ffd23f" stroke={O} strokeWidth={SW} />
+      {/* предни крака с решетка */}
+      {[
+        [120, 96, 62, 212],
+        [120, 96, 178, 212],
+      ].map(([x1, y1, x2, y2], k) => (
+        <g key={k}>
+          <path d={`M${x1} ${y1} L${x2} ${y2}`} stroke={O} strokeWidth="13" strokeLinecap="round" />
+          <path d={`M${x1} ${y1} L${x2} ${y2}`} stroke="url(#fw-leg)" strokeWidth="7.5" strokeLinecap="round" />
+        </g>
+      ))}
+      {/* напречни греди — само под колелото */}
+      {[186, 200].map((y) => {
+        const dx = 58 * ((y - 96) / 116)
+        return (
+          <g key={y}>
+            <path d={`M${120 - dx} ${y} L${120 + dx} ${y}`} stroke={O} strokeWidth="6" strokeLinecap="round" />
+            <path d={`M${120 - dx} ${y} L${120 + dx} ${y}`} stroke="#ffd23f" strokeWidth="2" strokeLinecap="round" />
+          </g>
+        )
+      })}
+      <path d="M76 200 L164 186 M76 186 L164 200" stroke={O} strokeWidth="2.5" opacity="0.5" />
+      {/* платформа и будка за билети */}
+      <rect x="44" y="206" width="152" height="16" rx="6" fill="#ffd23f" stroke={O} strokeWidth={SW} />
+      <rect x="50" y="209" width="140" height="4" rx="2" fill="#fff59d" />
+      <path d="M58 222 h124 v6 h-124 z" fill="#e89a00" stroke={O} strokeWidth="2.5" />
+      <g>
+        <rect x="186" y="176" width="30" height="32" rx="3" fill="#fff1c9" stroke={O} strokeWidth="2.5" />
+        <path d="M182 178 L201 164 L220 178 Z" fill="#ff5fa2" stroke={O} strokeWidth="2.5" strokeLinejoin="round" />
+        <rect x="192" y="184" width="18" height="10" rx="2" fill="#7ff5ea" stroke={O} strokeWidth="1.8" />
+      </g>
+      <Flag x={34} y={176} color="#2ed1c4" h={34} />
     </Frame>
   )
 }
 
 // ───────────────────────── 4. Влакчето на задачите ─────────────────────────
-const COASTER_PATH = 'M10 192 C 48 192 46 58 86 58 C 120 58 112 168 142 168 C 166 168 168 104 190 104 C 212 104 208 192 230 192'
+const COASTER_PATH =
+  'M-8 196 C 26 196 34 54 70 54 C 98 54 100 150 124 170 C 140 184 168 186 182 160 C 196 134 176 110 160 122 C 144 134 156 172 190 178 C 214 182 226 194 248 196'
+
+/** Неподвижни позиции на вагончетата, когато анимациите са изключени. */
+const PARKED: [number, number, number][] = [
+  [86, 60, 20],
+  [72, 54, 0],
+  [57, 59, -18],
+  [44, 72, -40],
+]
 
 export function CoasterArt(p: ArtProps) {
-  const supports: [number, number][] = [[52, 140], [70, 76], [86, 58], [104, 84], [124, 152], [150, 160], [170, 122], [190, 104], [207, 140]]
-  const cars = ['#ff5fa2', '#ffd23f', '#2ed1c4']
+  const { settings } = useApp()
+  const cars = ['#ff5fa2', '#ffd23f', '#2ed1c4', '#9b5de5']
+  const posts: [number, number][] = [
+    [30, 125],
+    [98, 104],
+    [124, 170],
+    [210, 184],
+  ]
   return (
     <Frame {...p} label="Влакчето на задачите">
-      <Shadow rx={100} />
-      {supports.map(([x, y]) => (
+      <defs>
+        <linearGradient id="cs-rail" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#c39bff" />
+          <stop offset="1" stopColor="#7d45d0" />
+        </linearGradient>
+      </defs>
+      <Shadow rx={112} cy={226} />
+      {/* решетъчна кула под първия връх */}
+      <g>
+        {[60, 80].map((x) => (
+          <line key={x} x1={x} y1="62" x2={x} y2="214" stroke={O} strokeWidth="5" />
+        ))}
+        {[60, 80].map((x) => (
+          <line key={`c${x}`} x1={x} y1="62" x2={x} y2="214" stroke="#ffd23f" strokeWidth="2" />
+        ))}
+        {Array.from({ length: 6 }, (_, i) => {
+          const y = 70 + i * 24
+          return <path key={i} d={`M60 ${y} L80 ${y + 24} M80 ${y} L60 ${y + 24}`} stroke={O} strokeWidth="1.8" opacity="0.7" />
+        })}
+      </g>
+      {posts.map(([x, y]) => (
         <g key={x}>
-          <line x1={x} y1={y + 4} x2={x} y2="214" stroke={O} strokeWidth="7" />
-          <line x1={x} y1={y + 4} x2={x} y2="214" stroke="#ffd23f" strokeWidth="3" />
+          <line x1={x} y1={y + 4} x2={x} y2="214" stroke={O} strokeWidth="6" />
+          <line x1={x} y1={y + 4} x2={x} y2="214" stroke="#ffd23f" strokeWidth="2.2" />
         </g>
       ))}
-      <path d={COASTER_PATH} fill="none" stroke={O} strokeWidth="13" strokeLinecap="round" />
-      <path d={COASTER_PATH} fill="none" stroke="#9b5de5" strokeWidth="8" strokeLinecap="round" />
-      <path d={COASTER_PATH} fill="none" stroke="#fff" strokeWidth="2" strokeDasharray="3 7" opacity="0.8" />
+      {/* опора на примката */}
+      <path d="M160 214 L170 176 L180 214" fill="none" stroke={O} strokeWidth="5" strokeLinejoin="round" />
+      <path d="M160 214 L170 176 L180 214" fill="none" stroke="#ffd23f" strokeWidth="2" strokeLinejoin="round" />
+      {/* релси: траверси, тяло, две релси */}
+      <path d={COASTER_PATH} fill="none" stroke="#7a4b1e" strokeWidth="15" strokeDasharray="2.5 6" />
+      <path d={COASTER_PATH} fill="none" stroke={O} strokeWidth="11" strokeLinecap="round" />
+      <path d={COASTER_PATH} fill="none" stroke="url(#cs-rail)" strokeWidth="7" strokeLinecap="round" />
+      <path d={COASTER_PATH} fill="none" stroke="#3e2a78" strokeWidth="1.6" />
+      <path d={COASTER_PATH} fill="none" stroke="#fff" strokeWidth="1.2" strokeDasharray="1 9" opacity="0.9" transform="translate(0 -2.4)" />
       <path id="coaster-track" d={COASTER_PATH} fill="none" stroke="none" />
-      {cars.map((c, i) => (
-        <g key={c}>
-          <animateMotion dur="4.5s" repeatCount="indefinite" rotate="auto" begin={`${-0.22 * i}s`} keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.45 0 0.55 1">
-            <mpath href="#coaster-track" />
-          </animateMotion>
-          <rect x="-12" y="-20" width="24" height="14" rx="5" fill={c} stroke={O} strokeWidth="2.5" />
-          <circle cx="-4" cy="-23" r="4.5" fill="#ffcf9e" stroke={O} strokeWidth="2" />
-          <circle cx="-6" cy="-5" r="3.5" fill={O} />
-          <circle cx="6" cy="-5" r="3.5" fill={O} />
-        </g>
-      ))}
-      {/* тунели — влакчето влиза и излиза от тях */}
-      <path d="M-6 216 V176 a22 22 0 0 1 44 0 V216 z" fill="#6bd66b" stroke={O} strokeWidth={SW} />
-      <path d="M4 216 V182 a12 12 0 0 1 24 0 V216 z" fill="#2c6b3a" />
-      <path d="M202 216 V176 a22 22 0 0 1 44 0 V216 z" fill="#6bd66b" stroke={O} strokeWidth={SW} />
-      <path d="M212 216 V182 a12 12 0 0 1 24 0 V216 z" fill="#2c6b3a" />
-      <rect x="-8" y="212" width="256" height="10" rx="5" fill="#ffd23f" stroke={O} strokeWidth={SW} />
-      <Flag x={16} y={136} color="#ff5fa2" />
-      <Flag x={224} y={136} color="#9b5de5" />
+      {cars.map((c, i) => {
+        const body = (
+          <>
+            <path d="M-12 -18 h22 a4 4 0 0 1 4 4 v8 h-28 v-10 a2 2 0 0 1 2 -2 z" fill={c} stroke={O} strokeWidth="2.2" strokeLinejoin="round" />
+            <path d="M-10 -14 h18" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+            <circle cx="-2" cy="-22" r="4.2" fill="#ffcf9e" stroke={O} strokeWidth="1.8" />
+            <path d="M-6 -22 l-4 -7 M2 -22 l4 -7" stroke={O} strokeWidth="2" strokeLinecap="round" />
+            <circle cx="-7" cy="-5" r="3.2" fill={O} />
+            <circle cx="7" cy="-5" r="3.2" fill={O} />
+          </>
+        )
+        if (!settings.animationsOn) {
+          const [x, y, r] = PARKED[i]
+          return (
+            <g key={c} transform={`translate(${x} ${y}) rotate(${r})`}>
+              {body}
+            </g>
+          )
+        }
+        return (
+          <g key={c}>
+            <animateMotion dur="6s" repeatCount="indefinite" rotate="auto" begin={`${-0.18 * i}s`} keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines="0.5 0 0.5 1">
+              <mpath href="#coaster-track" />
+            </animateMotion>
+            {body}
+          </g>
+        )
+      })}
+      {/* тунел и гара */}
+      <path d="M-8 218 V178 a22 22 0 0 1 44 0 V218 z" fill="#6bd66b" stroke={O} strokeWidth={SW} />
+      <path d="M2 218 V184 a12 12 0 0 1 24 0 V218 z" fill="#2c6b3a" />
+      <path d="M-4 176 a18 18 0 0 1 36 0" fill="none" stroke="#b8f5a8" strokeWidth="3" strokeLinecap="round" />
+      <g>
+        <rect x="210" y="170" width="6" height="46" fill={O} />
+        <rect x="238" y="170" width="6" height="46" fill={O} />
+        <path d="M200 172 L227 152 L254 172 Z" fill="#ff5fa2" stroke={O} strokeWidth={SW} strokeLinejoin="round" />
+        <path d="M206 172 h42" stroke="#ffd23f" strokeWidth="4" />
+      </g>
+      <rect x="-10" y="212" width="262" height="10" rx="5" fill="#ffd23f" stroke={O} strokeWidth={SW} />
+      <Flag x={14} y={140} color="#ff5fa2" />
+      <Flag x={227} y={130} color="#9b5de5" />
     </Frame>
   )
 }

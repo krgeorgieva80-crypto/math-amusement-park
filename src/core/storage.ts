@@ -20,6 +20,8 @@ export interface Settings {
   hintsOn: boolean
   /** Учениците могат сами да сменят класа и трудността. */
   studentCanChoose: boolean
+  /** Декоративни анимации (облаци, колело, балони и др.). */
+  animationsOn: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -31,6 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
   taskCount: 10,
   hintsOn: true,
   studentCanChoose: true,
+  animationsOn: true,
 }
 
 export interface GameResult {

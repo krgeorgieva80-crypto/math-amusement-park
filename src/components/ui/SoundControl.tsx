@@ -12,14 +12,14 @@ export function SoundControl() {
     <div className="sound-control">
       <RoundButton
         icon={settings.soundOn ? 'sound' : 'mute'}
-        label="Настройки за звука"
+        label="Настройки за звука и анимациите"
         color="purple"
         onClick={() => setOpen((o) => !o)}
       />
       {open && (
         <>
           <div className="sound-control__backdrop" onClick={() => setOpen(false)} />
-          <div className="sound-panel" role="dialog" aria-label="Настройки за звука">
+          <div className="sound-panel" role="dialog" aria-label="Настройки за звука и анимациите">
             <div className="sound-panel__title">Звук</div>
             <Toggle
               label="Звукови ефекти"
@@ -45,6 +45,7 @@ export function SoundControl() {
                 aria-label="Сила на звука"
               />
             </label>
+            <Toggle label="Анимации" icon="star" on={settings.animationsOn} onChange={(v) => updateSettings({ animationsOn: v })} />
           </div>
         </>
       )}
@@ -62,7 +63,7 @@ export function Toggle({
   label: string
   on: boolean
   onChange: (v: boolean) => void
-  icon?: 'sound' | 'music' | 'help'
+  icon?: 'sound' | 'music' | 'help' | 'star'
   disabled?: boolean
 }) {
   return (
