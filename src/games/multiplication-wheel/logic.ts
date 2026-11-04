@@ -16,7 +16,7 @@ export type WheelModeId = 'equalGroups' | 'spin' | 'table' | 'challenge'
 
 export const WHEEL_MODES: { id: WheelModeId; label: string; description: string; ready: boolean }[] = [
   { id: 'equalGroups', label: 'Открий равните групи', description: 'Сложи по равно деца в кабинките', ready: true },
-  { id: 'spin', label: 'Завърти колелото', description: 'Умножавай с колелото', ready: false },
+  { id: 'spin', label: 'Завърти колелото', description: 'Упражнявай таблицата', ready: true },
   { id: 'table', label: 'Попълни таблицата', description: 'Таблицата за умножение', ready: false },
   { id: 'challenge', label: 'Предизвикателството на колелото', description: 'Трудни задачи', ready: false },
 ]

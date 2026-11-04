@@ -15,6 +15,10 @@ import { DIFFICULTIES, DIFFICULTY_DESCRIPTIONS, DIFFICULTY_LABELS, type Difficul
 import type { TaskOutcome } from '../magic-tokens/PlayBoard'
 import { EqualGroupsBoard } from './EqualGroupsBoard'
 import { WHEEL_MODES, generateGroupsTasks, groupsLevel, type GroupsTask, type WheelModeId } from './logic'
+import { generateSpinTasks, type SpinTask } from './spin/logic'
+import { SpinBoard } from './spin/SpinBoard'
+import { SpinModeArt } from './spin/SpinModeArt'
+import { SPIN_RESULT_MODE, SpinSetup } from './spin/SpinSetup'
 
 const GAME_ID = 'multiplication-wheel'
 const nowMs = () => Date.now()
@@ -31,7 +35,28 @@ function testTasks(): GroupsTask[] | null {
   })
 }
 
-type Phase = { name: 'modes' } | { name: 'setup' } | { name: 'play'; tasks: GroupsTask[]; startedAt: number } | { name: 'summary'; outcomes: TaskOutcome[]; durationSec: number }
+const GROUPS_RESULT_MODE = 'Колелото: Открий равните групи'
+
+/** Само при разработка: ?testSpin=3x7,2x5m,4x6s (таблица × множител; s — разменени, m — липсващ). */
+function testSpinTasks(): SpinTask[] | null {
+  if (!import.meta.env.DEV) return null
+  const raw = new URLSearchParams(window.location.search).get('testSpin')
+  if (!raw) return null
+  return raw.split(',').map((q, i) => {
+    const kind = q.endsWith('s') ? ('swapped' as const) : q.endsWith('m') ? ('missing' as const) : ('normal' as const)
+    const [table, multiplier] = q.replace(/[sm]$/, '').split('x').map(Number)
+    return { id: i + 1, table, multiplier, kind }
+  })
+}
+
+type PlayMode = 'equalGroups' | 'spin'
+
+type Phase =
+  | { name: 'modes' }
+  | { name: 'setup' }
+  | { name: 'play'; tasks: GroupsTask[]; startedAt: number }
+  | { name: 'spin'; tasks: SpinTask[]; startedAt: number }
+  | { name: 'summary'; outcomes: TaskOutcome[]; durationSec: number }
 
 /** „Колелото на умножението“: режими → настройки → задачи → обобщение. */
 export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExit: () => void }) {
@@ -40,16 +65,23 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
   const [difficulty, setDifficulty] = useState<Difficulty>(settings.difficulty)
   const [count, setCount] = useState<number>(settings.taskCount)
   const [phase, setPhase] = useState<Phase>({ name: 'modes' })
+  const [mode, setMode] = useState<PlayMode>('equalGroups')
+  const spinTables = settings.spinTables[grade]
+  const [spinTable, setSpinTable] = useState<number>(spinTables[spinTables.length - 1])
+  const table = spinTables.includes(spinTable) ? spinTable : spinTables[spinTables.length - 1]
   const d = locked ? settings.difficulty : difficulty
   const n = locked ? settings.taskCount : count
 
-  const start = () => setPhase({ name: 'play', tasks: testTasks() ?? generateGroupsTasks(grade, d, n), startedAt: nowMs() })
+  const start = () =>
+    mode === 'spin'
+      ? setPhase({ name: 'spin', tasks: testSpinTasks() ?? generateSpinTasks(d, { tables: spinTables, zero: settings.spinZero, missing: settings.spinMissing }, table, n), startedAt: nowMs() })
+      : setPhase({ name: 'play', tasks: testTasks() ?? generateGroupsTasks(grade, d, n), startedAt: nowMs() })
 
   const finish = (outcomes: TaskOutcome[], startedAt: number) => {
     const durationSec = Math.round((nowMs() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
-      mode: 'Колелото: Открий равните групи',
+      mode: mode === 'spin' ? SPIN_RESULT_MODE : GROUPS_RESULT_MODE,
       grade,
       difficulty: d,
       total: outcomes.length,
@@ -64,8 +96,35 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
 
   switch (phase.name) {
     case 'modes':
-      return <WheelModes grade={grade} onChoose={() => setPhase({ name: 'setup' })} onExit={onExit} />
+      return (
+        <WheelModes
+          grade={grade}
+          onChoose={(m) => {
+            setMode(m === 'spin' ? 'spin' : 'equalGroups')
+            setPhase({ name: 'setup' })
+          }}
+          onExit={onExit}
+        />
+      )
     case 'setup':
+      if (mode === 'spin')
+        return (
+          <SpinSetup
+            grade={grade}
+            gameId={GAME_ID}
+            difficulty={d}
+            count={n}
+            locked={locked}
+            tables={spinTables}
+            table={table}
+            onDifficulty={setDifficulty}
+            onCount={setCount}
+            onTable={setSpinTable}
+            onStart={start}
+            onBack={() => setPhase({ name: 'modes' })}
+            onExit={onExit}
+          />
+        )
       return (
         <WheelSetup
           grade={grade}
@@ -81,12 +140,14 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
       )
     case 'play':
       return <EqualGroupsBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+    case 'spin':
+      return <SpinBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} zero={settings.spinZero} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'summary':
       return (
         <GameSummary
           grade={grade}
           difficulty={d}
-          modeName="Открий равните групи"
+          modeName={mode === 'spin' ? 'Завърти колелото' : 'Открий равните групи'}
           outcomes={phase.outcomes}
           durationSec={phase.durationSec}
           onAgain={start}
@@ -120,7 +181,7 @@ function ModeArt({ mode }: { mode: WheelModeId }): ReactNode {
         </svg>
       )
     case 'spin':
-      return <FerrisWheelArt size={140} />
+      return <SpinModeArt />
     case 'table':
       return (
         <svg viewBox="0 0 160 120" width="170" height="128" aria-hidden="true">
@@ -292,7 +353,7 @@ function WheelSetup(p: {
         </div>
         <div className="setup-card__footer">
           <span className="setup-card__best">
-            Най-добър резултат: <StarRow stars={bestStars(results, GAME_ID, p.grade, p.difficulty) ?? 0} size={28} />
+            Най-добър резултат: <StarRow stars={bestStars(results.filter((r) => (r.mode ?? GROUPS_RESULT_MODE) === GROUPS_RESULT_MODE), GAME_ID, p.grade, p.difficulty) ?? 0} size={28} />
           </span>
           <span className="setup-card__meta">{settings.hintsOn ? 'С подсказки' : 'Подсказките са изключени'}</span>
           <GameButton color="green" size="xl" icon="play" onClick={p.onStart} className="game-intro__start">

@@ -9,6 +9,7 @@ import { Toggle } from '../components/ui/SoundControl'
 import { DIFFICULTIES, DIFFICULTY_LABELS, GRADES, type Grade } from '../games/magic-tokens/logic'
 import { GRADE_RANGES, RANGES, REGROUPING_LABELS } from '../games/magic-tokens/tasks'
 import { WORK_MODE_LABELS, WORK_MODE_SHORT } from '../games/magic-tokens/compute'
+import { ALL_TABLES } from '../games/multiplication-wheel/spin/logic'
 
 function Segmented<T extends string | number>({ options, value, onChange, label }: { options: { value: T; label: string; title?: string }[]; value: T; onChange: (v: T) => void; label: string }) {
   const { play } = useApp()
@@ -105,6 +106,54 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
             options={(['tokensAndCompute', 'computeOnly', 'tokensOnly'] as TokensWorkMode[]).map((v) => ({ value: v, label: WORK_MODE_SHORT[v], title: WORK_MODE_LABELS[v] }))}
             onChange={(v) => updateSettings({ tokensWorkMode: v })}
           />
+          <div className="setting-row">
+            <span className="setting-row__label">Изучени таблици ({settings.grade}. клас)</span>
+            <div className="segmented spin-tables" role="group" aria-label={`Изучени таблици за ${settings.grade}. клас — „Завърти колелото“`}>
+              {ALL_TABLES.map((t) => {
+                const on = settings.spinTables[settings.grade].includes(t)
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={on}
+                    title={on ? `Махни таблицата с ${t}` : `Добави таблицата с ${t}`}
+                    className={`segmented__opt ${on ? 'is-on' : ''}`}
+                    onClick={() => {
+                      const cur = settings.spinTables[settings.grade]
+                      // поне една таблица остава активна
+                      if (on && cur.length === 1) return
+                      const next = on ? cur.filter((x) => x !== t) : [...cur, t].sort((a, b) => a - b)
+                      updateSettings({ spinTables: { ...settings.spinTables, [settings.grade]: next } })
+                    }}
+                  >
+                    {t}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div className="setting-row">
+            <span className="setting-row__label">Завърти колелото</span>
+            <div className="segmented spin-options" role="group" aria-label="Завърти колелото — допълнителни задачи">
+              {(
+                [
+                  ['spinZero', 'Числото 0 на колелото'],
+                  ['spinMissing', 'Липсващ множител (Майстор)'],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={settings[key]}
+                  className={`segmented__opt ${settings[key] ? 'is-on' : ''}`}
+                  onClick={() => updateSettings({ [key]: !settings[key] })}
+                >
+                  {settings[key] ? '✓ ' : ''}
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="teacher-toggles">
             <Toggle label="Подсказки" icon="help" on={settings.hintsOn} onChange={(v) => updateSettings({ hintsOn: v })} />
             <Toggle label="Звук" icon="sound" on={settings.soundOn} onChange={(v) => updateSettings({ soundOn: v })} />
@@ -112,7 +161,7 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
             <Toggle label="Ученикът избира сам" on={settings.studentCanChoose} onChange={(v) => updateSettings({ studentCanChoose: v })} />
           </div>
           <p className="teacher-note">
-            Запазва се автоматично. Обхватът, преминаването и начинът на работа са за „Вълшебните жетони“ (начинът — при събиране и изваждане). При заключен избор учениците избират само режима.
+            Запазва се автоматично. Обхватът, преминаването и начинът на работа са за „Вълшебните жетони“ (начинът — при събиране и изваждане). Таблиците, 0 и липсващият множител са за „Завърти колелото“ — за избрания клас. При заключен избор учениците избират само режима.
           </p>
         </section>
 
