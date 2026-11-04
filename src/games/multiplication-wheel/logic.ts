@@ -168,7 +168,7 @@ export function multiplicationText(addend: number | string, times: number | stri
 }
 
 /** Защо групите трябва да са равни — показва се при неравни кабинки. */
-export const WHY_EQUAL = 'Умножаваме само равни групи. Затова във всяка кабинка трябва да има еднакъв брой деца.'
+export const WHY_EQUAL = 'Умножаваме само равни групи — навсякъде еднакъв брой.'
 
 /** Подетапи на „Пресметни“: първо сборът, после умножението. */
 export type ComputeStep = 'sum' | 'factor'

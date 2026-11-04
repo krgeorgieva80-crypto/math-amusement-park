@@ -5049,3 +5049,25 @@ button:focus-visible {
 .wheel-play .wp-side:has(.kid-queue) {
   width: auto;
 }
+
+/* балончето на Звездичката не излиза извън лявата колона */
+.wheel-play .tb-task {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wheel-play .mascot-area {
+  align-items: flex-end;
+  min-height: 0;
+}
+
+.wheel-play .speech-bubble--game {
+  font-size: 21px;
+  line-height: 1.25;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.wheel-play .speech-bubble--game .bubble-title {
+  font-size: 24px;
+}
