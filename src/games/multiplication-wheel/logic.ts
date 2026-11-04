@@ -132,6 +132,8 @@ export interface Check {
   message: string
   /** Номер (от 0) на кабинката, която да светне. */
   cabin?: number
+  /** Педагогическо обяснение (при неравни групи). */
+  why?: string
 }
 
 /** Етап „Представи“: всички кабинки трябва да имат по s деца. */
@@ -139,12 +141,13 @@ export function checkGroups(t: GroupsTask, cabins: number[], details = true): Ch
   if (cabins.every((c) => c === 0)) return { status: 'incomplete', message: 'Сложи деца в кабинките.' }
   const i = cabins.findIndex((c) => c !== t.size)
   if (i === -1) return { status: 'correct', message: 'Всички кабинки са равни!' }
-  if (!details) return { status: 'wrong', message: 'Кабинките още не са равни.', cabin: i }
+  if (!details) return { status: 'wrong', message: 'Кабинките още не са равни.', cabin: i, why: WHY_EQUAL }
   const c = cabins[i]
   const what = t.kind === 'match' ? `а в първата има ${t.size}` : `а трябва ${t.size}`
   return {
     status: 'wrong',
     cabin: i,
+    why: WHY_EQUAL,
     message: c < t.size ? `В кабинка ${i + 1} има ${c} ${kids(c)}, ${what}. Добави ${t.size - c}.` : `В кабинка ${i + 1} има ${c} ${kids(c)}, ${what}. Махни ${c - t.size}.`,
   }
 }
@@ -155,6 +158,17 @@ export function checkGroups(t: GroupsTask, cabins: number[], details = true): Ch
 export function repeatedSumText(t: GroupsTask): string {
   return new Array(t.groups).fill(String(t.size)).join(' + ')
 }
+
+/**
+ * Единственото място, където се съставя записът на умножението:
+ * първият множител е повтарящото се събираемо, вторият — броят повторения.
+ */
+export function multiplicationText(addend: number | string, times: number | string): string {
+  return `${addend} · ${times}`
+}
+
+/** Защо групите трябва да са равни — показва се при неравни кабинки. */
+export const WHY_EQUAL = 'Умножаваме само равни групи. Затова във всяка кабинка трябва да има еднакъв брой деца.'
 
 /** Подетапи на „Пресметни“: първо сборът, после умножението. */
 export type ComputeStep = 'sum' | 'factor'
@@ -186,7 +200,7 @@ export function groupsHint(t: GroupsTask, cabins: number[], step: 'model' | Comp
     const r = checkGroups(t, cabins)
     if (r.status === 'correct') return 'Всички са равни! Натисни „Провери“.'
     if (r.status === 'incomplete') return `Сложи по ${t.size} ${kids(t.size)} във всяка кабинка.`
-    return r.message
+    return `${r.message} ${WHY_EQUAL}`
   }
   if (step === 'sum') {
     // броене през s: първите стъпки, но не крайният резултат
@@ -202,8 +216,8 @@ export function equationTexts(t: GroupsTask, sumDone: boolean, factorDone: boole
   return {
     sum: `${repeatedSumText(t)} =`,
     sumAnswer: sumDone ? String(total) : null,
-    factor: sumDone ? `${t.size} · ? = ${total}` : null,
-    full: factorDone ? `${repeatedSumText(t)} = ${t.size} · ${t.groups} = ${total}` : null,
+    factor: sumDone ? `${multiplicationText(t.size, '?')} = ${total}` : null,
+    full: factorDone ? `${repeatedSumText(t)} = ${multiplicationText(t.size, t.groups)} = ${total}` : null,
   }
 }
 

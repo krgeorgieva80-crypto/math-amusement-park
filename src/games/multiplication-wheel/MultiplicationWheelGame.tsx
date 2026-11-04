@@ -104,17 +104,18 @@ function ModeArt({ mode }: { mode: WheelModeId }): ReactNode {
     case 'equalGroups':
       return (
         <svg viewBox="0 0 200 120" width="210" height="126" aria-hidden="true">
+          {/* 3 кабинки по 2 деца: 2 + 2 + 2 = 2 · 3 (събираемо · брой повторения) */}
           {[0, 1, 2].map((g) => (
             <g key={g} transform={`translate(${20 + g * 62} 20)`}>
               <path d="M-4 10 Q26 -2 56 10 Z" fill={['#ff5fa2', '#ffd23f', '#2ed1c4'][g]} stroke="#3b2a5a" strokeWidth="3" />
               <rect x="0" y="9" width="52" height="56" rx="12" fill="#fffaf0" stroke="#3b2a5a" strokeWidth="3.5" />
-              {[0, 1, 2].map((k) => (
-                <circle key={k} cx={14 + (k % 2) * 24} cy={26 + Math.floor(k / 2) * 22} r="9" fill="#ffcf9e" stroke="#3b2a5a" strokeWidth="2" />
+              {[0, 1].map((k) => (
+                <circle key={k} cx={14 + k * 24} cy={38} r="9" fill="#ffcf9e" stroke="#3b2a5a" strokeWidth="2" />
               ))}
             </g>
           ))}
           <text x="100" y="112" textAnchor="middle" className="art-text" fontSize="22" fill="#5e2fb0">
-            3 + 3 + 3 = 3 · 3
+            2 + 2 + 2 = 2 · 3
           </text>
         </svg>
       )

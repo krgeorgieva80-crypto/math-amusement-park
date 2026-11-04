@@ -136,8 +136,9 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
         return setFeedback({ kind: 'info', message: r.message })
       }
       if (r.status === 'wrong') {
+        // Неравни групи: не се преминава към умножение; обясняваме защо.
         setHintCabin(r.cabin ?? null)
-        return fail(r.message)
+        return fail(r.why ? `${r.message} ${r.why}` : r.message)
       }
       play('star')
       setStage('sum')

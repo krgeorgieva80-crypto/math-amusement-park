@@ -14,6 +14,8 @@ import {
   product,
   removePassenger,
   repeatedSumText,
+  multiplicationText,
+  WHY_EQUAL,
   type GroupsTask,
 } from './logic'
 
@@ -114,6 +116,7 @@ describe('взаимодействие с кабинките', () => {
     expect(addPassenger(t, t.start, 0)).toEqual(t.start)
     expect(removePassenger(t, t.start, 0)).toEqual(t.start)
     expect(checkGroups(t, t.start).message).toBe('В кабинка 2 има 2 деца, а в първата има 5. Добави 3.')
+    expect(checkGroups(t, t.start).why).toBe(WHY_EQUAL)
   })
 
   it('проверка с ясни съобщения', () => {
@@ -150,5 +153,52 @@ describe('пресмятане без разкриване на резултат
         expect(groupsHint(tt, new Array(g).fill(s), 'sum')).not.toMatch(new RegExp(`(^|\\D)${s * g}(\\D|$)`))
       }
     expect(groupsHint(t, [0, 0, 0, 0], 'sum')).toBe('Брой по 3: 3, 6, 9, …')
+  })
+})
+
+describe('правило за записа: събираемо · брой повторения', () => {
+  it('навсякъде първият множител е събираемото, вторият — броят групи', () => {
+    for (let g = 2; g <= 10; g++)
+      for (let s = 2; s <= 10; s++) {
+        const t = task(g, s)
+        const e = equationTexts(t, true, true)
+        expect(multiplicationText(s, g)).toBe(`${s} · ${g}`)
+        expect(e.factor).toBe(`${s} · ? = ${s * g}`)
+        expect(e.full).toBe(`${repeatedSumText(t)} = ${s} · ${g} = ${s * g}`)
+        // събираемото в сбора е същото като първия множител, броят събираеми — вторият
+        const terms = repeatedSumText(t).split(' + ')
+        expect(terms.every((x) => Number(x) === s)).toBe(true)
+        expect(terms.length).toBe(g)
+        // при различни числа: обратният ред НЕ се приема като отговор за повторенията
+        if (s !== g) expect(checkFactor(t, String(s)).status).toBe('wrong')
+        expect(checkFactor(t, String(g)).status).toBe('correct')
+      }
+  })
+})
+
+describe('неравни групи не позволяват умножение', () => {
+  it('всяко неравно разпределение се отхвърля с обяснение', () => {
+    const rng = seededRng(5)
+    for (let k = 0; k < 500; k++) {
+      const g = 2 + Math.floor(rng() * 9)
+      const s = 2 + Math.floor(rng() * 9)
+      const cabins = Array.from({ length: g }, () => Math.floor(rng() * 11))
+      if (cabins.every((c) => c === s)) continue
+      const r = checkGroups(task(g, s), cabins)
+      expect(r.status).not.toBe('correct')
+      if (r.status === 'wrong') {
+        expect(r.why).toBe(WHY_EQUAL)
+        expect(cabins[r.cabin!]).not.toBe(s)
+      }
+    }
+  })
+
+  it('дори равни групи, но с друг брой, не са верни', () => {
+    expect(checkGroups(task(4, 3), [2, 2, 2, 2]).status).toBe('wrong')
+    expect(checkGroups(task(4, 3, 'match', [3, 1, 1, 1]), [3, 2, 2, 2]).status).toBe('wrong')
+  })
+
+  it('подсказката обяснява защо групите трябва да са равни', () => {
+    expect(groupsHint(task(3, 4), [4, 2, 4], 'model')).toBe(`В кабинка 2 има 2 деца, а трябва 4. Добави 2. ${WHY_EQUAL}`)
   })
 })
