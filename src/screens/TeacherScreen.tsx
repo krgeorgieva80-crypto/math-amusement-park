@@ -48,7 +48,7 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
   const { settings, updateSettings, results, resetResults } = useApp()
   const [confirmClear, setConfirmClear] = useState(false)
 
-  const games = results.filter((r) => r.game === 'magic-tokens')
+  const games = results
   const totalTasks = games.reduce((a, r) => a + r.total, 0)
   const solvedTasks = games.reduce((a, r) => a + r.solved, 0)
 

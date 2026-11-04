@@ -50,7 +50,7 @@ const SIGN_LINES: Partial<Record<AttractionId, string[]>> = {
   'balloon-challenge': ['Балоненото', 'предизвикателство'],
 }
 
-const GUIDE_TIPS = ['Избери атракцион и играй!', '„Вълшебните жетони“ те чакат!', 'Другите атракциони отварят скоро.']
+const GUIDE_TIPS = ['Избери атракцион и играй!', '„Вълшебните жетони“ те чакат!', 'Качи се на „Колелото на умножението“!', 'Другите атракциони отварят скоро.']
 
 /**
  * Хоризонтално: ръчно подредена, леко асиметрична композиция върху
@@ -68,7 +68,7 @@ function landscapeLayout(w: number): MapLayout {
     'task-train': { x: X(1118), y: 360, size: S(272) },
     'clock-tower': { x: X(1452), y: 420, size: S(232) },
     'balloon-challenge': { x: X(228), y: 745, size: S(240) },
-    'magic-tokens': { x: X(640), y: 736, size: S(272) },
+    'magic-tokens': { x: X(630), y: 752, size: S(264) },
     'shape-castle': { x: X(1012), y: 762, size: S(250) },
     'wonder-shop': { x: X(1382), y: 760, size: S(240) },
   }
@@ -196,7 +196,7 @@ export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher }: Pro
   const map = portrait ? portraitLayout(w, h) : landscapeLayout(w)
   const { spots, horizon, fountain } = map
 
-  const totalStars = DIFFICULTIES.reduce((acc, d) => acc + (bestStars(results, 'magic-tokens', grade, d) ?? 0), 0)
+  const totalStars = ['magic-tokens', 'multiplication-wheel'].reduce((sum, game) => sum + DIFFICULTIES.reduce((acc, d) => acc + (bestStars(results, game, grade, d) ?? 0), 0), 0)
 
   const say = (msg: string) => {
     setGuideMsg(msg)
@@ -315,13 +315,14 @@ export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher }: Pro
                     <Icon name="lock" size={14} /> Очаквай скоро
                   </span>
                 )}
+                {/* „Играй!“ е в табелата — така няколко активни атракциона не се застъпват */}
+                {ready && (
+                  <span className="map-spot__play is-in-sign">
+                    <Icon name="play" size={22} /> Играй!
+                    {best > 0 && <StarRow stars={best} size={20} />}
+                  </span>
+                )}
               </span>
-              {ready && (
-                <span className="map-spot__play">
-                  <Icon name="play" size={24} /> Играй!
-                  {best > 0 && <StarRow stars={best} size={22} />}
-                </span>
-              )}
             </button>
           )
         })}

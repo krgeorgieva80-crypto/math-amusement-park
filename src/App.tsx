@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './core/AppContext'
 import { Stage } from './core/Stage'
 import type { Grade } from './games/magic-tokens/logic'
 import { MagicTokensGame } from './games/magic-tokens/MagicTokensGame'
+import { MultiplicationWheelGame } from './games/multiplication-wheel/MultiplicationWheelGame'
 import { AboutScreen } from './screens/AboutScreen'
 import { GradeScreen } from './screens/GradeScreen'
 import { HomeScreen } from './screens/HomeScreen'
@@ -35,8 +36,13 @@ function Router() {
 
   let content
   if (typeof screen === 'object') {
-    // Тук се добавят следващите атракциони.
-    content = <MagicTokensGame grade={grade} onExit={() => setScreen('map')} />
+    // Всеки атракцион е отделен модул; класът идва от общото състояние.
+    content =
+      screen.game === 'multiplication-wheel' ? (
+        <MultiplicationWheelGame grade={grade} onExit={() => setScreen('map')} />
+      ) : (
+        <MagicTokensGame grade={grade} onExit={() => setScreen('map')} />
+      )
   } else {
     switch (screen) {
       case 'home':
