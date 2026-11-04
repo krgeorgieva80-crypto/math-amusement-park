@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../../core/AppContext'
 import { useStage } from '../../core/Stage'
 import { Mascot, type MascotMood } from '../../components/art/Mascot'
@@ -26,7 +26,8 @@ import {
   type ComputeStep,
   type GroupsTask,
 } from './logic'
-import { WheelBoard } from './WheelBoard'
+import { Kid } from './KidArt'
+import { ParkNightBackdrop, WheelBoard } from './WheelBoard'
 
 type Stage = 'model' | ComputeStep | 'done'
 type Feedback = null | { kind: 'correct'; stars: 1 | 2 | 3 } | { kind: 'wrong'; message: string } | { kind: 'info'; message: string }
@@ -262,7 +263,28 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
   } else bubble = stage === 'model' ? 'Докосни кабинка, за да сложиш дете.' : 'Пресметни и запиши отговора.'
 
   const instruction = stage === 'model' ? groupsInstruction(task) : stage === 'sum' ? 'Колко деца има общо? Пресметни и запиши.' : `Колко пъти е взето ${task.size}? Запиши.`
-  const wheelSize = portrait ? Math.min(W - 50, H * 0.5) : Math.min(700, H - 220)
+  // ширина на колелото: колкото позволява височината (viewBox 1000×1050)
+  // На тесни хоризонтални екрани (4:3) страничните панели са по-тесни.
+  const narrow = !portrait && W < 1450
+  const sideW = portrait ? 0 : stage === 'model' ? (narrow ? 170 : 220) : narrow ? 280 : 330
+  // Колелото заема реално свободното място в средната част (измерено, не изчислено).
+  const work = useRef<HTMLElement>(null)
+  const [box, setBox] = useState({ w: 0, h: 0 })
+  useLayoutEffect(() => {
+    const el = work.current
+    if (!el) return
+    const m = () => setBox({ w: el.clientWidth, h: el.clientHeight })
+    m()
+    const ro = new ResizeObserver(m)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const RATIO = 1050 / 1000
+  const availW = box.w - 40 - (sideW ? sideW + 16 : 0)
+  const availH = box.h - 84 - 28 - (portrait && stage !== 'model' ? 250 : 0)
+  const wheelSize = box.w ? Math.max(200, Math.min(availW, availH / RATIO)) : portrait ? Math.min(W - 50, (H * 0.52) / RATIO) : 560
+  // следващото дете в опашката изглежда различно
+  const queueKid = cabins.reduce((a, b) => a + b, 0) + index * 3
 
   const stepState = (n: 1 | 2 | 3) => (n === 1 ? (stage === 'model' ? 'active' : 'done') : n === 2 ? (stage === 'sum' || stage === 'factor' ? 'active' : solved ? 'done' : 'todo') : solved ? 'done' : 'todo')
 
@@ -274,7 +296,7 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
           Към парка
         </GameButton>
         <GradeTicket grade={grade} />
-        <div className="level-chip">Равни групи · {DIFFICULTY_LABELS[difficulty]}</div>
+        <div className="level-chip">Умножение · {DIFFICULTY_LABELS[difficulty]}</div>
         <div className="top-bar__spacer" />
         <div className="progress" aria-label={`Задача ${index + 1} от ${tasks.length}`}>
           <span className="progress__label">
@@ -293,7 +315,7 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
         <SoundControl />
       </div>
 
-      <div className="wp-grid">
+      <div className={`wp-grid ${narrow ? 'is-narrow' : ''}`}>
         <section className="tb-task">
           <div className="marquee tb-marquee" key={task.id}>
             <span className="marquee__lights" aria-hidden="true" />
@@ -309,8 +331,9 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
           </div>
         </section>
 
-        <section className="wp-work">
+        <section className="wp-work" ref={work}>
           <div className={`wp-stage ${feedback?.kind === 'wrong' ? 'is-shake' : ''}`} key={shake}>
+            <ParkNightBackdrop />
             <WheelBoard
               cabins={cabins}
               locked={(i) => isLocked(task, i)}
@@ -323,17 +346,13 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
               spinning={solved}
               size={wheelSize}
             />
-            <div className="wp-side">
+            <div className="wp-side" style={sideW ? { width: sideW } : undefined}>
               {stage === 'model' ? (
                 <div className="kid-queue">
                   <div className="kid-queue__title">Опашка</div>
                   <div className="kid-queue__kid" {...bind({ from: 'queue' })} role="button" aria-label="Дете от опашката — влачи го до кабинка">
-                    <svg viewBox="-30 -30 60 60" width="96" height="96" aria-hidden="true">
-                      <circle r="26" fill="#ffcf9e" stroke="#3b2a5a" strokeWidth="3" />
-                      <path d="M-26 -4 a26 26 0 0 1 52 0 q-26 -14 -52 0z" fill="#7a4b1e" />
-                      <circle cx="-9" cy="3" r="3.4" fill="#3b2a5a" />
-                      <circle cx="9" cy="3" r="3.4" fill="#3b2a5a" />
-                      <path d="M-9 11 q9 8 18 0" fill="none" stroke="#3b2a5a" strokeWidth="3" strokeLinecap="round" />
+                    <svg viewBox="-60 -110 120 120" width="110" height="110" aria-hidden="true">
+                      <Kid x={0} y={0} s={100} v={queueKid} />
                     </svg>
                   </div>
                   <div className="kid-queue__hint">Влачи до кабинка или докосни кабинката.</div>
@@ -406,11 +425,8 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
 
       {drag && (
         <div className={`drag-ghost ${drag.over ? 'is-over' : ''}`} style={{ left: drag.x, top: drag.y }} aria-hidden="true">
-          <svg viewBox="-30 -30 60 60" width="80" height="80">
-            <circle r="26" fill="#ffcf9e" stroke="#3b2a5a" strokeWidth="3" />
-            <path d="M-26 -4 a26 26 0 0 1 52 0 q-26 -14 -52 0z" fill="#7a4b1e" />
-            <circle cx="-9" cy="3" r="3.4" fill="#3b2a5a" />
-            <circle cx="9" cy="3" r="3.4" fill="#3b2a5a" />
+          <svg viewBox="-60 -110 120 120" width="96" height="96">
+            <Kid x={0} y={0} s={100} v={queueKid} />
           </svg>
         </div>
       )}

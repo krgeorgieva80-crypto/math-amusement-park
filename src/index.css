@@ -4826,3 +4826,226 @@ button:focus-visible {
 .is-portrait .map-spot__play.is-in-sign {
   margin: 0;
 }
+
+/* ═════════════ Колелото: илюстрована визия ═════════════ */
+
+.wp-stage {
+  position: relative;
+  overflow: hidden;
+  background: #5a34b0;
+  box-shadow:
+    inset 0 0 0 8px rgba(255, 255, 255, 0.18),
+    0 10px 0 #2e1a66,
+    0 18px 30px rgba(0, 0, 0, 0.35);
+}
+
+.wheel-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.wp-stage > .wheel-board,
+.wp-stage > .wp-side {
+  position: relative;
+}
+
+.wheel-board {
+  filter: drop-shadow(0 14px 14px rgba(20, 8, 60, 0.45));
+}
+
+.wheel-cabin__body {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 8;
+  transition: stroke 0.2s, fill 0.2s;
+}
+
+.wheel-cabin:hover .wheel-cabin__body {
+  fill: rgba(255, 246, 168, 0.18);
+}
+
+.wheel-cabin.is-over .wheel-cabin__body {
+  fill: rgba(255, 246, 168, 0.35);
+  stroke: #fff6a8;
+}
+
+.wheel-cabin.is-hinted .wheel-cabin__body {
+  animation: cabin-glow 1s ease-in-out infinite;
+}
+
+@keyframes cabin-glow {
+  50% {
+    stroke: #fff6a8;
+    fill: rgba(255, 246, 168, 0.3);
+  }
+}
+
+.wheel-cabin:focus-visible .wheel-cabin__body {
+  stroke: #ff5fa2;
+}
+
+.wheel-cabin.is-locked .wheel-cabin__body {
+  fill: rgba(155, 93, 229, 0.12);
+}
+
+/* деликатна реакция при добавяне: новото дете „подскача“ на мястото си */
+.kid--seat {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: kid-pop 0.32s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes kid-pop {
+  from {
+    transform: translateY(18%) scale(0.6);
+    opacity: 0.2;
+  }
+}
+
+.wheel-minus circle:first-child {
+  filter: drop-shadow(0 3px 0 rgba(59, 42, 90, 0.4));
+}
+
+.kid-queue {
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  box-shadow: 0 8px 0 var(--yellow-d), 0 14px 22px rgba(0, 0, 0, 0.3);
+}
+
+.kid-queue__kid {
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #ffe9f4 70%);
+  border: 4px dashed #ff8cc0;
+}
+
+.no-motion .kid--seat {
+  animation: none !important;
+}
+
+.wheel-play .wp-side:has(.kid-queue) {
+  width: 220px;
+}
+
+.kid-queue__hint {
+  font-size: 18px;
+}
+
+.is-portrait .wheel-play .wp-side:has(.kid-queue) {
+  width: 100%;
+}
+
+.is-portrait .kid-queue {
+  flex-direction: row;
+  gap: 16px;
+}
+
+.is-portrait .kid-queue__kid {
+  width: 96px;
+  height: 96px;
+}
+
+.is-portrait .kid-queue__hint {
+  max-width: 340px;
+}
+
+/* вертикално: опашката е малка значка в ъгъла, колелото заема сцената */
+.is-portrait .wheel-play .wp-side:has(.kid-queue) {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: auto;
+  z-index: 2;
+}
+
+.is-portrait .kid-queue {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.is-portrait .kid-queue__title {
+  font-size: 20px;
+}
+
+.is-portrait .kid-queue__hint {
+  display: none;
+}
+
+.is-portrait .wheel-board {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+}
+
+/* вертикално „Пресметни“: компактен панел, колелото остава видимо */
+.is-portrait .wp-side {
+  flex: none;
+}
+
+.is-portrait .wheel-compute {
+  padding: 10px 14px;
+  gap: 6px 14px;
+  align-items: center;
+}
+
+.is-portrait .wheel-compute .keypad {
+  max-width: 280px;
+  gap: 6px;
+}
+
+.is-portrait .wheel-compute .keypad__key {
+  height: 52px;
+  font-size: 30px;
+}
+
+.is-portrait .wheel-compute .compute-panel__title {
+  font-size: 28px;
+}
+
+.is-portrait .wheel-compute > :nth-child(2) {
+  grid-area: eq1;
+}
+
+.is-portrait .wheel-compute > :nth-child(3):not(.keypad) {
+  grid-area: eq2;
+}
+
+.is-portrait .wheel-compute {
+  grid-template-rows: auto auto auto;
+  align-content: center;
+}
+
+/* тесен хоризонтален екран (4:3): повече място за колелото */
+.wp-grid.is-narrow {
+  grid-template-columns: 270px minmax(0, 1fr) 205px;
+  gap: 12px 14px;
+}
+
+.wp-grid.is-narrow .actions .game-btn__face {
+  font-size: 24px;
+  padding: 0 14px;
+}
+
+.wp-grid.is-narrow .kid-queue__kid {
+  width: 104px;
+  height: 104px;
+}
+
+.wp-grid.is-narrow .wheel-compute .keypad__key {
+  height: 54px;
+  font-size: 30px;
+}
+
+.wp-grid.is-narrow .wheel-eq {
+  font-size: 24px;
+}
+
+.wheel-play .wp-side:has(.kid-queue) {
+  width: auto;
+}
