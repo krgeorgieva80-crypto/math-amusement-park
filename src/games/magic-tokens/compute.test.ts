@@ -153,7 +153,9 @@ describe('резултатът не се разкрива преди прове�
       const before = visibleInfo(task, s, false)
       const shown = [before.info, ...Object.values(before.rowValues)].join(' | ')
       expect(shown).not.toMatch(new RegExp(`(^|\\D)${expected}(\\D|$)`))
-      expect(before.rowValues.result ?? before.rowValues.board).toBe('?')
+      // събиране: сборът е „?“; изваждане: в началото се вижда началното число
+      if (task.kind === 'add') expect(before.rowValues.result).toBe('?')
+      else expect(before.rowValues.board).toBe(formatNumber(task.a))
       // дори когато моделът е завършен
       const done: BoardState =
         task.kind === 'add'

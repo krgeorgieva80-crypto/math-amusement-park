@@ -6,7 +6,7 @@
  */
 import { borrowCount, carryCount, digitAt } from './arithmetic'
 import { formatNumber } from './logic'
-import { PLACES, PLACE_NAMES, valueOf, type Counts, type Place } from './placeValue'
+import { PLACES, PLACE_NAMES, describeCounts, valueOf, type Counts, type Place } from './placeValue'
 import { typicalMistake, type BoardState, type TokenTask } from './tasks'
 
 export type WorkMode = 'tokensAndCompute' | 'computeOnly' | 'tokensOnly'
@@ -185,6 +185,8 @@ export interface VisibleInfo {
   rowValues: Partial<Record<'a' | 'b' | 'result' | 'board' | 'removed', string>>
   /** Текст в лентата под дъската. */
   info: string
+  /** Етикет на реда вместо подразбиращия се (напр. „Имаш“ → „Остават“). */
+  rowLabels?: Partial<Record<'board', string>>
 }
 
 /**
@@ -202,8 +204,20 @@ export function visibleInfo(task: ArithTask, state: BoardState, revealed: boolea
     }
   }
   const removed = state.kind === 'subtract' ? valueOf(state.removed) : 0
-  return {
-    rowValues: { board: revealed ? f(result) : '?', removed: revealed ? f(task.b) : '' },
-    info: revealed ? `${f(task.a)} − ${f(task.b)} = ${f(result)}` : `Имаше ${f(task.a)}. Трябва да махнеш ${f(task.b)}.${removed > 0 ? ' Махай по разряди.' : ''}`,
+  if (revealed) {
+    return { rowValues: { board: f(result), removed: f(task.b) }, rowLabels: { board: 'Остават' }, info: `${f(task.a)} − ${f(task.b)} = ${f(result)}` }
   }
+  if (removed === 0) {
+    // Преди махането: началното число и актуалното разрядно представяне.
+    // При размяна представянето се променя, а стойността остава същата.
+    const board = state.kind === 'subtract' ? state.board : null
+    const places = task.places.filter((p) => p <= Math.max(10, task.a))
+    return {
+      rowValues: { board: f(task.a), removed: '' },
+      rowLabels: { board: 'Имаш' },
+      info: board ? `Имаш ${f(task.a)} = ${describeCounts(board, places, true)}` : `Имаш ${f(task.a)}.`,
+    }
+  }
+  // Докато маха: остатъкът не се изписва — ученикът сам ще преброи жетоните.
+  return { rowValues: { board: '?', removed: '' }, rowLabels: { board: 'Остават' }, info: `Имаше ${f(task.a)}. Махни ${f(task.b)}.` }
 }

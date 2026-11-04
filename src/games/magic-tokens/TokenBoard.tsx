@@ -502,6 +502,7 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
                 rows={arith && stage !== 'model' ? rows.filter((r) => r.key === 'result' || r.key === 'board') : rows}
                 counts={counts}
                 rowValues={arith ? visibleInfo(arith, state, solved).rowValues : undefined}
+                rowLabels={arith ? visibleInfo(arith, state, solved).rowLabels : undefined}
                 bind={bind}
                 dragOver={drag?.over ?? null}
                 onExchange={exchange}

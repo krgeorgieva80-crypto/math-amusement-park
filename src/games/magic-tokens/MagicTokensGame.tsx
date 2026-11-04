@@ -10,16 +10,17 @@ import { TokenBoard } from './TokenBoard'
 
 const GAME_ID = 'magic-tokens'
 /**
- * Само при разработка: ?testAdd=30+4,24+13 задава точни задачи за
- * автоматизираните тестове. В production сборката този код липсва.
+ * Само при разработка: ?testAdd=30+4,24+13 или ?testSub=100-71 задава точни
+ * задачи за автоматизираните тестове. В production сборката този код липсва.
  */
 function testAddTasks(c: TokensConfig): TokenTask[] | null {
-  if (!import.meta.env.DEV || c.mode !== 'add') return null
-  const raw = new URLSearchParams(window.location.search).get('testAdd')
+  if (!import.meta.env.DEV || (c.mode !== 'add' && c.mode !== 'subtract')) return null
+  const params = new URLSearchParams(window.location.search)
+  const raw = c.mode === 'add' ? params.get('testAdd') : params.get('testSub')
   if (!raw) return null
   return raw.split(',').map((pair, i) => {
-    const [a, b] = pair.split('+').map(Number)
-    return { kind: 'add' as const, id: i + 1, a, b, places: rangePlaces(c.range) }
+    const [a, b] = pair.split(c.mode === 'add' ? '+' : '-').map(Number)
+    return { kind: c.mode as 'add' | 'subtract', id: i + 1, a, b, places: rangePlaces(c.range) }
   })
 }
 

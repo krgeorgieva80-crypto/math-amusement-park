@@ -45,6 +45,8 @@ interface Props {
   disabled?: boolean
   /** Текст до етикета на реда вместо стойността (напр. „?“ — за да не се разкрива резултатът). */
   rowValues?: Partial<Record<RowKey, string>>
+  /** Етикет на реда вместо подразбиращия се. */
+  rowLabels?: Partial<Record<RowKey, string>>
   /** Подреждане на жетоните по 10 (за събиране). */
   tenFrames?: boolean
   /** Фиксирана височина на редовете (px) — по-компактна дъска на телефон. */
@@ -118,7 +120,7 @@ function CellTokens({ n, maxSize, bottom, className, render, frames, ...rest }: 
   )
 }
 
-export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onKeyTap, highlight, flash, tokenSize, cap, disabled, rowValues, tenFrames, rowHeights, labelWidth = 128 }: Props) {
+export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onKeyTap, highlight, flash, tokenSize, cap, disabled, rowValues, rowLabels, tenFrames, rowHeights, labelWidth = 128 }: Props) {
   return (
     <div className="place-mat" style={{ gridTemplateColumns: `${labelWidth}px repeat(${places.length}, minmax(0, 1fr))`, gridTemplateRows: `auto ${rows.map((r) => (rowHeights?.[r.key] ? `${rowHeights[r.key]}px` : `minmax(0, ${r.weight}fr)`)).join(' ')}` }}>
       <div className="place-mat__corner" />
@@ -133,7 +135,7 @@ export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onK
         if (!c) return null
         return [
           <div key={`${row.key}-label`} className={`place-mat__label place-mat__label--${row.tone}`}>
-            <span className="place-mat__label-name">{row.label}</span>
+            <span className="place-mat__label-name">{rowLabels?.[row.key] ?? row.label}</span>
             <span className="place-mat__label-value">{rowValues ? (rowValues[row.key] ?? '') : formatNumber(valueOf(c))}</span>
           </div>,
           ...places.map((p) => {
