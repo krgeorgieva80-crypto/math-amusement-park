@@ -4461,3 +4461,757 @@ button:focus-visible {
   line-height: 1.2;
   font-size: 20px;
 }
+
+/* ═════════════ Колелото на умножението ═════════════ */
+
+.mode-card.is-soon {
+  filter: saturate(0.6);
+}
+
+.mode-card.is-soon .mode-art {
+  opacity: 0.75;
+}
+
+.mode-card__soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 12px;
+  border-radius: 99px;
+  background: #f1ecf8;
+  border: 3px solid var(--ink);
+  font-size: 17px;
+  font-weight: 900;
+  color: #6d5f86;
+}
+
+.mode-art--wheel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wheel-setup-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.wheel-setup-info span {
+  padding: 10px 18px;
+  border-radius: 18px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  font-size: 22px;
+}
+
+.wp-grid {
+  position: absolute;
+  inset: 116px 24px 18px;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr) 250px;
+  grid-template-areas: 'task work actions';
+  gap: 14px 20px;
+}
+
+.wp-work {
+  grid-area: work;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wp-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 14px;
+  border-radius: 34px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.25), transparent 60%), linear-gradient(180deg, #7fdcf7, #3cc9bd);
+  border: 6px solid var(--ink);
+  box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.22), 0 10px 0 #0f6b64;
+}
+
+.wp-stage.is-shake {
+  animation: shake 0.45s ease;
+}
+
+.wheel-board {
+  flex: none;
+  max-height: 100%;
+  overflow: visible;
+  touch-action: none;
+}
+
+.wheel-cabin {
+  cursor: pointer;
+}
+
+.wheel-cabin:focus-visible {
+  outline: none;
+}
+
+.wheel-cabin:focus-visible .wheel-cabin__body {
+  stroke: #ff5fa2;
+  stroke-width: 8;
+}
+
+.wheel-cabin.is-hinted .wheel-cabin__body {
+  animation: cabin-hint 1s ease-in-out infinite;
+}
+
+.wheel-cabin.is-over .wheel-cabin__body {
+  fill: #fff6a8;
+}
+
+.wheel-cabin.is-locked {
+  cursor: not-allowed;
+}
+
+.wheel-cabin.is-locked .wheel-cabin__body {
+  fill: #efe6ff;
+}
+
+@keyframes cabin-hint {
+  50% {
+    fill: #fff6a8;
+    stroke: #e89a00;
+  }
+}
+
+.wheel-minus {
+  cursor: pointer;
+}
+
+.wheel-minus:active circle {
+  fill: #ff5fa2;
+}
+
+/* празнична обиколка */
+.wheel-rotor,
+.wheel-cabin-upright {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+.wheel-board.is-spinning .wheel-rotor {
+  animation: spin 2.6s cubic-bezier(0.5, 0, 0.3, 1) 1;
+}
+
+.wheel-board.is-spinning .wheel-cabin-upright {
+  animation: spin 2.6s cubic-bezier(0.5, 0, 0.3, 1) 1 reverse;
+}
+
+.wp-side {
+  flex: 0 0 auto;
+  width: 330px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.kid-queue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 30px;
+  background: #fffaf0;
+  border: 5px solid var(--ink);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
+}
+
+.kid-queue__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 30px;
+  color: var(--purple);
+}
+
+.kid-queue__kid {
+  cursor: grab;
+  touch-action: none;
+  border-radius: 50%;
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+.kid-queue__hint {
+  font-size: 20px;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.wheel-compute {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 5px solid var(--ink);
+  box-shadow: 0 8px 0 var(--yellow-d);
+  animation: card-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.wheel-compute .compute-panel__title {
+  font-size: 32px;
+}
+
+.wheel-eq {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 30px;
+}
+
+.wheel-eq .answer-box {
+  min-width: 90px;
+  font-size: 34px;
+}
+
+.wheel-eq.is-done {
+  opacity: 0.85;
+  font-size: 24px;
+}
+
+.wheel-eq.is-done .answer-box {
+  font-size: 26px;
+}
+
+.wheel-compute .keypad {
+  max-width: 290px;
+  gap: 8px;
+}
+
+.wheel-compute .keypad__key {
+  height: 62px;
+  font-size: 34px;
+}
+
+.no-motion .kid-queue__kid {
+  animation: none !important;
+}
+
+/* вертикално */
+.is-portrait .wp-grid {
+  inset: 116px 18px 12px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'task'
+    'work'
+    'actions';
+}
+
+.is-portrait .wp-grid .tb-task {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.is-portrait .wp-grid .tb-marquee {
+  grid-row: span 2;
+}
+
+.is-portrait .wp-grid .mascot-area .mascot {
+  width: 80px;
+  height: 80px;
+}
+
+.is-portrait .wp-stage {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.is-portrait .wp-side {
+  width: 100%;
+}
+
+.is-portrait .kid-queue {
+  flex-direction: row;
+  justify-content: center;
+  padding: 8px 14px;
+}
+
+.is-portrait .kid-queue__kid svg {
+  width: 72px;
+  height: 72px;
+}
+
+.is-portrait .wheel-compute {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-areas:
+    'title keypad'
+    'eq1 keypad'
+    'eq2 keypad';
+}
+
+.is-portrait .wheel-compute .compute-panel__title {
+  grid-area: title;
+}
+
+.is-portrait .wheel-compute .keypad {
+  grid-area: keypad;
+}
+
+.is-portrait .steps-bar__info {
+  display: none;
+}
+
+.is-portrait .wp-grid .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.wheel-marquee {
+  font-size: 46px;
+  line-height: 1.1;
+  white-space: normal;
+  padding: 10px 12px 14px;
+}
+
+.is-portrait .wheel-marquee,
+.is-portrait .wp-grid .marquee__number.wheel-marquee {
+  font-size: 40px;
+  padding: 8px 10px 10px;
+}
+
+.is-portrait .wp-grid .tb-task {
+  grid-template-rows: auto auto;
+  align-items: start;
+}
+
+.is-portrait .wp-grid .tb-instruction {
+  align-self: start;
+}
+
+.is-portrait .wheel-board {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  height: auto;
+}
+
+/* „Играй!“ вътре в табелата на активния атракцион */
+.map-spot__play.is-in-sign {
+  display: flex;
+  width: max-content;
+  margin: 6px auto 0;
+  padding: 3px 16px;
+  font-size: 21px;
+  border-width: 3px;
+  box-shadow: 0 4px 0 var(--green-d);
+  scale: 1;
+}
+
+/* вертикално: „Играй!“ до името, за да остане табелата ниска */
+.is-portrait .map-spot.is-ready .park-sign {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.is-portrait .map-spot__play.is-in-sign {
+  margin: 0;
+}
+
+/* ═════════════ Колелото: илюстрована визия ═════════════ */
+
+.wp-stage {
+  position: relative;
+  overflow: hidden;
+  background: #5a34b0;
+  box-shadow:
+    inset 0 0 0 8px rgba(255, 255, 255, 0.18),
+    0 10px 0 #2e1a66,
+    0 18px 30px rgba(0, 0, 0, 0.35);
+}
+
+.wheel-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.wp-stage > .wheel-board,
+.wp-stage > .wp-side {
+  position: relative;
+}
+
+.wheel-board {
+  filter: drop-shadow(0 14px 14px rgba(20, 8, 60, 0.45));
+}
+
+.wheel-cabin__body {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 8;
+  transition: stroke 0.2s, fill 0.2s;
+}
+
+.wheel-cabin:hover .wheel-cabin__body {
+  fill: rgba(255, 246, 168, 0.18);
+}
+
+.wheel-cabin.is-over .wheel-cabin__body {
+  fill: rgba(255, 246, 168, 0.35);
+  stroke: #fff6a8;
+}
+
+.wheel-cabin.is-hinted .wheel-cabin__body {
+  animation: cabin-glow 1s ease-in-out infinite;
+}
+
+@keyframes cabin-glow {
+  50% {
+    stroke: #fff6a8;
+    fill: rgba(255, 246, 168, 0.3);
+  }
+}
+
+.wheel-cabin:focus-visible .wheel-cabin__body {
+  stroke: #ff5fa2;
+}
+
+.wheel-cabin.is-locked .wheel-cabin__body {
+  fill: rgba(155, 93, 229, 0.12);
+}
+
+/* деликатна реакция при добавяне: новото дете „подскача“ на мястото си */
+.kid--seat {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: kid-pop 0.32s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+@keyframes kid-pop {
+  from {
+    transform: translateY(18%) scale(0.6);
+    opacity: 0.2;
+  }
+}
+
+.wheel-minus circle:first-child {
+  filter: drop-shadow(0 3px 0 rgba(59, 42, 90, 0.4));
+}
+
+.kid-queue {
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  box-shadow: 0 8px 0 var(--yellow-d), 0 14px 22px rgba(0, 0, 0, 0.3);
+}
+
+.kid-queue__kid {
+  display: grid;
+  place-items: center;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #ffe9f4 70%);
+  border: 4px dashed #ff8cc0;
+}
+
+.no-motion .kid--seat {
+  animation: none !important;
+}
+
+.wheel-play .wp-side:has(.kid-queue) {
+  width: 220px;
+}
+
+.kid-queue__hint {
+  font-size: 18px;
+}
+
+.is-portrait .wheel-play .wp-side:has(.kid-queue) {
+  width: 100%;
+}
+
+.is-portrait .kid-queue {
+  flex-direction: row;
+  gap: 16px;
+}
+
+.is-portrait .kid-queue__kid {
+  width: 96px;
+  height: 96px;
+}
+
+.is-portrait .kid-queue__hint {
+  max-width: 340px;
+}
+
+/* вертикално: опашката е малка значка в ъгъла, колелото заема сцената */
+.is-portrait .wheel-play .wp-side:has(.kid-queue) {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: auto;
+  z-index: 2;
+}
+
+.is-portrait .kid-queue {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.is-portrait .kid-queue__title {
+  font-size: 20px;
+}
+
+.is-portrait .kid-queue__hint {
+  display: none;
+}
+
+.is-portrait .wheel-board {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+}
+
+/* вертикално „Пресметни“: компактен панел, колелото остава видимо */
+.is-portrait .wp-side {
+  flex: none;
+}
+
+.is-portrait .wheel-compute {
+  padding: 10px 14px;
+  gap: 6px 14px;
+  align-items: center;
+}
+
+.is-portrait .wheel-compute .keypad {
+  max-width: 280px;
+  gap: 6px;
+}
+
+.is-portrait .wheel-compute .keypad__key {
+  height: 52px;
+  font-size: 30px;
+}
+
+.is-portrait .wheel-compute .compute-panel__title {
+  font-size: 28px;
+}
+
+.is-portrait .wheel-compute > :nth-child(2) {
+  grid-area: eq1;
+}
+
+.is-portrait .wheel-compute > :nth-child(3):not(.keypad) {
+  grid-area: eq2;
+}
+
+.is-portrait .wheel-compute {
+  grid-template-rows: auto auto auto;
+  align-content: center;
+}
+
+/* тесен хоризонтален екран (4:3): повече място за колелото */
+.wp-grid.is-narrow {
+  grid-template-columns: 270px minmax(0, 1fr) 205px;
+  gap: 12px 14px;
+}
+
+.wp-grid.is-narrow .actions .game-btn__face {
+  font-size: 24px;
+  padding: 0 14px;
+}
+
+.wp-grid.is-narrow .kid-queue__kid {
+  width: 104px;
+  height: 104px;
+}
+
+.wp-grid.is-narrow .wheel-compute .keypad__key {
+  height: 54px;
+  font-size: 30px;
+}
+
+.wp-grid.is-narrow .wheel-eq {
+  font-size: 24px;
+}
+
+.wheel-play .wp-side:has(.kid-queue) {
+  width: auto;
+}
+
+/* балончето на Звездичката не излиза извън лявата колона */
+.wheel-play .tb-task {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wheel-play .mascot-area {
+  align-items: flex-end;
+  min-height: 0;
+}
+
+.wheel-play .speech-bubble--game {
+  font-size: 21px;
+  line-height: 1.25;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.wheel-play .speech-bubble--game .bubble-title {
+  font-size: 24px;
+}
+
+/* ═════════════ Колелото: броене след успех ═════════════ */
+
+.wheel-cabin.is-counted .wheel-cabin__body {
+  fill: rgba(255, 246, 168, 0.28);
+  stroke: #ffd23f;
+  transition: fill 0.35s ease, stroke 0.35s ease;
+}
+
+.wheel-cabin.is-counting .wheel-cabin__art {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cabin-count 0.45s ease-out;
+}
+
+@keyframes cabin-count {
+  40% {
+    transform: scale(1.06);
+  }
+}
+
+.wheel-tally {
+  animation: tally-in 0.35s ease-out both;
+}
+
+@keyframes tally-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.wheel-tally {
+  transform-box: fill-box;
+}
+
+.count-strip {
+  position: absolute;
+  z-index: 35;
+  left: 50%;
+  bottom: 120px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 40px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px 10px 26px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 5px solid var(--ink);
+  box-shadow: 0 8px 0 var(--yellow-d), 0 16px 28px rgba(0, 0, 0, 0.35);
+}
+
+.count-strip__label {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 28px;
+  color: var(--purple);
+}
+
+.count-strip__steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.count-strip__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 34px;
+  color: var(--ink);
+  animation: tally-in 0.35s ease-out both;
+}
+
+.count-strip__step:last-child b {
+  color: var(--pink-d);
+}
+
+.count-strip__arrow {
+  color: #9b8fb8;
+  font-size: 28px;
+}
+
+.count-strip__skip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 56px;
+  padding: 0 20px;
+  border-radius: 99px;
+  background: var(--purple);
+  color: #fff;
+  border: 4px solid var(--ink);
+  box-shadow: 0 5px 0 var(--purple-d);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.count-strip__skip:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.is-portrait .count-strip {
+  bottom: 300px;
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 30px;
+}
+
+.is-portrait .count-strip__step {
+  font-size: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-cabin.is-counting .wheel-cabin__art,
+  .wheel-tally,
+  .count-strip__step {
+    animation: none !important;
+  }
+}
+
+/* вертикално (телефон/таблет): по-голям бутон „Пропусни“ и по-едри числа */
+.is-portrait .count-strip__skip {
+  min-height: 112px;
+  padding: 0 34px;
+  font-size: 34px;
+  border-width: 5px;
+}
+
+.is-portrait .count-strip__label {
+  font-size: 34px;
+}
+
+.is-portrait .count-strip__step {
+  font-size: 44px;
+}
