@@ -5,10 +5,24 @@ import { GameSummary } from './GameSummary'
 import { getLevelConfig, generateSession, type Grade, type Task } from './logic'
 import { ModeSelect } from './ModeSelect'
 import { PlayBoard, type TaskOutcome } from './PlayBoard'
-import { GRADE_RANGES, configForGrade, generateTokenTasks, modeLabel, type ModeId, type TokenTask, type TokensConfig } from './tasks'
+import { GRADE_RANGES, configForGrade, generateTokenTasks, modeLabel, rangePlaces, type ModeId, type TokenTask, type TokensConfig } from './tasks'
 import { TokenBoard } from './TokenBoard'
 
 const GAME_ID = 'magic-tokens'
+/**
+ * Само при разработка: ?testAdd=30+4,24+13 задава точни задачи за
+ * автоматизираните тестове. В production сборката този код липсва.
+ */
+function testAddTasks(c: TokensConfig): TokenTask[] | null {
+  if (!import.meta.env.DEV || c.mode !== 'add') return null
+  const raw = new URLSearchParams(window.location.search).get('testAdd')
+  if (!raw) return null
+  return raw.split(',').map((pair, i) => {
+    const [a, b] = pair.split('+').map(Number)
+    return { kind: 'add' as const, id: i + 1, a, b, places: rangePlaces(c.range) }
+  })
+}
+
 /** Текущо време (вика се само от обработчици на събития). */
 const nowMs = () => Date.now()
 
@@ -46,7 +60,7 @@ export function MagicTokensGame({ grade, onExit }: { grade: Grade; onExit: () =>
       const tasks = generateSession(getLevelConfig(c.grade, c.difficulty), c.count)
       setPhase({ name: 'play', kind: 'free', tasks, startedAt: nowMs() })
     } else {
-      setPhase({ name: 'play', kind: 'tokens', tasks: generateTokenTasks(c), startedAt: nowMs() })
+      setPhase({ name: 'play', kind: 'tokens', tasks: testAddTasks(c) ?? generateTokenTasks(c), startedAt: nowMs() })
     }
   }
 

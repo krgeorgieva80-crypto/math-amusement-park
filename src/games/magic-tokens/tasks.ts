@@ -211,7 +211,7 @@ export function taskInstruction(task: TokenTask): string {
     case 'otherWay':
       return 'Състави числото по друг начин — с размяна. Всеки различен начин е верен.'
     case 'add':
-      return 'Премести двете групи в сбора. Ако имаш 10 еднакви жетона — размени ги.'
+      return 'Премести жетоните в сбора.'
     case 'subtract':
       return `Махни ${formatNumber(task.b)} от жетоните. Ако не стигат — размени.`
     case 'missingAddend':
@@ -593,11 +593,12 @@ export function checkTask(task: TokenTask, state: BoardState, details = true): T
     }
     case 'add': {
       if (state.kind !== 'add') break
-      if (!isEmpty(state.a) || !isEmpty(state.b)) return incomplete('Премести всички жетони от двете групи в сбора.')
+      if (!isEmpty(state.a) || !isEmpty(state.b)) return incomplete('Премести всички жетони в сбора.')
       const v = valueOf(state.result)
       if (v !== task.a + task.b) return wrong(valueMessage(v, task.a + task.b, details))
+      // Размяната е задължителна, но не е грешка — ученикът още не е готов.
       const over = overfullPlace(state.result, task.places)
-      if (over) return wrong(`Имаш ${state.result[over]} ${PLACE_NAMES[over].many}. Размени 10 ${PLACE_NAMES[over].many} за 1 ${PLACE_NAMES[(over * 10) as Place].one}.`)
+      if (over) return incomplete(`Имаш ${state.result[over]} ${PLACE_NAMES[over].many}. Размени 10 ${PLACE_NAMES[over].many} за 1 ${PLACE_NAMES[(over * 10) as Place].one}.`)
       return ok()
     }
     case 'subtract':
@@ -719,11 +720,11 @@ export function hintFor(task: TokenTask, state: BoardState): TokenHint {
       for (const row of ['b', 'a'] as const) {
         const group = state[row]
         const p = task.places.find((q) => group[q] > 0)
-        if (p) return { message: `Премести ${group[p]} ${placeWord(p, group[p])} от ${row === 'a' ? 'първата' : 'втората'} група в сбора.`, row, place: p }
+        if (p) return { message: `Премести ${PLACE_NAMES[p].many}те в сбора.`, row, place: p }
       }
       const over = overfullPlace(state.result, task.places)
-      if (over) return { message: `Имаш ${state.result[over]} ${PLACE_NAMES[over].many}. Размени 10 ${PLACE_NAMES[over].many} за 1 ${PLACE_NAMES[(over * 10) as Place].one}.`, row: 'result', place: over }
-      return { message: 'Сборът е готов! Натисни „Провери“.' }
+      if (over) return { message: `Преброй ${PLACE_NAMES[over].many}те: ${state.result[over]}. Размени 10 ${PLACE_NAMES[over].many} за 1 ${PLACE_NAMES[(over * 10) as Place].one}.`, row: 'result', place: over }
+      return { message: 'Готово! Провери решението.' }
     }
     case 'subtract': {
       if (state.kind !== 'subtract') break

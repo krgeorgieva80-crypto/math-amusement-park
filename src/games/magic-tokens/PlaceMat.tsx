@@ -45,6 +45,12 @@ interface Props {
   disabled?: boolean
   /** Текст до етикета на реда вместо стойността (напр. „?“ — за да не се разкрива резултатът). */
   rowValues?: Partial<Record<RowKey, string>>
+  /** Подреждане на жетоните по 10 (за събиране). */
+  tenFrames?: boolean
+  /** Фиксирана височина на редовете (px) — по-компактна дъска на телефон. */
+  rowHeights?: Partial<Record<RowKey, number>>
+  /** Ширина на колоната с етикетите на редовете. */
+  labelWidth?: number
 }
 
 /** Разрядна дъска: колони по разряди, редове по групи. */
@@ -52,7 +58,7 @@ interface Props {
  * Жетоните в една клетка: размерът и броят в ред се избират според
  * реалния размер на клетката, така че всички жетони да се виждат.
  */
-function CellTokens({ n, maxSize, bottom, className, render, ...rest }: { n: number; maxSize: number; bottom: number; className: string; render: (size: number) => ReactNode } & Record<string, unknown>) {
+function CellTokens({ n, maxSize, bottom, className, render, frames, ...rest }: { n: number; maxSize: number; bottom: number; className: string; render: (size: number) => ReactNode; frames?: boolean } & Record<string, unknown>) {
   const ref = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState({ w: 0, h: 0 })
   useLayoutEffect(() => {
@@ -64,6 +70,37 @@ function CellTokens({ n, maxSize, bottom, className, render, ...rest }: { n: num
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+  if (frames) {
+    // Жетоните се групират по 10 (две редици по 5) — „десетка“ се вижда веднага.
+    const groups = Math.max(1, Math.ceil(n / 10))
+    let best = { size: Math.min(maxSize, 40), perLine: 1 }
+    if (box.w > 0 && n > 0) {
+      best = { size: 0, perLine: 1 }
+      for (let perLine = 1; perLine <= Math.min(3, groups); perLine++) {
+        const lines = Math.ceil(groups / perLine)
+        const rowsPerFrame = n <= 5 ? 1 : 2
+        // точни размери: рамка = 5 жетона + 4 отстъпа по 4px + вътрешен отстъп 2×5px + рамка 2×3px
+        const w = (box.w - 12 - (perLine - 1) * 12 - perLine * 32) / (perLine * 5)
+        const h = (box.h - 34 - bottom - (lines - 1) * 10 - lines * (16 + (rowsPerFrame - 1) * 4)) / (lines * rowsPerFrame)
+        const size = Math.floor(Math.min(w, h, maxSize)) - 1
+        if (size > best.size) best = { size, perLine }
+      }
+      best.size = Math.max(12, best.size)
+    }
+    const tokens = render(best.size) as ReactNode[]
+    const list = Array.isArray(tokens) ? tokens : [tokens]
+    const chunks: ReactNode[][] = []
+    for (let i = 0; i < list.length; i += 10) chunks.push(list.slice(i, i + 10))
+    return (
+      <div ref={ref} className={`${className} is-framed`} style={{ paddingBottom: bottom, ['--frames-per-line' as string]: best.perLine }} {...rest}>
+        {chunks.map((c, i) => (
+          <span key={i} className={`ten-frame ${c.length === 10 ? 'is-full' : ''}`} style={{ gridTemplateColumns: `repeat(5, ${best.size}px)` }}>
+            {c}
+          </span>
+        ))}
+      </div>
+    )
+  }
   let best = { size: Math.min(maxSize, 40), perRow: 5 }
   if (box.w > 0 && n > 0) {
     best = { size: 0, perRow: 1 }
@@ -81,9 +118,9 @@ function CellTokens({ n, maxSize, bottom, className, render, ...rest }: { n: num
   )
 }
 
-export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onKeyTap, highlight, flash, tokenSize, cap, disabled, rowValues }: Props) {
+export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onKeyTap, highlight, flash, tokenSize, cap, disabled, rowValues, tenFrames, rowHeights, labelWidth = 128 }: Props) {
   return (
-    <div className="place-mat" style={{ gridTemplateColumns: `128px repeat(${places.length}, minmax(0, 1fr))`, gridTemplateRows: `auto ${rows.map((r) => `minmax(0, ${r.weight}fr)`).join(' ')}` }}>
+    <div className="place-mat" style={{ gridTemplateColumns: `${labelWidth}px repeat(${places.length}, minmax(0, 1fr))`, gridTemplateRows: `auto ${rows.map((r) => (rowHeights?.[r.key] ? `${rowHeights[r.key]}px` : `minmax(0, ${r.weight}fr)`)).join(' ')}` }}>
       <div className="place-mat__corner" />
       {places.map((p) => (
         <div key={p} className={`place-mat__head place-mat__head--${p}`}>
@@ -116,6 +153,7 @@ export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onK
                 <CellTokens
                   n={shown}
                   maxSize={tokenSize}
+                  frames={tenFrames}
                   bottom={canUp || canDown ? 46 : 10}
                   className={`mat-cell__tokens ${row.interactive && n > 0 && !disabled ? 'is-interactive' : ''}`}
                   {...(row.interactive && n > 0 && !disabled ? bind({ row: row.key, place: p }) : {})}

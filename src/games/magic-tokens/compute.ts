@@ -129,13 +129,16 @@ export function checkComputedAnswer(task: ArithTask, input: string, details = tr
   const value = Number(clean)
   const correct = resultOf(task)
   if (value === correct) return { status: 'correct', message: 'Браво!' }
+  if (task.kind === 'add') {
+    // кратки съобщения за събиране (2. клас)
+    if (!details) return { status: 'wrong', message: 'Не е вярно. Опитай отново.' }
+    if (carryCount(task.a, task.b) > 0 && value === typicalMistake('+', task.a, task.b, task.places)) return { status: 'wrong', message: 'Не е вярно. Провери размяната.' }
+    return { status: 'wrong', message: value > correct ? 'Твоят отговор е по-голям. Опитай отново.' : 'Твоят отговор е по-малък. Опитай отново.' }
+  }
   if (!details) return { status: 'wrong', message: 'Отговорът не е верен. Пресметни още веднъж.' }
-  const regroup = task.kind === 'add' ? carryCount(task.a, task.b) > 0 : borrowCount(task.a, task.b) > 0
-  if (regroup && value === typicalMistake(task.kind === 'add' ? '+' : '-', task.a, task.b, task.places)) {
-    return {
-      status: 'wrong',
-      message: task.kind === 'add' ? 'Май си забравил преноса. Провери къде има 10 или повече.' : 'Май си извадил по-малката цифра от по-голямата. Провери къде трябва да заемеш.',
-    }
+  // оттук нататък — изваждане (непроменено)
+  if (borrowCount(task.a, task.b) > 0 && value === typicalMistake('-', task.a, task.b, task.places)) {
+    return { status: 'wrong', message: 'Май си извадил по-малката цифра от по-голямата. Провери къде трябва да заемеш.' }
   }
   return { status: 'wrong', message: value > correct ? 'Отговорът е по-голям от верния. Пресметни още веднъж.' : 'Отговорът е по-малък от верния. Пресметни още веднъж.' }
 }
@@ -155,6 +158,9 @@ function digitsWord(c: Counts, places: Place[]): string {
  * Не съобщава целия резултат.
  */
 export function computeHint(task: ArithTask, board: Counts | null, attempt: number): string {
+  if (board && task.kind === 'add') {
+    return attempt === 0 ? 'Преброй десетиците и единиците.' : `Имаш ${digitsWord(board, task.places)}.`
+  }
   if (board) {
     return attempt === 0
       ? 'Погледни жетоните на дъската. Колко има във всеки разряд?'
@@ -165,9 +171,7 @@ export function computeHint(task: ArithTask, board: Counts | null, attempt: numb
   const unit = PLACE_NAMES[s.place].many
   if (task.kind === 'add') {
     const sum = s.top + s.bottom
-    return sum >= 10
-      ? `Започни от ${unit}: ${s.top} + ${s.bottom} = ${sum}. Запиши ${s.digit} и пренеси 1 в следващия разряд.`
-      : `Започни от ${unit}: ${s.top} + ${s.bottom} = ${sum}. После събери следващия разряд.`
+    return sum >= 10 ? `Събери ${unit}те: ${s.top} + ${s.bottom} = ${sum}. Запиши ${s.digit}, пренеси 1.` : `Събери ${unit}те: ${s.top} + ${s.bottom} = ${sum}.`
   }
   return s.carryOut
     ? `Започни от ${unit}: ${s.top} − ${s.bottom} не може. Заеми 1 от следващия разряд: ${s.top + 10} − ${s.bottom} = ${s.digit}.`

@@ -43,6 +43,7 @@ import {
   type TokenTask,
 } from './tasks'
 import { usePointerDrag } from './usePointerDrag'
+import { addStepInstruction, visibleAddPlaces } from './addition'
 import {
   backspace,
   checkComputedAnswer,
@@ -79,9 +80,9 @@ function rowsFor(task: TokenTask): MatRow[] {
   switch (task.kind) {
     case 'add':
       return [
-        { key: 'a', label: '1. група', weight: 1, interactive: true, tone: 'group' },
-        { key: 'b', label: '2. група', weight: 1, interactive: true, tone: 'group' },
-        { key: 'result', label: 'Сбор', weight: 1.8, drop: true, interactive: true, up: true, tone: 'result' },
+        { key: 'a', label: '1. група', weight: 0.9, interactive: true, tone: 'group' },
+        { key: 'b', label: '2. група', weight: 0.9, interactive: true, tone: 'group' },
+        { key: 'result', label: 'Сбор', weight: 2.1, drop: true, interactive: true, up: true, tone: 'result' },
       ]
     case 'subtract':
     case 'missingSubtrahend':
@@ -132,7 +133,7 @@ const buildRow = (t: TokenTask): RowKey => (t.kind === 'missingAddend' ? 'added'
 
 export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensAndCompute', onFinish, onExit }: Props) {
   const { settings, play } = useApp()
-  const { width: W, portrait } = useStage()
+  const { width: W, height: H, portrait } = useStage()
   const [index, setIndex] = useState(0)
   const [state, setState] = useState<BoardState>(() => initialState(tasks[0]))
   const [mistakes, setMistakes] = useState(0)
@@ -155,10 +156,13 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
   const canNext = solved
   const starsSoFar = outcomes.reduce((a, o) => a + o.stars, 0)
   const rows = rowsFor(task)
-  const places = 'places' in task ? task.places : []
+  // При събиране — само нужните колони (без празната „Стотици“ при задачи до 100).
+  const places = task.kind === 'add' ? visibleAddPlaces(task, state) : 'places' in task ? task.places : []
   const counts = countsOfState(state)
   const supply = needsSupply(task)
   const arith: ArithTask | null = isArithmetic(task) ? task : null
+  // Висок вертикален екран (телефон): компактна дъска за събиране вместо разтеглена.
+  const compactAdd = task.kind === 'add' && portrait && H >= 1600
   /** Дъската с жетони остава видима и при пресмятане (освен „без жетони“). */
   const showMat = !arith || hasModelStage(arith, workMode)
 
@@ -167,7 +171,7 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
   // отстъпи на дъската (рамка, вътрешен отстъп) и празнините между колоните
   const colW = places.length ? (centerW - 40 - 8 * places.length) / places.length : 200
   // горна граница; всяка клетка сама избира размер, за да се поберат всички жетони
-  const tokenSize = Math.max(36, Math.min(54, Math.floor((colW - 16) / 3) - 4))
+  const tokenSize = task.kind === 'add' ? 66 : Math.max(36, Math.min(54, Math.floor((colW - 16) / 3) - 4))
 
   const changed = (next: BoardState) => {
     setState(next)
@@ -301,7 +305,7 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
       if (hasComputeStage(task, workMode)) {
         play('star')
         setStage('compute')
-        return setFeedback({ kind: 'info', message: 'Жетоните са готови! Сега пресметни сам и напиши отговора.' })
+        return setFeedback({ kind: 'info', message: task.kind === 'add' ? 'Браво! Сега пресметни и запиши отговора.' : 'Жетоните са готови! Сега пресметни сам и напиши отговора.' })
       }
       return succeed()
     }
@@ -418,10 +422,14 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
   } else {
     bubble =
       stage === 'compute'
-        ? 'Сега пресметни сам! Напиши отговора с цифрите.'
+        ? task.kind === 'add'
+          ? 'Пресметни и запиши отговора.'
+          : 'Сега пресметни сам! Напиши отговора с цифрите.'
         : task.kind === 'compare' || task.kind === 'findError'
           ? 'Помисли спокойно и избери.'
-          : 'Докосни или влачи жетоните. Ти можеш!'
+          : task.kind === 'add'
+            ? 'Докосни жетоните. Ти можеш!'
+            : 'Докосни или влачи жетоните. Ти можеш!'
   }
 
   const title = taskTitle(task)
@@ -455,7 +463,7 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
         <SoundControl />
       </div>
 
-      <div className={`tb-grid ${supply ? 'has-supply' : ''}`}>
+      <div className={`tb-grid ${supply ? 'has-supply' : ''} ${compactAdd ? 'is-add-compact' : ''}`}>
         <section className="tb-task">
           <div className="marquee tb-marquee" key={task.id}>
             <span className="marquee__lights" aria-hidden="true" />
@@ -463,7 +471,9 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
             <span className={`marquee__number tb-marquee__text ${textSize(title.text)}`}>{title.text}</span>
           </div>
           <div className="tb-instruction">
-            {arith && stage !== 'model'
+            {task.kind === 'add'
+              ? addStepInstruction(task, state, stage, answer)
+              : arith && stage !== 'model'
               ? showMat
                 ? 'Погледни жетоните и пресметни сам. Напиши отговора.'
                 : 'Пресметни сам и напиши отговора.'
@@ -499,7 +509,10 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
                 highlight={shownHint && shownHint.row !== 'supply' ? shownHint : null}
                 flash={flash}
                 tokenSize={tokenSize}
-                cap={20}
+                cap={task.kind === 'add' ? 30 : 20}
+                tenFrames={task.kind === 'add'}
+                labelWidth={task.kind === 'add' ? 100 : undefined}
+                rowHeights={compactAdd ? { a: 190, b: 190, result: 340 } : undefined}
                 disabled={solved || stage !== 'model'}
               />
               {arith && stage !== 'model' && hasComputeStage(arith, workMode) && (

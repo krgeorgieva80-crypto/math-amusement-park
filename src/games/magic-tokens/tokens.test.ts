@@ -390,7 +390,8 @@ describe('проверка на решения и подсказки', () => {
     expect(checkTask(add, s).status).toBe('incomplete')
     const merged: BoardState = { kind: 'add', a: emptyCounts(), b: emptyCounts(), result: mergeCounts(countsOf(48), countsOf(27)) }
     const res = checkTask(add, merged)
-    expect(res.status).toBe('wrong')
+    // ненаправената размяна не е грешка, но не позволява да се продължи
+    expect(res.status).toBe('incomplete')
     expect(res.message).toBe('Имаш 15 единици. Размени 10 единици за 1 десетица.')
     expect(hintFor(add, merged).place).toBe(1)
     const done: BoardState = { kind: 'add', a: emptyCounts(), b: emptyCounts(), result: countsOf(75) }

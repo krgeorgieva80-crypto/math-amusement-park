@@ -4399,3 +4399,58 @@ button:focus-visible {
   flex: 1 1 0;
   overflow-wrap: anywhere;
 }
+
+/* ═════════════ Събиране: жетони по десет ═════════════ */
+
+.mat-cell__tokens.is-framed {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-end;
+  justify-content: center;
+  gap: 10px 12px;
+}
+
+.ten-frame {
+  display: grid;
+  gap: 4px;
+  padding: 5px;
+  border-radius: 12px;
+  border: 2px dashed rgba(59, 42, 90, 0.25);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* пълна десетка — светва, за да подскаже размяната */
+.ten-frame.is-full {
+  border: 3px solid var(--yellow-d);
+  background: rgba(255, 246, 168, 0.7);
+  box-shadow: 0 0 0 3px rgba(255, 210, 63, 0.35);
+}
+
+/* Събиране на телефон/таблет (вертикално): компактна дъска без излишна височина */
+.is-portrait .tb-grid.is-add-compact {
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  row-gap: 18px;
+}
+
+.is-portrait .tb-grid.is-add-compact .tb-work__inner,
+.is-portrait .tb-grid.is-add-compact .tb-split,
+.is-portrait .tb-grid.is-add-compact .place-mat {
+  flex: none;
+}
+
+.is-portrait .tb-grid.is-add-compact .tb-split.has-panel > .place-mat {
+  min-height: 0;
+}
+
+.is-portrait .tb-grid.is-add-compact .tb-work__inner,
+.is-portrait .tb-grid.is-add-compact .tb-split,
+.is-portrait .tb-grid.is-add-compact .place-mat {
+  width: 100%;
+  min-width: 0;
+}
+
+.mat-cell__tokens.is-framed {
+  min-width: 0;
+  overflow: hidden;
+}
