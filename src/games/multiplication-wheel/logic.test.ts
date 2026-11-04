@@ -15,6 +15,9 @@ import {
   removePassenger,
   repeatedSumText,
   multiplicationText,
+  successText,
+  runningTotals,
+  countStepMs,
   WHY_EQUAL,
   type GroupsTask,
 } from './logic'
@@ -200,5 +203,31 @@ describe('неравни групи не позволяват умножение
 
   it('подсказката обяснява защо групите трябва да са равни', () => {
     expect(groupsHint(task(3, 4), [4, 2, 4], 'model')).toBe(`В кабинка 2 има 2 деца, а трябва 4. Добави 2. ${WHY_EQUAL}`)
+  })
+})
+
+describe('поздравление и натрупване', () => {
+  it('конкретен текст според задачата', () => {
+    expect(successText(task(4, 5))).toBe('Браво! Откри, че 4 групи по 5 са общо 20!')
+    expect(successText(task(3, 4))).toBe('Браво! Откри, че 3 групи по 4 са общо 12!')
+    expect(successText(task(10, 10))).toBe('Браво! Откри, че 10 групи по 10 са общо 100!')
+  })
+
+  it('натрупването стига точно до произведението', () => {
+    expect(runningTotals(task(4, 5))).toEqual([5, 10, 15, 20])
+    for (let g = 2; g <= 10; g++)
+      for (let s = 2; s <= 10; s++) {
+        const r = runningTotals(task(g, s))
+        expect(r).toHaveLength(g)
+        expect(r[r.length - 1]).toBe(g * s)
+        r.forEach((v, i) => expect(v - (i ? r[i - 1] : 0)).toBe(s))
+      }
+  })
+
+  it('анимацията е кратка: общо до ~3,5 с, всяка стъпка поне 320 мс', () => {
+    for (let g = 2; g <= 10; g++) {
+      expect(countStepMs(g)).toBeGreaterThanOrEqual(320)
+      expect(countStepMs(g) * g).toBeLessThanOrEqual(3500)
+    }
   })
 })

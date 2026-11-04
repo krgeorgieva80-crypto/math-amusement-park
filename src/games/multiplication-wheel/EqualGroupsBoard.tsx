@@ -23,6 +23,9 @@ import {
   groupsTitle,
   isLocked,
   removePassenger,
+  countStepMs,
+  runningTotals,
+  successText,
   type ComputeStep,
   type GroupsTask,
 } from './logic'
@@ -33,7 +36,6 @@ type Stage = 'model' | ComputeStep | 'done'
 type Feedback = null | { kind: 'correct'; stars: 1 | 2 | 3 } | { kind: 'wrong'; message: string } | { kind: 'info'; message: string }
 type Drag = { from: 'queue' } | { from: 'cabin'; i: number }
 
-const PRAISE = ['Супер си!', 'Отлично!', 'Чудесно!', 'Страхотно!', 'Точно така!']
 
 interface Props {
   grade: Grade
@@ -58,6 +60,8 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
   const [hintCabin, setHintCabin] = useState<number | null>(null)
   const [outcomes, setOutcomes] = useState<TaskOutcome[]>([])
   const [shake, setShake] = useState(0)
+  /** Броене след успех: колко кабинки са преброени (null — няма анимация). */
+  const [counted, setCounted] = useState<number | null>(null)
 
   const task = tasks[index]
   const hintsOn = settings.hintsOn
@@ -161,12 +165,31 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
       if (r.status === 'wrong') return fail(r.message)
       const s = starsForTask(mistakes, usedHint)
       setStage('done')
+      // Кратко броене по кабинки (5 → 10 → 15 → 20), освен при намалено движение.
+      const reduce = !settings.animationsOn || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      if (!reduce) setCounted(0)
       setOutcomes((o) => [...o, { stars: s, firstTry: mistakes === 0, solved: true }])
       setFeedback({ kind: 'correct', stars: s })
       play('success')
       for (let i = 0; i < s; i++) window.setTimeout(() => play('star'), 650 + i * 230)
     }
   }
+
+  const skipCount = () => setCounted(null)
+
+  // Стъпки на броенето; след последната — кратка пауза и поздравителния прозорец.
+  useEffect(() => {
+    if (counted === null) return
+    const step = countStepMs(task.groups)
+    const t = window.setTimeout(() => {
+      if (counted >= task.groups) setCounted(null)
+      else {
+        play('pick')
+        setCounted(counted + 1)
+      }
+    }, counted === 0 ? 250 : counted >= task.groups ? 900 : step)
+    return () => window.clearTimeout(t)
+  }, [counted, task.groups, play])
 
   const reset = () => {
     if (solved) return
@@ -201,6 +224,7 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
     setFeedback(null)
     setHint(null)
     setHintCabin(null)
+    setCounted(null)
   }
 
   const digit = (d: string) => {
@@ -214,6 +238,19 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
     play('remove')
     setAnswer((a) => backspace(a))
   }
+
+  // Клавиш Enter, интервал или Escape пропуска броенето.
+  useEffect(() => {
+    if (counted === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+        e.preventDefault()
+        setCounted(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [counted])
 
   // Физическа клавиатура при пресмятане.
   useEffect(() => {
@@ -259,7 +296,7 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
     )
   } else if (solved) {
     mood = 'cheer'
-    bubble = 'Ура!'
+    bubble = successText(task)
   } else bubble = stage === 'model' ? 'Докосни кабинка, за да сложиш дете.' : 'Пресметни и запиши отговора.'
 
   const instruction = stage === 'model' ? groupsInstruction(task) : stage === 'sum' ? 'Колко деца има общо? Пресметни и запиши.' : `Колко пъти е взето ${task.size}? Запиши.`
@@ -343,7 +380,9 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
               highlight={hintCabin}
               over={overCabin}
               disabled={stage !== 'model'}
-              spinning={solved}
+              spinning={solved && counted === null}
+              counted={counted}
+              totals={runningTotals(task)}
               size={wheelSize}
             />
             <div className="wp-side" style={sideW ? { width: sideW } : undefined}>
@@ -431,14 +470,33 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
         </div>
       )}
 
-      {feedback?.kind === 'correct' && (
+      {counted !== null && (
+        <div className="count-strip" role="status" aria-live="polite">
+          <span className="count-strip__label">Броим:</span>
+          <span className="count-strip__steps">
+            {runningTotals(task)
+              .slice(0, Math.max(1, counted))
+              .map((v, i) => (
+                <span key={i} className="count-strip__step">
+                  {i > 0 && <span className="count-strip__arrow">→</span>}
+                  <b>{v}</b>
+                </span>
+              ))}
+          </span>
+          <button type="button" className="count-strip__skip" onClick={skipCount}>
+            Пропусни <Icon name="next" size={22} />
+          </button>
+        </div>
+      )}
+
+      {feedback?.kind === 'correct' && counted === null && (
         <div className="success-overlay">
           <Confetti seed={index + 3} />
           <div className="success-card">
             <div className="success-card__burst" aria-hidden="true" />
             <Mascot mood="cheer" size={150} className="success-card__mascot" />
             <div className="success-card__title">Браво!</div>
-            <div className="success-card__praise">{PRAISE[index % PRAISE.length]}</div>
+            <div className="success-card__praise">{successText(task)}</div>
             <StarRow stars={feedback.stars} size={86} animate />
             <div className="success-card__text">{eq.full}</div>
             <GameButton color="green" size="xl" icon="next" onClick={next} className="success-card__next">

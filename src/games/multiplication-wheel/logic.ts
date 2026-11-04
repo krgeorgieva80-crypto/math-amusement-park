@@ -237,3 +237,22 @@ export function groupsInstruction(t: GroupsTask): string {
       return 'Във всяка кабинка да има толкова деца, колкото в първата.'
   }
 }
+
+// ───────────────────────── Поздравление и натрупване ─────────────────────────
+
+const groupsWord = (n: number) => (n === 1 ? 'група' : 'групи')
+
+/** „Браво! Откри, че 4 групи по 5 са общо 20!“ — според текущата задача. */
+export function successText(t: GroupsTask): string {
+  return `Браво! Откри, че ${t.groups} ${groupsWord(t.groups)} по ${t.size} са общо ${product(t)}!`
+}
+
+/** Натрупването при броене на кабинките една по една: 5, 10, 15, 20. */
+export function runningTotals(t: GroupsTask): number[] {
+  return Array.from({ length: t.groups }, (_, i) => t.size * (i + 1))
+}
+
+/** Продължителност на една стъпка (мс): общо най-много ~3,5 с, но не по-бързо от 320 мс. */
+export function countStepMs(groups: number): number {
+  return Math.max(320, Math.min(650, Math.floor(3500 / Math.max(1, groups))))
+}

@@ -5071,3 +5071,147 @@ button:focus-visible {
 .wheel-play .speech-bubble--game .bubble-title {
   font-size: 24px;
 }
+
+/* ═════════════ Колелото: броене след успех ═════════════ */
+
+.wheel-cabin.is-counted .wheel-cabin__body {
+  fill: rgba(255, 246, 168, 0.28);
+  stroke: #ffd23f;
+  transition: fill 0.35s ease, stroke 0.35s ease;
+}
+
+.wheel-cabin.is-counting .wheel-cabin__art {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cabin-count 0.45s ease-out;
+}
+
+@keyframes cabin-count {
+  40% {
+    transform: scale(1.06);
+  }
+}
+
+.wheel-tally {
+  animation: tally-in 0.35s ease-out both;
+}
+
+@keyframes tally-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.wheel-tally {
+  transform-box: fill-box;
+}
+
+.count-strip {
+  position: absolute;
+  z-index: 35;
+  left: 50%;
+  bottom: 120px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 40px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px 10px 26px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 5px solid var(--ink);
+  box-shadow: 0 8px 0 var(--yellow-d), 0 16px 28px rgba(0, 0, 0, 0.35);
+}
+
+.count-strip__label {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 28px;
+  color: var(--purple);
+}
+
+.count-strip__steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.count-strip__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 34px;
+  color: var(--ink);
+  animation: tally-in 0.35s ease-out both;
+}
+
+.count-strip__step:last-child b {
+  color: var(--pink-d);
+}
+
+.count-strip__arrow {
+  color: #9b8fb8;
+  font-size: 28px;
+}
+
+.count-strip__skip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 56px;
+  padding: 0 20px;
+  border-radius: 99px;
+  background: var(--purple);
+  color: #fff;
+  border: 4px solid var(--ink);
+  box-shadow: 0 5px 0 var(--purple-d);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.count-strip__skip:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.is-portrait .count-strip {
+  bottom: 300px;
+  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 30px;
+}
+
+.is-portrait .count-strip__step {
+  font-size: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-cabin.is-counting .wheel-cabin__art,
+  .wheel-tally,
+  .count-strip__step {
+    animation: none !important;
+  }
+}
+
+/* вертикално (телефон/таблет): по-голям бутон „Пропусни“ и по-едри числа */
+.is-portrait .count-strip__skip {
+  min-height: 112px;
+  padding: 0 34px;
+  font-size: 34px;
+  border-width: 5px;
+}
+
+.is-portrait .count-strip__label {
+  font-size: 34px;
+}
+
+.is-portrait .count-strip__step {
+  font-size: 44px;
+}

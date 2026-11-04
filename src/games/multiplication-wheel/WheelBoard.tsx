@@ -19,6 +19,10 @@ interface Props {
   /** Празнична обиколка след верен отговор. */
   spinning?: boolean
   size: number
+  /** Броене след успех: кабинки с номер < counted са преброени; counted−1 е текущата. */
+  counted?: number | null
+  /** Натрупаната сума до всяка кабинка (за значката над нея). */
+  totals?: number[]
 }
 
 import { CX, CY, R, VB_H, VB_W, cabinSize, kidLayout } from './wheelGeometry'
@@ -112,7 +116,7 @@ function Gondola({ i, w, h, count, locked }: { i: number; w: number; h: number; 
  * докосване добавя дете, бутонът „−“ маха. Кабинките висят изправени
  * и при празничното завъртане.
  */
-export function WheelBoard({ cabins, locked, onAdd, onRemove, bindCabin, highlight, over, disabled, spinning, size }: Props) {
+export function WheelBoard({ cabins, locked, onAdd, onRemove, bindCabin, highlight, over, disabled, spinning, size, counted, totals }: Props) {
   const n = cabins.length
   const { w, h } = cabinSize(n)
   const bulbs = 40
@@ -218,7 +222,7 @@ export function WheelBoard({ cabins, locked, onAdd, onRemove, bindCabin, highlig
                 <g className="wheel-cabin-upright">
                   <circle r="13" fill="url(#wb-gold)" stroke={O} strokeWidth="3" />
                   <g
-                    className={`wheel-cabin ${highlight === i ? 'is-hinted' : ''} ${over === i ? 'is-over' : ''} ${isLocked ? 'is-locked' : ''}`}
+                    className={`wheel-cabin ${highlight === i ? 'is-hinted' : ''} ${over === i ? 'is-over' : ''} ${isLocked ? 'is-locked' : ''} ${counted != null && i < counted ? 'is-counted' : ''} ${counted != null && i === counted - 1 ? 'is-counting' : ''}`}
                     data-drop={`cabin:${i}`}
                     role="button"
                     tabIndex={disabled || isLocked ? -1 : 0}
@@ -256,6 +260,15 @@ export function WheelBoard({ cabins, locked, onAdd, onRemove, bindCabin, highlig
                       </text>
                     </g>
                   </g>
+                  {/* натрупаната сума над преброената кабинка */}
+                  {counted != null && totals && i < counted && (
+                    <g className="wheel-tally" transform={`translate(0 ${-Math.max(20, w * 0.1) - 30})`} aria-hidden="true">
+                      <rect x="-38" y="-22" width="76" height="44" rx="22" fill="url(#wb-gold)" stroke={O} strokeWidth="4" />
+                      <text y="11" textAnchor="middle" className="art-text" fontSize="28" fill={O}>
+                        {totals[i]}
+                      </text>
+                    </g>
+                  )}
                   {/* „−“ в долния ляв ъгъл на купата — без да излиза извън кабинката */}
                   {!isLocked && !disabled && count > 0 && (
                     <g
