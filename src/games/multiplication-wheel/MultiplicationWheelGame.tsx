@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useApp } from '../../core/AppContext'
 import { useStage } from '../../core/Stage'
-import { bestStars } from '../../core/storage'
+import { bestStars, type TaskCount } from '../../core/storage'
 import { FerrisWheelArt } from '../../components/art/Attractions'
 import { MascotSays } from '../../components/art/Mascot'
 import { StarRow } from '../../components/ui/Effects'
@@ -60,17 +60,18 @@ type Phase =
 
 /** „Колелото на умножението“: режими → настройки → задачи → обобщение. */
 export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExit: () => void }) {
-  const { settings, saveResult } = useApp()
+  const { settings, updateSettings, saveResult } = useApp()
   const locked = !settings.studentCanChoose
-  const [difficulty, setDifficulty] = useState<Difficulty>(settings.difficulty)
-  const [count, setCount] = useState<number>(settings.taskCount)
+  // Единствен източник: изборът в екрана на играта се запазва в общите настройки.
+  const setDifficulty = (difficulty: Difficulty) => updateSettings({ difficulty })
+  const setCount = (n: number) => updateSettings({ taskCount: (n === 5 || n === 15 ? n : 10) as TaskCount })
   const [phase, setPhase] = useState<Phase>({ name: 'modes' })
   const [mode, setMode] = useState<PlayMode>('equalGroups')
   const spinTables = settings.spinTables[grade]
   const [spinTable, setSpinTable] = useState<number>(spinTables[spinTables.length - 1])
   const table = spinTables.includes(spinTable) ? spinTable : spinTables[spinTables.length - 1]
-  const d = locked ? settings.difficulty : difficulty
-  const n = locked ? settings.taskCount : count
+  const d = settings.difficulty
+  const n = settings.taskCount
 
   const start = () =>
     mode === 'spin'

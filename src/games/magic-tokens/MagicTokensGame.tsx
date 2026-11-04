@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../../core/AppContext'
+import type { TaskCount } from '../../core/storage'
 import { GameSetup } from './GameSetup'
 import { GameSummary } from './GameSummary'
 import { getLevelConfig, generateSession, type Grade, type Task } from './logic'
@@ -39,7 +40,7 @@ type Phase =
  * Режимът „С различни жетони“ е досегашната игра за съставяне на числа.
  */
 export function MagicTokensGame({ grade, onExit }: { grade: Grade; onExit: () => void }) {
-  const { settings, saveResult } = useApp()
+  const { settings, updateSettings, saveResult } = useApp()
   // Класът идва само от общото състояние (избран веднъж с билетите).
   const [stored, setConfig] = useState<TokensConfig>(() => ({
     grade,
@@ -52,9 +53,28 @@ export function MagicTokensGame({ grade, onExit }: { grade: Grade; onExit: () =>
     challenge: 'mixed',
   }))
   const [phase, setPhase] = useState<Phase>({ name: 'modes' })
-  // Винаги в съответствие с текущия общ клас — без параметри от друг клас.
-  const config = configForGrade(stored, grade, settings.tokensRange)
-  const changeConfig = (c: TokensConfig) => setConfig(configForGrade(c, grade, settings.tokensRange))
+  // Единствен източник: трудност, брой задачи, обхват и преминаване идват от общите
+  // настройки (избират се в екрана на играта); режимът и видът задачи — от екрана.
+  const config = configForGrade(
+    {
+      ...stored,
+      difficulty: settings.difficulty,
+      count: settings.taskCount,
+      regrouping: settings.tokensRegrouping,
+      range: GRADE_RANGES[grade][settings.tokensRange === 'small' ? 0 : 1],
+    },
+    grade,
+    settings.tokensRange,
+  )
+  const changeConfig = (c: TokensConfig) => {
+    setConfig(c)
+    updateSettings({
+      difficulty: c.difficulty,
+      taskCount: (c.count === 5 || c.count === 15 ? c.count : 10) as TaskCount,
+      tokensRegrouping: c.regrouping,
+      tokensRange: GRADE_RANGES[grade].indexOf(c.range) === 0 ? 'small' : 'large',
+    })
+  }
 
   const start = (c: TokensConfig = config) => {
     if (c.mode === 'compose' && c.composeTopic === 'free') {

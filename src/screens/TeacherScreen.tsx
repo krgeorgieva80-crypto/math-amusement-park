@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { useApp } from '../core/AppContext'
 import { useStage } from '../core/Stage'
-import type { TaskCount, TokensRangeLevel, TokensRegrouping, TokensWorkMode } from '../core/storage'
+import { loadPlayerGrade } from '../core/storage'
 import { SkyAndHills, SkyDefs } from '../components/scenery/Scenery'
 import { GameButton, RoundButton } from '../components/ui/GameButton'
 import { Icon } from '../components/ui/Icon'
 import { Toggle } from '../components/ui/SoundControl'
-import { DIFFICULTIES, DIFFICULTY_LABELS, GRADES, type Grade } from '../games/magic-tokens/logic'
-import { GRADE_RANGES, RANGES, REGROUPING_LABELS } from '../games/magic-tokens/tasks'
-import { WORK_MODE_LABELS, WORK_MODE_SHORT } from '../games/magic-tokens/compute'
+import { DIFFICULTY_LABELS, GRADES, type Grade } from '../games/magic-tokens/logic'
 import { ALL_TABLES } from '../games/multiplication-wheel/spin/logic'
 
 function Segmented<T extends string | number>({ options, value, onChange, label }: { options: { value: T; label: string; title?: string }[]; value: T; onChange: (v: T) => void; label: string }) {
@@ -48,6 +46,8 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
   const { width: w, height: h } = useStage()
   const { settings, updateSettings, results, resetResults } = useApp()
   const [confirmClear, setConfirmClear] = useState(false)
+  // само за кой клас се редактират таблиците (не е отделен избор на клас за играта)
+  const [tableGrade, setTableGrade] = useState<Grade>(() => loadPlayerGrade() ?? 2)
 
   const games = results
   const totalTasks = games.reduce((a, r) => a + r.total, 0)
@@ -67,103 +67,57 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
         <div className="top-bar__spacer" />
       </div>
 
-      <div className="teacher-layout">
-        <section className="teacher-card">
-          <h3 className="teacher-card__title">Настройки на играта</h3>
-          <Segmented<Grade>
-            label="Клас"
-            value={settings.grade}
-            options={GRADES.map((g) => ({ value: g, label: `${g}. клас` }))}
-            onChange={(g) => updateSettings({ grade: g })}
-          />
-          <Segmented
-            label="Степен на трудност"
-            value={settings.difficulty}
-            options={DIFFICULTIES.map((d) => ({ value: d, label: DIFFICULTY_LABELS[d] }))}
-            onChange={(d) => updateSettings({ difficulty: d })}
-          />
-          <Segmented<TaskCount>
-            label="Брой задачи"
-            value={settings.taskCount}
-            options={[5, 10, 15].map((n) => ({ value: n as TaskCount, label: String(n) }))}
-            onChange={(n) => updateSettings({ taskCount: n })}
-          />
-          <Segmented<TokensRangeLevel>
-            label="Числов обхват"
-            value={settings.tokensRange}
-            options={(['small', 'large'] as TokensRangeLevel[]).map((v, i) => ({ value: v, label: RANGES[GRADE_RANGES[settings.grade][i]].label }))}
-            onChange={(v) => updateSettings({ tokensRange: v })}
-          />
-          <Segmented<TokensRegrouping>
-            label="Преминаване"
-            value={settings.tokensRegrouping}
-            options={(['none', 'with', 'mixed'] as TokensRegrouping[]).map((v) => ({ value: v, label: REGROUPING_LABELS[v] }))}
-            onChange={(v) => updateSettings({ tokensRegrouping: v })}
-          />
-          <Segmented<TokensWorkMode>
-            label="Начин на работа"
-            value={settings.tokensWorkMode}
-            options={(['tokensAndCompute', 'computeOnly', 'tokensOnly'] as TokensWorkMode[]).map((v) => ({ value: v, label: WORK_MODE_SHORT[v], title: WORK_MODE_LABELS[v] }))}
-            onChange={(v) => updateSettings({ tokensWorkMode: v })}
-          />
-          <div className="setting-row">
-            <span className="setting-row__label">Изучени таблици ({settings.grade}. клас)</span>
-            <div className="segmented spin-tables" role="group" aria-label={`Изучени таблици за ${settings.grade}. клас — „Завърти колелото“`}>
-              {ALL_TABLES.map((t) => {
-                const on = settings.spinTables[settings.grade].includes(t)
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    aria-pressed={on}
-                    title={on ? `Махни таблицата с ${t}` : `Добави таблицата с ${t}`}
-                    className={`segmented__opt ${on ? 'is-on' : ''}`}
-                    onClick={() => {
-                      const cur = settings.spinTables[settings.grade]
-                      // поне една таблица остава активна
-                      if (on && cur.length === 1) return
-                      const next = on ? cur.filter((x) => x !== t) : [...cur, t].sort((a, b) => a - b)
-                      updateSettings({ spinTables: { ...settings.spinTables, [settings.grade]: next } })
-                    }}
-                  >
-                    {t}
-                  </button>
-                )
-              })}
+      <div className="teacher-layout teacher-layout--v2">
+        <div className="teacher-col">
+          <section className="teacher-card teacher-card--general">
+            <h3 className="teacher-card__title">Поведение на приложението</h3>
+            <div className="teacher-toggles">
+              <Toggle label="Подсказки" icon="help" on={settings.hintsOn} onChange={(v) => updateSettings({ hintsOn: v })} />
+              <Toggle label="Звук" icon="sound" on={settings.soundOn} onChange={(v) => updateSettings({ soundOn: v })} />
+              <Toggle label="Музика" icon="music" on={settings.musicOn} disabled={!settings.soundOn} onChange={(v) => updateSettings({ musicOn: v })} />
+              <Toggle label="Ученикът избира сам" on={settings.studentCanChoose} onChange={(v) => updateSettings({ studentCanChoose: v })} />
             </div>
-          </div>
-          <div className="setting-row">
-            <span className="setting-row__label">Завърти колелото</span>
-            <div className="segmented spin-options" role="group" aria-label="Завърти колелото — допълнителни задачи">
-              {(
-                [
-                  ['spinZero', 'Числото 0 на колелото'],
-                  ['spinMissing', 'Липсващ множител (Майстор)'],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={settings[key]}
-                  className={`segmented__opt ${settings[key] ? 'is-on' : ''}`}
-                  onClick={() => updateSettings({ [key]: !settings[key] })}
-                >
-                  {settings[key] ? '✓ ' : ''}
-                  {label}
-                </button>
-              ))}
+            <p className="teacher-note">
+              Класът, трудността, броят задачи, обхватът и начинът на работа се избират в самата игра — преди „Започни“. Когато „Ученикът избира сам“ е изключено, остават заключени последно избраните там стойности.
+            </p>
+          </section>
+
+          <section className="teacher-card teacher-card--subject">
+            <h3 className="teacher-card__title">Умножение · „Завърти колелото“</h3>
+            <Segmented<Grade> label="Таблици за" value={tableGrade} options={GRADES.map((g) => ({ value: g, label: `${g}. клас` }))} onChange={setTableGrade} />
+            <div className="setting-row setting-row--stack">
+              <span className="setting-row__label">Изучени таблици</span>
+              <div className="segmented spin-tables" role="group" aria-label={`Изучени таблици за ${tableGrade}. клас`}>
+                {ALL_TABLES.map((t) => {
+                  const on = settings.spinTables[tableGrade].includes(t)
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      aria-pressed={on}
+                      title={on ? `Махни таблицата с ${t}` : `Добави таблицата с ${t}`}
+                      className={`segmented__opt ${on ? 'is-on' : ''}`}
+                      onClick={() => {
+                        const cur = settings.spinTables[tableGrade]
+                        // поне една таблица остава активна
+                        if (on && cur.length === 1) return
+                        const next = on ? cur.filter((x) => x !== t) : [...cur, t].sort((a, b) => a - b)
+                        updateSettings({ spinTables: { ...settings.spinTables, [tableGrade]: next } })
+                      }}
+                    >
+                      {t}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-          <div className="teacher-toggles">
-            <Toggle label="Подсказки" icon="help" on={settings.hintsOn} onChange={(v) => updateSettings({ hintsOn: v })} />
-            <Toggle label="Звук" icon="sound" on={settings.soundOn} onChange={(v) => updateSettings({ soundOn: v })} />
-            <Toggle label="Музика" icon="music" on={settings.musicOn} disabled={!settings.soundOn} onChange={(v) => updateSettings({ musicOn: v })} />
-            <Toggle label="Ученикът избира сам" on={settings.studentCanChoose} onChange={(v) => updateSettings({ studentCanChoose: v })} />
-          </div>
-          <p className="teacher-note">
-            Запазва се автоматично. Обхватът, преминаването и начинът на работа са за „Вълшебните жетони“ (начинът — при събиране и изваждане). Таблиците, 0 и липсващият множител са за „Завърти колелото“ — за избрания клас. При заключен избор учениците избират само режима.
-          </p>
-        </section>
+            <div className="teacher-toggles">
+              <Toggle label="Числото 0 на колелото" on={settings.spinZero} onChange={(v) => updateSettings({ spinZero: v })} />
+              <Toggle label="Липсващ множител (Майстор)" on={settings.spinMissing} onChange={(v) => updateSettings({ spinMissing: v })} />
+            </div>
+            <p className="teacher-note">Задачите са само от отметнатите таблици — за всеки клас поотделно и на всички нива.</p>
+          </section>
+        </div>
 
         <section className="teacher-card teacher-card--results">
           <h3 className="teacher-card__title">Резултати</h3>

@@ -7,7 +7,8 @@ import { GameButton } from '../../components/ui/GameButton'
 import { SoundControl } from '../../components/ui/SoundControl'
 import { GradeTicket } from '../../components/ui/GradeTicket'
 import { BoothBackdrop } from './BoothBackdrop'
-import { WORK_MODE_LABELS } from './compute'
+import { WORK_MODE_LABELS, WORK_MODE_SHORT } from './compute'
+import type { TokensWorkMode } from '../../core/storage'
 import { DIFFICULTIES, DIFFICULTY_DESCRIPTIONS, DIFFICULTY_LABELS, type Difficulty } from './logic'
 import {
   CHALLENGE_KINDS,
@@ -59,7 +60,7 @@ function Pills<T extends string | number>({ label, value, options, onChange, loc
 
 /** Избор на учебно съдържание — показват се само приложимите опции. */
 export function GameSetup({ config, onChange, onStart, onBack, onExit }: { config: TokensConfig; onChange: (c: TokensConfig) => void; onStart: () => void; onBack: () => void; onExit: () => void }) {
-  const { settings, results } = useApp()
+  const { settings, updateSettings, results } = useApp()
   const locked = !settings.studentCanChoose
   const show = applicableOptions(config.mode, config.composeTopic, config.challenge)
   const set = (patch: Partial<TokensConfig>) => onChange({ ...config, ...patch })
@@ -114,6 +115,19 @@ export function GameSetup({ config, onChange, onStart, onBack, onExit }: { confi
                   onChange={(challenge) => set({ challenge })}
                 />,
               )
+            // начинът на работа — на цял ред, за да не се разместят останалите двойки
+            if (config.mode === 'add' || config.mode === 'subtract')
+              wide.push(
+                <Pills<TokensWorkMode>
+                  key="work"
+                  label="Начин на работа"
+                  wide
+                  value={settings.tokensWorkMode}
+                  locked={locked}
+                  options={(['tokensAndCompute', 'computeOnly', 'tokensOnly'] as TokensWorkMode[]).map((v) => ({ value: v, label: WORK_MODE_SHORT[v], hint: WORK_MODE_LABELS[v] }))}
+                  onChange={(tokensWorkMode) => updateSettings({ tokensWorkMode })}
+                />,
+              )
             if (show.range)
               narrow.push({
                 key: 'range',
@@ -161,12 +175,6 @@ export function GameSetup({ config, onChange, onStart, onBack, onExit }: { confi
           </span>
           <span className="setup-card__meta">
             {settings.hintsOn ? 'С подсказки' : 'Подсказките са изключени'}
-            {(config.mode === 'add' || config.mode === 'subtract') && (
-              <>
-                <br />
-                Начин на работа: <b>{WORK_MODE_LABELS[settings.tokensWorkMode]}</b>
-              </>
-            )}
           </span>
           <GameButton color="green" size="xl" icon="play" onClick={onStart} className="game-intro__start">
             Започни

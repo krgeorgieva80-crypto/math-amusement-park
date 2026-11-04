@@ -5452,14 +5452,77 @@ button:focus-visible {
   grid-template-columns: minmax(0, 1fr) calc(var(--key-h, 72px) * 3.6);
 }
 
-.segmented.spin-options .segmented__opt {
-  font-size: 17px;
-  line-height: 1.15;
+
+/* ═════════════ Учителски панел: секции без дублиране ═════════════ */
+
+.teacher-layout--v2 {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
 }
 
-/* настройките не излизат извън картата на по-ниски екрани */
-.teacher-card:not(.teacher-card--results) {
+/* лявата колона се превърта вертикално, ако не се събира */
+.teacher-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
   overflow-y: auto;
-  /* превъртането не бива да свива колоната (ширината остава като преди) */
-  min-width: min-content;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 0 6px 16px 0;
+}
+
+.teacher-col .teacher-card {
+  flex: none;
+}
+
+.teacher-layout--v2 .teacher-card--results {
+  min-width: 0;
+  min-height: 0;
+}
+
+.teacher-card .setting-row.setting-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.teacher-card .setting-row--stack .setting-row__label {
+  flex: none;
+}
+
+.teacher-layout--v2 .teacher-toggles .toggle:last-child {
+  grid-column: auto;
+}
+
+/* вертикално (телефон и таблет): една колона, целият панел се превърта */
+.is-portrait .teacher-layout--v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding-bottom: 20px;
+}
+
+.is-portrait .teacher-col {
+  flex: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.is-portrait .teacher-layout--v2 .teacher-card--results {
+  flex: none;
+  min-height: 620px;
+}
+
+.is-portrait .teacher-layout--v2 .teacher-toggles {
+  grid-template-columns: 1fr;
+}
+
+/* превключвателите — в две колони само ако се събират, иначе в една */
+.teacher-layout--v2 .teacher-toggles {
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 }
