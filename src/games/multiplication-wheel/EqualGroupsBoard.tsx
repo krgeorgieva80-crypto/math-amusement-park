@@ -299,7 +299,7 @@ export function EqualGroupsBoard({ grade, difficulty, tasks, onFinish, onExit }:
     bubble = successText(task)
   } else bubble = stage === 'model' ? 'Докосни кабинка, за да сложиш дете.' : 'Пресметни и запиши отговора.'
 
-  const instruction = stage === 'model' ? groupsInstruction(task) : stage === 'sum' ? 'Колко деца има общо? Пресметни и запиши.' : `Колко пъти е взето ${task.size}? Запиши.`
+  const instruction = solved ? `Броим по ${task.size}: ${runningTotals(task).join(' → ')}.` : stage === 'model' ? groupsInstruction(task) : stage === 'sum' ? 'Колко деца има общо? Пресметни и запиши.' : `Колко пъти е взето ${task.size}? Запиши.`
   // ширина на колелото: колкото позволява височината (viewBox 1000×1050)
   // На тесни хоризонтални екрани (4:3) страничните панели са по-тесни.
   const narrow = !portrait && W < 1450
