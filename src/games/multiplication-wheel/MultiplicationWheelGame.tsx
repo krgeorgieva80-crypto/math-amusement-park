@@ -15,15 +15,25 @@ import { DIFFICULTIES, DIFFICULTY_DESCRIPTIONS, DIFFICULTY_LABELS, type Difficul
 import type { TaskOutcome } from '../magic-tokens/PlayBoard'
 import { EqualGroupsBoard } from './EqualGroupsBoard'
 import { WHEEL_MODES, generateGroupsTasks, groupsLevel, type GroupsTask, type WheelModeId } from './logic'
+import { generateTrainTasks, trainLevel } from './train/logic'
+import { TrainBoard } from './train/TrainBoard'
+import { TrainModeArt } from './train/TrainModeArt'
 
 const GAME_ID = 'multiplication-wheel'
 const nowMs = () => Date.now()
-const MODE_COLORS: Record<WheelModeId, string> = { equalGroups: 'turquoise', spin: 'pink', table: 'green', challenge: 'purple' }
+const MODE_COLORS: Record<WheelModeId, string> = { equalGroups: 'turquoise', train: 'orange', spin: 'pink', table: 'green', challenge: 'purple' }
 
-/** Само при разработка: ?testWheel=4x3,2x5 (кабинки × деца) за автоматизираните тестове. */
-function testTasks(): GroupsTask[] | null {
+/** Готовите режими с равни групи: колелото и влакчето. */
+type PlayMode = 'equalGroups' | 'train'
+const MODE_INFO: Record<PlayMode, { name: string; result: string; unit: string }> = {
+  equalGroups: { name: 'Открий равните групи', result: 'Колелото: Открий равните групи', unit: 'кабинки' },
+  train: { name: 'Веселото влакче', result: 'Умножение: Веселото влакче', unit: 'вагончета' },
+}
+
+/** Само при разработка: ?testWheel=4x3,2x5 (кабинки × деца) или ?testTrain=… за автоматизираните тестове. */
+function testTasks(mode: PlayMode): GroupsTask[] | null {
   if (!import.meta.env.DEV) return null
-  const raw = new URLSearchParams(window.location.search).get('testWheel')
+  const raw = new URLSearchParams(window.location.search).get(mode === 'train' ? 'testTrain' : 'testWheel')
   if (!raw) return null
   return raw.split(',').map((p, i) => {
     const [groups, size] = p.split('x').map(Number)
@@ -40,16 +50,17 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
   const [difficulty, setDifficulty] = useState<Difficulty>(settings.difficulty)
   const [count, setCount] = useState<number>(settings.taskCount)
   const [phase, setPhase] = useState<Phase>({ name: 'modes' })
+  const [mode, setMode] = useState<PlayMode>('equalGroups')
   const d = locked ? settings.difficulty : difficulty
   const n = locked ? settings.taskCount : count
 
-  const start = () => setPhase({ name: 'play', tasks: testTasks() ?? generateGroupsTasks(grade, d, n), startedAt: nowMs() })
+  const start = () => setPhase({ name: 'play', tasks: testTasks(mode) ?? (mode === 'train' ? generateTrainTasks : generateGroupsTasks)(grade, d, n), startedAt: nowMs() })
 
   const finish = (outcomes: TaskOutcome[], startedAt: number) => {
     const durationSec = Math.round((nowMs() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
-      mode: 'Колелото: Открий равните групи',
+      mode: MODE_INFO[mode].result,
       grade,
       difficulty: d,
       total: outcomes.length,
@@ -64,11 +75,21 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
 
   switch (phase.name) {
     case 'modes':
-      return <WheelModes grade={grade} onChoose={() => setPhase({ name: 'setup' })} onExit={onExit} />
+      return (
+        <WheelModes
+          grade={grade}
+          onChoose={(m) => {
+            if (m === 'equalGroups' || m === 'train') setMode(m)
+            setPhase({ name: 'setup' })
+          }}
+          onExit={onExit}
+        />
+      )
     case 'setup':
       return (
         <WheelSetup
           grade={grade}
+          mode={mode}
           difficulty={d}
           count={n}
           locked={locked}
@@ -80,13 +101,17 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
         />
       )
     case 'play':
-      return <EqualGroupsBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+      return mode === 'train' ? (
+        <TrainBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+      ) : (
+        <EqualGroupsBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+      )
     case 'summary':
       return (
         <GameSummary
           grade={grade}
           difficulty={d}
-          modeName="Открий равните групи"
+          modeName={MODE_INFO[mode].name}
           outcomes={phase.outcomes}
           durationSec={phase.durationSec}
           onAgain={start}
@@ -119,6 +144,8 @@ function ModeArt({ mode }: { mode: WheelModeId }): ReactNode {
           </text>
         </svg>
       )
+    case 'train':
+      return <TrainModeArt />
     case 'spin':
       return <FerrisWheelArt size={140} />
     case 'table':
@@ -145,7 +172,8 @@ function WheelModes({ grade, onChoose, onExit }: { grade: Grade; onChoose: (m: W
   const { play } = useApp()
   const { width, portrait } = useStage()
   const [soon, setSoon] = useState<string | null>(null)
-  const cardW = portrait ? (width - 60 - 26) / 2 : (width - 120 - 78) / 4
+  const cols = portrait ? 3 : WHEEL_MODES.length
+  const cardW = (width - (portrait ? 60 : 120) - (cols - 1) * 20) / cols
   const nameSize = (name: string) => Math.max(18, Math.min(30, Math.floor((cardW - 40) / (Math.min(name.length, 16) * 0.64))))
   return (
     <div className="screen mode-select wheel-modes">
@@ -209,6 +237,7 @@ function WheelModes({ grade, onChoose, onExit }: { grade: Grade; onChoose: (m: W
 
 function WheelSetup(p: {
   grade: Grade
+  mode: PlayMode
   difficulty: Difficulty
   count: number
   locked: boolean
@@ -219,7 +248,16 @@ function WheelSetup(p: {
   onExit: () => void
 }) {
   const { results, settings, play } = useApp()
-  const lv = groupsLevel(p.grade, p.difficulty)
+  const train = p.mode === 'train'
+  const info = MODE_INFO[p.mode]
+  const lv = (train ? trainLevel : groupsLevel)(p.grade, p.difficulty)
+  // най-добрият резултат — само от избрания режим
+  const best = bestStars(
+    results.filter((r) => (r.mode ?? info.result) === info.result),
+    GAME_ID,
+    p.grade,
+    p.difficulty,
+  )
   const pills = <T extends string | number>(label: string, value: T, options: { value: T; label: string; hint?: string }[], on: (v: T) => void) => (
     <div className="setup-row is-wide">
       <span className="setup-row__label">
@@ -248,7 +286,9 @@ function WheelSetup(p: {
       </div>
     </div>
   )
-  const kindText = { fill: 'Празни кабинки — сложи по равно', fix: 'Неравни кабинки — изравни ги', match: 'Направи всички като първата' }[lv.kind]
+  const kindText = train
+    ? { fill: 'Празни вагончета — качи по равно', fix: 'Неравни вагончета — изравни ги', match: 'Направи всички като първото' }[lv.kind]
+    : { fill: 'Празни кабинки — сложи по равно', fix: 'Неравни кабинки — изравни ги', match: 'Направи всички като първата' }[lv.kind]
   return (
     <div className="screen game-setup">
       <BoothBackdrop />
@@ -257,7 +297,7 @@ function WheelSetup(p: {
           Игри
         </GameButton>
         <GradeTicket grade={p.grade} />
-        <div className="level-chip">Открий равните групи</div>
+        <div className="level-chip">{info.name}</div>
         <div className="top-bar__spacer" />
         <GameButton color="yellow" size="md" icon="map" onClick={p.onExit}>
           Към парка
@@ -266,8 +306,8 @@ function WheelSetup(p: {
       </div>
       <div className="setup-card">
         <div className="setup-card__title">
-          <FerrisWheelArt size={84} />
-          <span>Открий равните групи</span>
+          {train ? <TrainModeArt small /> : <FerrisWheelArt size={84} />}
+          <span>{info.name}</span>
         </div>
         <div className="setup-grid">
           {pills(
@@ -281,7 +321,7 @@ function WheelSetup(p: {
             <span className="setup-row__label">Какво те чака</span>
             <div className="wheel-setup-info">
               <span>
-                {lv.groups[0]}–{lv.groups[1]} кабинки
+                {lv.groups[0]}–{lv.groups[1]} {info.unit}
               </span>
               <span>
                 по {lv.size[0]}–{lv.size[1]} деца
@@ -292,7 +332,7 @@ function WheelSetup(p: {
         </div>
         <div className="setup-card__footer">
           <span className="setup-card__best">
-            Най-добър резултат: <StarRow stars={bestStars(results, GAME_ID, p.grade, p.difficulty) ?? 0} size={28} />
+            Най-добър резултат: <StarRow stars={best ?? 0} size={28} />
           </span>
           <span className="setup-card__meta">{settings.hintsOn ? 'С подсказки' : 'Подсказките са изключени'}</span>
           <GameButton color="green" size="xl" icon="play" onClick={p.onStart} className="game-intro__start">

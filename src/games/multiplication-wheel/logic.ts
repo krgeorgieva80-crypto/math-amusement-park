@@ -12,10 +12,11 @@ export const MAX_PER_CABIN = 10
 export const MIN_CABINS = 2
 export const MAX_CABINS = 10
 
-export type WheelModeId = 'equalGroups' | 'spin' | 'table' | 'challenge'
+export type WheelModeId = 'equalGroups' | 'train' | 'spin' | 'table' | 'challenge'
 
 export const WHEEL_MODES: { id: WheelModeId; label: string; description: string; ready: boolean }[] = [
   { id: 'equalGroups', label: 'Открий равните групи', description: 'Сложи по равно деца в кабинките', ready: true },
+  { id: 'train', label: 'Веселото влакче', description: 'Равни групи една след друга', ready: true },
   { id: 'spin', label: 'Завърти колелото', description: 'Умножавай с колелото', ready: false },
   { id: 'table', label: 'Попълни таблицата', description: 'Таблицата за умножение', ready: false },
   { id: 'challenge', label: 'Предизвикателството на колелото', description: 'Трудни задачи', ready: false },
