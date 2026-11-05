@@ -5541,7 +5541,7 @@ button:focus-visible {
   container: setup / inline-size;
 }
 
-@container setup (max-width: 1480px) {
+@container setup (max-width: 1399px) {
   .setup-card .setup-grid,
   .is-portrait .setup-card .setup-grid {
     grid-template-columns: minmax(0, 1fr);
