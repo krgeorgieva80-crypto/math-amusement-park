@@ -5526,3 +5526,69 @@ button:focus-visible {
 .teacher-layout--v2 .teacher-toggles {
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 }
+
+/* ═════════════ Адаптивни настройки: без пренасяне в думите ═════════════ */
+
+/* бутоните в настройките никога не разделят дума */
+.setup-pill {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+
+/* при тясна карта (4:3, вертикално) редовете са един под друг — бутоните са широки */
+.setup-card {
+  container: setup / inline-size;
+}
+
+@container setup (max-width: 1480px) {
+  .setup-card .setup-grid,
+  .is-portrait .setup-card .setup-grid {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: safe center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  .setup-card .setup-row.is-wide,
+  .is-portrait .setup-card .setup-row.is-wide {
+    grid-column: auto;
+  }
+
+  .setup-card .setup-pills {
+    flex-wrap: wrap;
+  }
+
+  .setup-card .setup-pill {
+    min-width: max-content;
+  }
+}
+
+/* учителски панел: две колони само при достатъчна ширина, иначе една под друга */
+.teacher-screen {
+  container: teacher / inline-size;
+}
+
+@container teacher (max-width: 1299px) {
+  .teacher-layout.teacher-layout--v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding-bottom: 20px;
+  }
+
+  .teacher-layout--v2 .teacher-col {
+    flex: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .teacher-layout--v2 .teacher-card--results {
+    flex: none;
+    min-height: 620px;
+  }
+}
