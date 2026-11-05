@@ -5592,3 +5592,30 @@ button:focus-visible {
     min-height: 620px;
   }
 }
+
+/* 4:3 хоризонтално: една колона, надписът е вляво от бутоните — всичко се побира без превъртане */
+@container setup (min-width: 900px) and (max-width: 1399px) {
+  .setup-card .setup-row,
+  .setup-card.is-compact .setup-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .setup-card .setup-row__label {
+    flex: 0 0 210px;
+    line-height: 1.15;
+  }
+
+  .setup-card .setup-pills {
+    flex: 1;
+  }
+
+  .setup-card .setup-grid {
+    gap: 14px;
+  }
+
+  .setup-card .setup-pill {
+    min-height: 64px;
+  }
+}

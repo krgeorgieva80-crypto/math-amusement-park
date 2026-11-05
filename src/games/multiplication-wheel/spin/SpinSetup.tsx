@@ -41,8 +41,8 @@ export function SpinSetup(p: {
     p.grade,
     p.difficulty,
   )
-  const pills = <T extends string | number>(label: string, value: T, options: { value: T; label: string; hint?: string }[], on: (v: T) => void, locked = p.locked) => (
-    <div className="setup-row is-wide">
+  const pills = <T extends string | number>(label: string, value: T, options: { value: T; label: string; hint?: string }[], on: (v: T) => void, locked = p.locked, wide = true) => (
+    <div className={`setup-row ${wide ? 'is-wide' : ''}`}>
       <span className="setup-row__label">
         {label}
         {locked && <small> · избрано от учителя</small>}
@@ -96,8 +96,10 @@ export function SpinSetup(p: {
             p.difficulty,
             DIFFICULTIES.map((x) => ({ value: x, label: DIFFICULTY_LABELS[x], hint: LEVEL_TEXT[x] })),
             p.onDifficulty,
+            p.locked,
+            false,
           )}
-          {pills('Брой задачи', p.count, [5, 10, 15].map((x) => ({ value: x, label: String(x) })), p.onCount)}
+          {pills('Брой задачи', p.count, [5, 10, 15].map((x) => ({ value: x, label: String(x) })), p.onCount, p.locked, false)}
           {p.difficulty === 'explorer' &&
             pills(
               'Таблица',
