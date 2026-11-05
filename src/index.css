@@ -5215,3 +5215,407 @@ button:focus-visible {
 .is-portrait .count-strip__step {
   font-size: 44px;
 }
+
+/* ═════════════ Колелото: „Завърти колелото“ ═════════════ */
+
+.spin-wheel {
+  flex: none;
+  position: relative;
+  max-height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 14px 14px rgba(20, 8, 60, 0.45));
+}
+
+.spin-rotor {
+  transform-box: view-box;
+  transform-origin: 0 0;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.75, 0.2, 1);
+}
+
+.spin-sector__glow {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.spin-sector.is-winner .spin-sector__glow {
+  animation: sector-win 0.9s ease-in-out 3;
+  opacity: 0.4;
+}
+
+@keyframes sector-win {
+  50% {
+    opacity: 0.75;
+  }
+}
+
+.spin-wheel.has-winner .spin-sector:not(.is-winner) {
+  filter: saturate(0.55) brightness(0.85);
+  transition: filter 0.3s ease;
+}
+
+.spin-number {
+  font-weight: 900;
+}
+
+.spin-hub.is-button {
+  cursor: pointer;
+}
+
+.spin-hub.is-button:hover circle:first-child {
+  stroke: #ff5fa2;
+}
+
+.spin-hub:focus-visible {
+  outline: none;
+}
+
+.spin-hub:focus-visible circle:first-child {
+  stroke: #ff5fa2;
+  stroke-width: 12;
+}
+
+.spin-pointer {
+  transform-box: fill-box;
+  transform-origin: 50% 85%;
+}
+
+.spin-pointer.is-ticking {
+  animation: pointer-tick 0.18s ease-in-out infinite;
+}
+
+@keyframes pointer-tick {
+  50% {
+    transform: rotate(-9deg);
+  }
+}
+
+.spin-panel {
+  width: 100%;
+}
+
+.spin-panel.is-idle {
+  gap: 18px;
+  padding: 26px 18px;
+}
+
+.spin-go {
+  width: 100%;
+}
+
+.spin-panel__note {
+  font-size: 22px;
+  text-align: center;
+  line-height: 1.25;
+  color: #5d4c7d;
+}
+
+.spin-eq {
+  font-size: 44px;
+}
+
+.spin-eq .answer-box {
+  min-width: 110px;
+  font-size: 44px;
+}
+
+.spin-model {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 18px;
+  background: #fff;
+  border: 3px dashed #b67cff;
+}
+
+.spin-model--empty {
+  font-size: 20px;
+  text-align: center;
+}
+
+.spin-model__row {
+  display: flex;
+}
+
+.spin-model__dot {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffb3d3, #e0408a);
+  border: 2px solid var(--ink);
+  animation: tally-in 0.3s ease-out both;
+}
+
+.spin-marquee {
+  font-size: 40px;
+}
+
+.wp-grid.is-narrow .spin-eq,
+.wp-grid.is-narrow .spin-eq .answer-box {
+  font-size: 36px;
+}
+
+/* вертикално: колелото горе, панелът под него */
+.is-portrait .spin-panel.is-idle {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.is-portrait .spin-panel.is-idle .compute-panel__title {
+  width: 100%;
+  text-align: center;
+}
+
+.is-portrait .spin-panel.is-idle .spin-go {
+  width: auto;
+}
+
+.is-portrait .spin-panel .spin-model {
+  grid-area: eq2;
+}
+
+.no-motion .spin-pointer,
+.no-motion .spin-sector.is-winner .spin-sector__glow,
+.no-motion .spin-model__dot {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-rotor {
+    transition: none !important;
+  }
+
+  .spin-pointer,
+  .spin-sector.is-winner .spin-sector__glow,
+  .spin-model__dot {
+    animation: none !important;
+  }
+}
+
+/* учителски панел: бутони за таблиците 2–10 */
+.segmented.spin-tables {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  min-width: 0;
+}
+
+.segmented.spin-tables .segmented__opt {
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.spin-number {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.75, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-number {
+    transition: none !important;
+  }
+}
+
+.is-portrait .spin-model {
+  flex-direction: row;
+  gap: 6px;
+  align-self: center;
+}
+
+.is-portrait .spin-model__row {
+  flex-direction: column;
+}
+
+.spin-play .wp-grid.is-narrow .steps-bar__info {
+  display: none;
+}
+
+/* вертикално (телефон/таблет): по-едри клавиши за детски пръсти */
+.is-portrait .spin-panel .keypad {
+  max-width: calc(var(--key-h, 72px) * 3.6);
+  gap: 10px;
+}
+
+.is-portrait .spin-panel .keypad__key {
+  height: var(--key-h, 72px);
+  font-size: calc(var(--key-h, 72px) * 0.48);
+}
+
+.is-portrait .spin-panel {
+  grid-template-columns: minmax(0, 1fr) calc(var(--key-h, 72px) * 3.6);
+}
+
+
+/* ═════════════ Учителски панел: секции без дублиране ═════════════ */
+
+.teacher-layout--v2 {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* лявата колона се превърта вертикално, ако не се събира */
+.teacher-col {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 0 6px 16px 0;
+}
+
+.teacher-col .teacher-card {
+  flex: none;
+}
+
+.teacher-layout--v2 .teacher-card--results {
+  min-width: 0;
+  min-height: 0;
+}
+
+.teacher-card .setting-row.setting-row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.teacher-card .setting-row--stack .setting-row__label {
+  flex: none;
+}
+
+.teacher-layout--v2 .teacher-toggles .toggle:last-child {
+  grid-column: auto;
+}
+
+/* вертикално (телефон и таблет): една колона, целият панел се превърта */
+.is-portrait .teacher-layout--v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding-bottom: 20px;
+}
+
+.is-portrait .teacher-col {
+  flex: none;
+  overflow: visible;
+  padding: 0;
+}
+
+.is-portrait .teacher-layout--v2 .teacher-card--results {
+  flex: none;
+  min-height: 620px;
+}
+
+.is-portrait .teacher-layout--v2 .teacher-toggles {
+  grid-template-columns: 1fr;
+}
+
+/* превключвателите — в две колони само ако се събират, иначе в една */
+.teacher-layout--v2 .teacher-toggles {
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+
+/* ═════════════ Адаптивни настройки: без пренасяне в думите ═════════════ */
+
+/* бутоните в настройките никога не разделят дума */
+.setup-pill {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+
+/* при тясна карта (4:3, вертикално) редовете са един под друг — бутоните са широки */
+.setup-card {
+  container: setup / inline-size;
+}
+
+@container setup (max-width: 1399px) {
+  .setup-card .setup-grid,
+  .is-portrait .setup-card .setup-grid {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: safe center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
+  .setup-card .setup-row.is-wide,
+  .is-portrait .setup-card .setup-row.is-wide {
+    grid-column: auto;
+  }
+
+  .setup-card .setup-pills {
+    flex-wrap: wrap;
+  }
+
+  .setup-card .setup-pill {
+    min-width: max-content;
+  }
+}
+
+/* учителски панел: две колони само при достатъчна ширина, иначе една под друга */
+.teacher-screen {
+  container: teacher / inline-size;
+}
+
+@container teacher (max-width: 1299px) {
+  .teacher-layout.teacher-layout--v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding-bottom: 20px;
+  }
+
+  .teacher-layout--v2 .teacher-col {
+    flex: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .teacher-layout--v2 .teacher-card--results {
+    flex: none;
+    min-height: 620px;
+  }
+}
+
+/* 4:3 хоризонтално: една колона, надписът е вляво от бутоните — всичко се побира без превъртане */
+@container setup (min-width: 900px) and (max-width: 1399px) {
+  .setup-card .setup-row,
+  .setup-card.is-compact .setup-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .setup-card .setup-row__label {
+    flex: 0 0 210px;
+    line-height: 1.15;
+  }
+
+  .setup-card .setup-pills {
+    flex: 1;
+  }
+
+  .setup-card .setup-grid {
+    gap: 14px;
+  }
+
+  .setup-card .setup-pill {
+    min-height: 64px;
+  }
+}

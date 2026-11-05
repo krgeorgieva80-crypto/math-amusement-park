@@ -3,6 +3,7 @@
  * само настройки и анонимни резултати от игрите.
  */
 import type { Difficulty, Grade } from '../games/magic-tokens/logic'
+import { DEFAULT_SPIN_TABLES, sanitizeTables } from '../games/multiplication-wheel/spin/logic'
 
 export type TokensRegrouping = 'none' | 'with' | 'mixed'
 /** По-малкият или по-големият числов обхват за класа. */
@@ -34,6 +35,12 @@ export interface Settings {
   tokensRange: TokensRangeLevel
   /** „Вълшебните жетони“: жетони и/или самостоятелно пресмятане. */
   tokensWorkMode: TokensWorkMode
+  /** „Завърти колелото“: изучените таблици за всеки клас. */
+  spinTables: Record<Grade, number[]>
+  /** „Завърти колелото“: сектор 0 на колелото. */
+  spinZero: boolean
+  /** „Завърти колелото“, ниво „Майстор“: задачи с липсващ множител. */
+  spinMissing: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -49,6 +56,9 @@ export const DEFAULT_SETTINGS: Settings = {
   tokensRegrouping: 'mixed',
   tokensRange: 'large',
   tokensWorkMode: 'tokensAndCompute',
+  spinTables: { 2: [...DEFAULT_SPIN_TABLES[2]], 3: [...DEFAULT_SPIN_TABLES[3]], 4: [...DEFAULT_SPIN_TABLES[4]] },
+  spinZero: false,
+  spinMissing: false,
 }
 
 export interface GameResult {
@@ -95,6 +105,10 @@ export function loadSettings(): Settings {
   if (!['none', 'with', 'mixed'].includes(merged.tokensRegrouping)) merged.tokensRegrouping = DEFAULT_SETTINGS.tokensRegrouping
   if (!['small', 'large'].includes(merged.tokensRange)) merged.tokensRange = DEFAULT_SETTINGS.tokensRange
   if (!['tokensAndCompute', 'computeOnly', 'tokensOnly'].includes(merged.tokensWorkMode)) merged.tokensWorkMode = DEFAULT_SETTINGS.tokensWorkMode
+  const st = (saved?.spinTables ?? {}) as Partial<Record<Grade, unknown>>
+  merged.spinTables = { 2: sanitizeTables(st[2], 2), 3: sanitizeTables(st[3], 3), 4: sanitizeTables(st[4], 4) }
+  merged.spinZero = merged.spinZero === true
+  merged.spinMissing = merged.spinMissing === true
   if (typeof merged.volume !== 'number' || merged.volume < 0 || merged.volume > 1) merged.volume = DEFAULT_SETTINGS.volume
   return merged
 }

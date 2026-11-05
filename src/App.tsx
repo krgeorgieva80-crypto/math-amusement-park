@@ -21,8 +21,8 @@ function Router() {
   // Класът се избира само веднъж — с билетите — и се пази локално.
   const [savedGrade, setSavedGrade] = useState<Grade | null>(loadPlayerGrade)
   const [chosenGrade, setChosenGrade] = useState<Grade>(() => savedGrade ?? settings.grade)
-  // Когато учителят е заключил избора, всички игри използват неговия клас.
-  const grade: Grade = settings.studentCanChoose ? chosenGrade : settings.grade
+  // Единствен източник: класът от билетите. При заключен избор остава последно избраният.
+  const grade: Grade = chosenGrade
   const chooseGrade = (g: Grade) => {
     setChosenGrade(g)
     setSavedGrade(g)
