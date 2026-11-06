@@ -45,6 +45,12 @@ interface Props {
 /** Минимален размер на клетка в реални пиксели (докосване на таблет и интерактивен дисплей). */
 const MIN_TOUCH = 50
 const typeInto = (a: string, d: string) => (a === '0' ? d : (a + d).slice(0, 3))
+/** На коя половина (страница) е клетката. */
+const pageOf = (t: TableTask, key: string | null) => {
+  if (!key || t.kind === 'pattern') return 0
+  const half = Math.ceil(t.cols.length / 2)
+  return t.cols.indexOf(Number(key.split('x')[1])) < half ? 0 : 1
+}
 
 /** „Попълни таблицата“: четири дейности върху светещото табло на парка. */
 export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props) {
@@ -76,7 +82,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
   const [locked, setLocked] = useState<Set<string>>(new Set())
   const [sel, setSelRaw] = useState<string | null>(() => firstSelection(tasks[0]))
   const [flash, setFlash] = useState<Set<string>>(new Set())
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(() => pageOf(tasks[0], firstSelection(tasks[0])))
 
   const isLast = index === tasks.length - 1
   const stars = outcomes.reduce((a, o) => a + o.stars, 0)
@@ -102,16 +108,13 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
     setLocked(new Set())
     setSelRaw(firstSelection(t))
     setFlash(new Set())
-    setPage(0)
+    setPage(pageOf(t, firstSelection(t)))
   }
 
   /** Избор на клетка; при таблица на две страници се показва страницата ѝ. */
   const setSel = (key: string | null) => {
     setSelRaw(key)
-    if (key && grid) {
-      const half = Math.ceil(grid.cols.length / 2)
-      setPage(grid.cols.indexOf(Number(key.split('x')[1])) < half ? 0 : 1)
-    }
+    if (key) setPage(pageOf(task, key))
   }
 
   const fail = (message: string) => {
@@ -334,6 +337,9 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
     return () => ro.disconnect()
   }, [shake])
   // рамката на таблото: 16 px отстъп + 6 px ръб от всяка страна
+  const narrow = !portrait && W < 1450
+  // телефон хоризонтално: много нисък екран — клавиатурата и бутоните един до друг
+  const phoneLand = !portrait && scale < 0.6
   const availW = Math.max(200, box.w - 48)
   const availH = Math.max(160, box.h - 48)
   let cols = grid?.cols ?? []
@@ -348,15 +354,21 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
     if (paged) {
       const half = Math.ceil(grid.cols.length / 2)
       cols = page === 0 ? grid.cols.slice(0, half) : grid.cols.slice(half)
+      // мястото вече е измерено без бутоните за страниците
       cell = Math.floor(fit(half + 1, grid.rows.length + 1))
     } else cell = Math.floor(full)
   } else if (pattern) {
     const n = pattern.terms.length
-    const one = Math.min(availW / (n + 0.6 * (n - 1)), availH * 0.55, 160)
+    // под редицата са бутоните за стъпката (докато не е избрана)
+    // телефон хоризонтално: бутоните са вдясно от редицата (ниският екран пести височина)
+    const stepBtn = Math.max(92, 52 / Math.max(0.1, scale))
+    const below = stepChosen || phoneLand ? 0 : stepBtn + 70
+    const beside = phoneLand && !stepChosen ? Math.max(150, stepBtn * 1.7) + 40 : 0
+    const one = Math.min((availW - beside) / (n + 0.6 * (n - 1)), (availH - below) / 1.6, 160)
     // тясно (телефон вертикално): редицата е на два реда, лампичките са по-едри
     stripWrap = one * scale < MIN_TOUCH
     const per = stripWrap ? Math.ceil(n / 2) : n
-    cell = Math.floor(stripWrap ? Math.min(availW / (per + 0.6 * per), availH * 0.3, 160) : one)
+    cell = Math.floor(stripWrap ? Math.min(availW / (per + 0.6 * per), (availH - below) / 3.6, 160) : one)
   }
   const pageInfo = (p: number) => {
     if (!grid) return 0
@@ -396,10 +408,11 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
   const helpDisabled = !hintsOn || solved || (help === 'limited' && usedHint)
   const helpTitle = help === 'none' ? 'На ниво „Майстор“ работиш самостоятелно' : !settings.hintsOn ? 'Подсказките са изключени от учителя' : help === 'limited' ? 'Една подсказка на задача' : 'Подсказка'
   const tablesText = grid ? (grid.rows.length === 1 ? `Таблица с ${grid.rows[0]}` : `Таблици ${grid.rows.join(', ')}`) : 'Редица'
-  const narrow = !portrait && W < 1450
+  // поне ~52 реални пиксела за всеки бутон за докосване
+  const tap = `${Math.ceil(52 / Math.max(0.1, scale))}px`
 
   return (
-    <div className="screen wheel-play table-play">
+    <div className="screen wheel-play table-play" style={{ '--tap': tap } as CSSProperties}>
       <BoothBackdrop />
       <div className="top-bar">
         <GameButton color="yellow" size="md" icon="map" onClick={onExit}>
@@ -425,7 +438,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
         <SoundControl />
       </div>
 
-      <div className={`tp-grid ${narrow ? 'is-narrow' : ''}`}>
+      <div className={`tp-grid ${narrow ? 'is-narrow' : ''} ${phoneLand ? 'is-phone-land' : ''}`}>
         <section className="tp-task">
           <div className="marquee tb-marquee tp-marquee" key={task.id}>
             <span className="marquee__lights" aria-hidden="true" />
@@ -443,7 +456,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
           </div>
         </section>
 
-        <section className={`wp-stage tp-stage ${feedback?.kind === 'wrong' ? 'is-shake' : ''}`} key={shake}>
+        <section className={`wp-stage tp-stage ${feedback?.kind === 'wrong' ? 'is-shake' : ''} ${grid && paged ? 'is-paged' : ''} ${grid && paged && ((portrait && scale >= 0.6) || phoneLand) ? 'is-paged-side' : ''}`} key={shake}>
           <ParkNightBackdrop />
           <div className="tp-board-area" ref={boardRef}>
             {pattern && (

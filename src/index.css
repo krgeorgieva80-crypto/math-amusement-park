@@ -6104,3 +6104,158 @@ button:focus-visible {
 .table-play .tp-grid.is-narrow .keypad {
   gap: 8px;
 }
+
+/* ── карта 3: размери за докосване на всяко устройство (--tap ≈ 52 реални px) ── */
+.table-play .tp-page {
+  min-height: max(76px, var(--tap));
+  min-width: max(180px, calc(var(--tap) * 2));
+  font-size: max(32px, calc(var(--tap) * 0.42));
+}
+
+.table-play .tp-page__badge {
+  min-width: max(40px, calc(var(--tap) * 0.55));
+  height: max(40px, calc(var(--tap) * 0.55));
+  font-size: max(22px, calc(var(--tap) * 0.3));
+  border-radius: 99px;
+}
+
+.table-play .tp-step-btn {
+  min-height: max(92px, var(--tap));
+  min-width: max(150px, calc(var(--tap) * 1.7));
+  font-size: max(44px, calc(var(--tap) * 0.5));
+}
+
+.table-play .tp-pad .keypad {
+  max-width: max(360px, calc(var(--tap) * 3.5));
+}
+
+.table-play .tp-pad .keypad__key {
+  min-height: var(--tap);
+  font-size: max(32px, calc(var(--tap) * 0.45));
+}
+
+.table-play .tp-actions .game-btn__face {
+  min-height: var(--tap);
+}
+
+/* вертикално: по-тесни отстъпи, бутоните за страниците — до таблото */
+.is-portrait .table-play .tp-grid {
+  inset: 116px 10px 10px;
+}
+
+.is-portrait .table-play .tp-stage {
+  padding: 6px;
+}
+
+.is-portrait .tt-board {
+  padding: 12px;
+}
+
+.tp-stage.is-paged-side {
+  flex-direction: row;
+}
+
+.tp-stage.is-paged-side .tp-pages {
+  flex-direction: column;
+  padding-right: 6px;
+}
+
+/* телефон хоризонтално: клавиатурата и бутоните са един до друг вдясно */
+.table-play .tp-grid.is-phone-land {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'task side'
+    'stage side';
+  gap: 10px 14px;
+}
+
+.is-phone-land .tp-stepsbar {
+  display: none;
+}
+
+.is-phone-land .tp-side {
+  flex-direction: row;
+  align-items: center;
+}
+
+.is-phone-land .tp-pad {
+  flex: none;
+  width: calc(var(--tap) * 3.7);
+  padding: 10px;
+}
+
+.is-phone-land .tp-pad .keypad {
+  gap: 8px;
+}
+
+.is-phone-land .tp-actions {
+  width: calc(var(--tap) * 2.8);
+}
+
+.is-phone-land .tp-marquee {
+  min-width: 0;
+}
+
+/* телефон хоризонтално: компактна лента със задачата (без табелата) */
+.is-phone-land .tp-marquee {
+  display: none;
+}
+
+.is-phone-land .tp-say {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.is-phone-land .tp-say .tb-instruction {
+  flex: 0 0 40%;
+  display: flex;
+  align-items: center;
+}
+
+.is-phone-land .tp-bubble .mascot {
+  width: 64px;
+  height: 64px;
+}
+
+/* страниците отстрани: областта на таблото заема цялата височина (не се свива по съдържанието) */
+.tp-stage.is-paged-side {
+  align-items: stretch;
+}
+
+.tp-stage.is-paged-side .tp-board-area {
+  height: auto;
+  align-self: stretch;
+}
+
+.tp-stage.is-paged-side .tp-pages {
+  align-self: center;
+}
+
+/* клавиатурата на карта 3 не наследява решетката на панела за пресмятане */
+.is-portrait .table-play .tp-pad {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.is-portrait .table-play .tp-pad .keypad {
+  width: 100%;
+  max-width: max(360px, calc(var(--tap) * 3.5));
+}
+
+.is-phone-land .tp-pattern {
+  flex-direction: row;
+  gap: 20px;
+}
+
+.is-phone-land .tp-steps {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+
+.is-phone-land .tp-steps__q {
+  width: auto;
+  font-size: 26px;
+}
