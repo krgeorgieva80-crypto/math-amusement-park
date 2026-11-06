@@ -57,14 +57,13 @@ const pageOf = (t: TableTask, key: string | null) => {
  * Примерът за избраната клетка: „2 · 3 = ?“, докато детето пише — „2 · 3 = 6“.
  * Отговорът се вижда само когато е въведен от детето или вече е проверен.
  */
-function EquationBar({ grid, sel, answers, marked, locked, height, canMark }: { grid: GridTask; sel: string | null; answers: Record<string, string>; marked: Set<string>; locked: Set<string>; height: number; canMark: boolean }) {
-  const style = { height, fontSize: Math.round(height * 0.5) } as CSSProperties
-  if (!sel) return <div className="tp-eq is-empty" style={style}>{canMark ? 'Докосни грешното произведение' : 'Докосни празна клетка'}</div>
+function EquationBar({ grid, sel, answers, marked, locked, canMark }: { grid: GridTask; sel: string | null; answers: Record<string, string>; marked: Set<string>; locked: Set<string>; canMark: boolean }) {
+  if (!sel) return <div className="tp-eq is-empty">{canMark ? 'Докосни грешното произведение' : 'Докосни празна клетка'}</div>
   const [r, c] = sel.split('x').map(Number)
   const st = cellState(grid, sel, answers, marked, locked)
   const value = st === 'locked' ? answers[sel] || String(r * c) : st === 'given' ? String(r * c) : answers[sel] ?? ''
   return (
-    <div className={`tp-eq ${st === 'locked' ? 'is-locked' : ''}`} style={style} aria-live="polite">
+    <div className={`tp-eq ${st === 'locked' ? 'is-locked' : ''}`} aria-live="polite">
       <span>
         {r} · {c} =
       </span>
@@ -367,10 +366,8 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
   let cell = 100
   let paged = false
   let stripWrap = false
-  // лентата с примера (напр. „2 · 3 = ?“) над таблото
-  const eqH = Math.round(Math.max(64, 46 / Math.max(0.1, scale)))
   if (grid) {
-    const gridH = availH - eqH - 12
+    const gridH = availH
     // клетка + 8 px зазор
     const fit = (nc: number, nr: number) => Math.min((availW - 8 * nc) / nc, (gridH - 8 * nr) / nr, 150)
     const full = fit(grid.cols.length + 1, grid.rows.length + 1)
@@ -470,7 +467,12 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
             <span className="marquee__number tb-marquee__text tp-marquee__text">{tablesText}</span>
           </div>
           <div className="tp-say">
-            <div className="tb-instruction">{solved ? praise(task) : instruction(task, stepChosen)}</div>
+            {/* при избрана клетка указанието става пример: „2 · 3 = ?“ (не взима място от таблото) */}
+            {grid && sel && !solved ? (
+              <EquationBar grid={grid} sel={sel} answers={answers} marked={marked} locked={locked} canMark={canMark} />
+            ) : (
+              <div className="tb-instruction">{solved ? praise(task) : instruction(task, stepChosen)}</div>
+            )}
             <div className="tp-bubble">
               <Mascot mood={mood} size={84} />
               <div className={`speech-bubble speech-bubble--game ${feedback?.kind === 'wrong' ? 'is-wrong' : ''}`} key={`${feedback?.kind}-${hint}-${shake}`}>
@@ -499,9 +501,6 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
               </div>
             )}
             {grid && (
-              <EquationBar grid={grid} sel={sel} answers={answers} marked={marked} locked={locked} height={eqH} canMark={canMark} />
-            )}
-            {grid && (
               <TableGrid
                 task={grid}
                 cols={cols}
@@ -511,7 +510,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
                 locked={locked}
                 flash={flash}
                 selected={sel}
-                showExpr={help === 'visual'}
+                showExpr
                 celebrate={solved}
                 disabled={solved}
                 onCell={onCell}
