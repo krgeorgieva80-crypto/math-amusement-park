@@ -6318,8 +6318,8 @@ button:focus-visible {
 /* примерът е на мястото на указанието (горе), едър и ясен */
 .tp-say .tp-eq {
   align-self: flex-start;
-  min-height: max(64px, var(--tap));
-  font-size: max(36px, calc(var(--tap) * 0.6));
+  min-height: max(80px, var(--tap));
+  font-size: max(50px, calc(var(--tap) * 0.6));
 }
 
 .is-phone-land .tp-say .tp-eq {
