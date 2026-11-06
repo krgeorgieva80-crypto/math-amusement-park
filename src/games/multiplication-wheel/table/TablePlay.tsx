@@ -25,6 +25,7 @@ import {
   instruction,
   patternHint,
   praise,
+  ruleText,
   stepText,
   type GridTask,
   type PatternTask,
@@ -50,6 +51,26 @@ const pageOf = (t: TableTask, key: string | null) => {
   if (!key || t.kind === 'pattern') return 0
   const half = Math.ceil(t.cols.length / 2)
   return t.cols.indexOf(Number(key.split('x')[1])) < half ? 0 : 1
+}
+
+/**
+ * Примерът за избраната клетка: „2 · 3 = ?“, докато детето пише — „2 · 3 = 6“.
+ * Отговорът се вижда само когато е въведен от детето или вече е проверен.
+ */
+function EquationBar({ grid, sel, answers, marked, locked, height, canMark }: { grid: GridTask; sel: string | null; answers: Record<string, string>; marked: Set<string>; locked: Set<string>; height: number; canMark: boolean }) {
+  const style = { height, fontSize: Math.round(height * 0.5) } as CSSProperties
+  if (!sel) return <div className="tp-eq is-empty" style={style}>{canMark ? 'Докосни грешното произведение' : 'Докосни празна клетка'}</div>
+  const [r, c] = sel.split('x').map(Number)
+  const st = cellState(grid, sel, answers, marked, locked)
+  const value = st === 'locked' ? answers[sel] || String(r * c) : st === 'given' ? String(r * c) : answers[sel] ?? ''
+  return (
+    <div className={`tp-eq ${st === 'locked' ? 'is-locked' : ''}`} style={style} aria-live="polite">
+      <span>
+        {r} · {c} =
+      </span>
+      <span className={`tp-eq__box ${value ? '' : 'is-empty'}`}>{value || '?'}</span>
+    </div>
+  )
 }
 
 /** „Попълни таблицата“: четири дейности върху светещото табло на парка. */
@@ -144,7 +165,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
       play('star')
       setStepChosen(true)
       setPSel(pattern.blanks[0])
-      setFeedback({ kind: 'info', message: `Точно така — всеки път с ${Math.abs(pattern.step)} ${pattern.step < 0 ? 'по-малко' : 'повече'}! Сега попълни празните места.` })
+      setFeedback({ kind: 'info', message: `Точно така! ${ruleText(pattern.step)}. Сега попълни празните места.` })
     } else fail(help === 'visual' && settings.hintsOn ? `Не е ${stepText(v)}. ${patternHint(pattern, false)}` : `Не е ${stepText(v)}. Виж пак как се променят числата.`)
   }
 
@@ -346,9 +367,12 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
   let cell = 100
   let paged = false
   let stripWrap = false
+  // лентата с примера (напр. „2 · 3 = ?“) над таблото
+  const eqH = Math.round(Math.max(64, 46 / Math.max(0.1, scale)))
   if (grid) {
+    const gridH = availH - eqH - 12
     // клетка + 8 px зазор
-    const fit = (nc: number, nr: number) => Math.min((availW - 8 * nc) / nc, (availH - 8 * nr) / nr, 150)
+    const fit = (nc: number, nr: number) => Math.min((availW - 8 * nc) / nc, (gridH - 8 * nr) / nr, 150)
     const full = fit(grid.cols.length + 1, grid.rows.length + 1)
     paged = full * scale < MIN_TOUCH && grid.cols.length > 6
     if (paged) {
@@ -374,7 +398,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
     if (!grid) return 0
     const half = Math.ceil(grid.cols.length / 2)
     const pc = p === 0 ? grid.cols.slice(0, half) : grid.cols.slice(half)
-    return grid.cells.filter((c) => pc.includes(c.c) && ((c.blank && !answers[cellKey(c.r, c.c)]) || (c.wrong !== undefined && !marked.has(cellKey(c.r, c.c)) && grid.tellErrors))).length
+    return grid.cells.filter((c) => pc.includes(c.c) && c.blank && !answers[cellKey(c.r, c.c)]).length
   }
 
   // ── Звездичката ──
@@ -473,6 +497,9 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
                   </div>
                 )}
               </div>
+            )}
+            {grid && (
+              <EquationBar grid={grid} sel={sel} answers={answers} marked={marked} locked={locked} height={eqH} canMark={canMark} />
             )}
             {grid && (
               <TableGrid

@@ -70,19 +70,22 @@ function stepOptions(step: number, rng: Rng): number[] {
   return opts.map((x) => (step < 0 ? -x : x))
 }
 
-export function generatePattern(d: Difficulty, o: TableOptions, explorerTable: number, rng: Rng, id: number): PatternTask {
+export function generatePattern(d: Difficulty, o: TableOptions, explorerTable: number, rng: Rng, id: number, avoid?: PatternTask): PatternTask {
   const first = o.zero ? 0 : 1
   const tables = o.tables
   if (d === 'explorer') {
     const t = tables.includes(explorerTable) ? explorerTable : tables[tables.length - 1]
-    const start = first
+    // начало: от първото число или от средата на таблицата (различно от предишната редица)
+    const starts = Array.from({ length: 6 - first }, (_, i) => first + i).filter((x) => x + 5 <= 10 && (!avoid || avoid.terms[0] !== t * x))
+    const start = starts.length ? pick(starts, rng) : first
     const terms = Array.from({ length: 6 }, (_, i) => t * (start + i))
     const blanks = sample([2, 3, 4, 5], 2, rng).sort((a, b) => a - b)
     return { kind: 'pattern', id, terms, blanks, step: t, stepOptions: stepOptions(t, rng), table: t, shape: 'up' }
   }
   if (d === 'researcher') {
-    const t = pick(tables, rng)
-    const down = rng() < 0.4
+    const t = tables.length > 1 && avoid ? pick(tables.filter((x) => x !== avoid.table), rng) : pick(tables, rng)
+    // редуват се: нагоре и надолу
+    const down = avoid ? avoid.shape !== 'down' : rng() < 0.4
     const len = 6
     const start = randInt(rng, first + (down ? len - 1 : 0), 10 - (down ? 0 : len - 1))
     const terms = Array.from({ length: len }, (_, i) => t * (down ? start - i : start + i))
@@ -97,14 +100,15 @@ export function generatePattern(d: Difficulty, o: TableOptions, explorerTable: n
     while (i + r.length < sorted.length && sorted[i + r.length] === r[r.length - 1] + 1) r.push(sorted[i + r.length])
     if (r.length > run.length) run = r
   }
-  if (run.length >= 4 && rng() < 0.5) {
+  const wantColumn = avoid ? avoid.shape !== 'column' : rng() < 0.5
+  if (run.length >= 4 && wantColumn) {
     const k = randInt(rng, 3, 9)
     const rows = run.slice(0, Math.min(6, run.length))
     const terms = rows.map((t) => t * k)
     const blanks = sample(rows.map((_, i) => i).filter((i) => i >= 2), Math.min(3, rows.length - 2), rng).sort((a, b) => a - b)
     return { kind: 'pattern', id, terms, blanks, step: k, stepOptions: stepOptions(k, rng), table: k, shape: 'column' }
   }
-  const t = pick(tables, rng)
+  const t = tables.length > 1 && avoid ? pick(tables.filter((x) => x !== avoid.table), rng) : pick(tables, rng)
   const start = randInt(rng, first, 2)
   const terms = Array.from({ length: 5 }, (_, i) => t * (start + 2 * i)).filter((x) => x <= t * 10)
   while (terms.length < 5) terms.unshift(terms[0] - 2 * t)
@@ -174,8 +178,10 @@ const COUNTS: Record<'fill' | 'fix' | 'final', Record<Difficulty, { blanks: numb
   final: { explorer: { blanks: 5, errors: 0 }, researcher: { blanks: 8, errors: 0 }, master: { blanks: 12, errors: 2 } },
 }
 
-export function generateGrid(kind: 'fill' | 'fix' | 'final', d: Difficulty, o: TableOptions, explorerTable: number, rng: Rng, id: number): GridTask {
-  const rows = rowsFor(d, o, explorerTable, rng, kind === 'final')
+export function generateGrid(kind: 'fill' | 'fix' | 'final', d: Difficulty, o: TableOptions, explorerTable: number, rng: Rng, id: number, avoidRows?: number[]): GridTask {
+  let rows = rowsFor(d, o, explorerTable, rng, kind === 'final')
+  // различни редове от предишната задача, когато има достатъчно изучени таблици
+  for (let k = 0; k < 20 && avoidRows && o.tables.length > rows.length && rows.join() === avoidRows.join(); k++) rows = rowsFor(d, o, explorerTable, rng, kind === 'final')
   const cols = tableColumns(o.zero)
   const cells: GridCell[] = rows.flatMap((r) => cols.map((c) => ({ r, c, value: r * c, blank: false })))
   // по-малко празни, ако таблицата е малка (една изучена таблица)
@@ -205,16 +211,22 @@ export function generateTableTasks(d: Difficulty, o: TableOptions, explorerTable
   const plan: ActivityId[] =
     activity === 'route' ? (['pattern', 'fill', 'fix', 'final'] as ActivityId[]).flatMap((a) => new Array(ROUTE[d][a]).fill(a)) : new Array(count).fill(activity)
   const seen = new Set<string>()
-  return plan.map((a, i) => {
-    let t: TableTask = a === 'pattern' ? generatePattern(d, o, explorerTable, rng, i + 1) : generateGrid(a, d, o, explorerTable, rng, i + 1)
-    for (let k = 0; k < 30 && seen.has(signature(t)); k++) t = a === 'pattern' ? generatePattern(d, o, explorerTable, rng, i + 1) : generateGrid(a, d, o, explorerTable, rng, i + 1)
+  const out: TableTask[] = []
+  plan.forEach((a, i) => {
+    const prevSame = [...out].reverse().find((x) => x.kind === a)
+    const prevGrid = [...out].reverse().find((x) => x.kind !== 'pattern') as GridTask | undefined
+    const make = (): TableTask =>
+      a === 'pattern' ? generatePattern(d, o, explorerTable, rng, i + 1, prevSame as PatternTask | undefined) : generateGrid(a, d, o, explorerTable, rng, i + 1, prevGrid?.rows)
+    let t = make()
+    for (let k = 0; k < 30 && seen.has(signature(t)); k++) t = make()
     seen.add(signature(t))
-    return t
+    out.push(t)
   })
+  return out
 }
 
 function signature(t: TableTask): string {
-  if (t.kind === 'pattern') return `p:${t.terms.join(',')}|${t.blanks.join(',')}`
+  if (t.kind === 'pattern') return `p:${t.terms.join(',')}`
   return `${t.kind}:${t.cells
     .filter((c) => c.blank || c.wrong !== undefined)
     .map((c) => `${c.r}x${c.c}`)
@@ -270,10 +282,13 @@ export function checkPattern(t: PatternTask, answers: Record<number, string>): {
 
 export const stepText = (s: number) => (s < 0 ? `− ${-s}` : `+ ${s}`)
 
+/** „Всяко следващо число е с 2 по-голямо“ / „… с 5 по-малко“. */
+export const ruleText = (s: number) => `Всяко следващо число е с ${Math.abs(s)} ${s < 0 ? 'по-малко' : 'по-голямо'}`
+
 export function instruction(t: TableTask, stepChosen: boolean): string {
   switch (t.kind) {
     case 'pattern':
-      return stepChosen ? 'Попълни празните места в редицата.' : 'С колко се променя всяко следващо число?'
+      return stepChosen ? `${ruleText(t.step)}. Попълни празните места.` : 'С колко се променя всяко следващо число?'
     case 'fill':
       return 'Докосни празна клетка и напиши произведението.'
     case 'fix': {
@@ -287,16 +302,17 @@ export function instruction(t: TableTask, stepChosen: boolean): string {
 
 /** Подсказка за клетка (без резултата): броене през таблицата до съседната. */
 export function cellHint(r: number, c: number, level: 'visual' | 'limited'): string {
-  if (c === 0) return `${r} групи по 0 — колко са? Умножение с 0.`
-  if (level === 'limited') return c > 1 ? `${multiplicationText(r, c - 1)} = ${r * (c - 1)}. Колко е с още едно ${r}?` : `Една група по ${r}.`
+  if (c === 0) return 'Умножение с нула: ако няма нито една група, колко има общо?'
+  if (c === 1) return 'Умножение по едно: числото се взема само веднъж. Виж заглавието на реда.'
+  if (level === 'limited') return `${multiplicationText(r, c - 1)} = ${r * (c - 1)}. Колко е с още едно ${r}?`
   const n = Math.min(c - 1, 3)
-  if (n <= 0) return `Една група по ${r}.`
-  return `${multiplicationText(r, c)}: брой по ${r} — ${Array.from({ length: n }, (_, i) => r * (i + 1)).join(', ')}, …`
+  return `${multiplicationText(r, c)}: брой по ${r} — ${Array.from({ length: n }, (_, i) => r * (i + 1)).join(', ')}, … и спри след ${c} ${c === 1 ? 'стъпка' : 'стъпки'}.`
 }
 
 export function patternHint(t: PatternTask, stepChosen: boolean): string {
   if (!stepChosen) return `Виж първите две числа: ${t.terms[0]} и ${t.terms[1]}. С колко се различават?`
-  return `Всяко следващо е с ${Math.abs(t.step)} ${t.step < 0 ? 'по-малко' : 'повече'}.`
+  // насочва към действието, без да казва числото на празното място
+  return `${ruleText(t.step)}. Започни от числото преди празното място и ${t.step < 0 ? 'извади' : 'добави'} ${Math.abs(t.step)}.`
 }
 
 /** Подсказка за поправянето: къде да се търси (ред), без да се казва коя клетка. */
@@ -307,7 +323,7 @@ export function fixHint(t: GridTask, marked: Set<string>): string {
 }
 
 export function praise(t: TableTask): string {
-  if (t.kind === 'pattern') return `Браво! Откри правилото: ${stepText(t.step)} всеки път.`
+  if (t.kind === 'pattern') return `Браво! Откри правилото: ${ruleText(t.step).charAt(0).toLowerCase()}${ruleText(t.step).slice(1)}.`
   if (t.kind === 'fix') return 'Браво! Откри и поправи всички грешки!'
   if (t.kind === 'final') return 'Браво! Таблицата е попълнена без грешки!'
   return 'Браво! Попълни липсващите произведения!'

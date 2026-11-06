@@ -13,6 +13,9 @@ import {
   generatePattern,
   generateTableTasks,
   patternHint,
+  praise,
+  ruleText,
+  instruction,
   tableColumns,
   typicalWrong,
   type GridTask,
@@ -182,6 +185,29 @@ describe('липсващи и грешни произведения', () => {
   })
 })
 
+describe('логична последователност без повторения', () => {
+  it('маршрутът: редиците са различни; Изследовател/Майстор редуват вида; таблиците на поредни задачи се сменят', () => {
+    const rng = seededRng(21)
+    for (let run = 0; run < 120; run++) {
+      const tables = subsets(rng)
+      for (const d of DIFFICULTIES) {
+        const r = generateTableTasks(d, opts(tables), tables[0], 'route', 0, rng)
+        const pats = r.filter((t) => t.kind === 'pattern') as PatternTask[]
+        expect(pats[0].terms.join()).not.toBe(pats[1].terms.join())
+        if (d !== 'explorer' && pats[0].shape !== 'column' && pats[1].shape !== 'column') {
+          if (d === 'researcher') expect(pats[0].shape).not.toBe(pats[1].shape)
+          if (tables.length > 1) expect(pats[0].table).not.toBe(pats[1].table)
+        }
+        const grids = r.filter((t) => t.kind !== 'pattern') as GridTask[]
+        for (let i = 1; i < grids.length; i++) if (d !== 'explorer' && tables.length > grids[i].rows.length + 1) expect(grids[i].rows.join()).not.toBe(grids[i - 1].rows.join())
+        // няма две еднакви задачи
+        const sig = r.map((t) => (t.kind === 'pattern' ? t.terms.join() : (t as GridTask).cells.filter((c) => c.blank || c.wrong !== undefined).map((c) => `${c.r}x${c.c}`).join()))
+        expect(new Set(sig).size).toBe(sig.length)
+      }
+    }
+  })
+})
+
 describe('серия, подсказки и звезди', () => {
   it('маршрутът: 4 станции по ред (2 + 2 + 2 + 1); отделна дейност — избраният брой', () => {
     for (const d of DIFFICULTIES) {
@@ -192,7 +218,27 @@ describe('серия, подсказки и звезди', () => {
     expect(generateTableTasks('researcher', opts(ALL), 3, 'fill', 10, seededRng(2))).toHaveLength(10)
   })
 
-  it('подсказките не съдържат отговора', () => {
+  it('точната формулировка на правилото', () => {
+    expect(ruleText(2)).toBe('Всяко следващо число е с 2 по-голямо')
+    expect(ruleText(-5)).toBe('Всяко следващо число е с 5 по-малко')
+    const p = generatePattern('explorer', opts([2]), 2, seededRng(1), 1)
+    expect(instruction(p, true)).toBe('Всяко следващо число е с 2 по-голямо. Попълни празните места.')
+    expect(praise(p)).toBe('Браво! Откри правилото: всяко следващо число е с 2 по-голямо.')
+  })
+
+  it('подсказките насочват, но не съдържат отговора (и при ×0 и ×1)', () => {
+    for (const r of ALL) {
+      expect(cellHint(r, 0, 'visual')).not.toMatch(/\d/)
+      expect(cellHint(r, 1, 'limited')).not.toMatch(/\d/)
+    }
+    expect(cellHint(3, 7, 'visual')).toBe('3 · 7: брой по 3 — 3, 6, 9, … и спри след 7 стъпки.')
+    expect(cellHint(3, 7, 'limited')).toBe('3 · 6 = 18. Колко е с още едно 3?')
+    const rng = seededRng(12)
+    for (let k = 0; k < 300; k++) {
+      const p = generatePattern(DIFFICULTIES[k % 3], opts(subsets(rng), k % 2 === 0), 2, rng, 1)
+      // подсказката за попълването не съобщава числото на празното място (освен ако то съвпада със самата стъпка)
+      for (const i of p.blanks) if (p.terms[i] !== Math.abs(p.step) && p.terms[i] !== p.terms[i - 1]) expect(patternHint(p, true)).not.toMatch(new RegExp(`(^|\\D)${p.terms[i]}(\\D|$)`))
+    }
     for (const r of ALL)
       for (let c = 2; c <= 10; c++) {
         const re = new RegExp(`(^|\\D)${r * c}(\\D|$)`)
