@@ -6259,3 +6259,8 @@ button:focus-visible {
   width: auto;
   font-size: 26px;
 }
+
+/* областта на таблото не се разширява от съдържанието — размерът се изчислява веднага */
+.tp-board-area {
+  min-width: 0;
+}
