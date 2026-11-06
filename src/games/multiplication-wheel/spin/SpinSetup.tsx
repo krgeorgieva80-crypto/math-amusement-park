@@ -115,7 +115,7 @@ export function SpinSetup(p: {
               <span>
                 <Icon name="lock" size={18} /> Изучени таблици: {p.tables.join(', ')}
               </span>
-              {settings.spinZero && <span>И числото 0 на колелото</span>}
+              {settings.spinZero && <span>И умножение с 0</span>}
               {p.difficulty === 'master' && settings.spinMissing && <span>И задачи с липсващ множител</span>}
               {help !== 'none' && !settings.hintsOn && <span>Подсказките са изключени</span>}
             </div>

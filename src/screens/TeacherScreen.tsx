@@ -83,7 +83,7 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
           </section>
 
           <section className="teacher-card teacher-card--subject">
-            <h3 className="teacher-card__title">Умножение · „Завърти колелото“</h3>
+            <h3 className="teacher-card__title">Умножение · „Колелото на умножението“</h3>
             <Segmented<Grade> label="Таблици за" value={tableGrade} options={GRADES.map((g) => ({ value: g, label: `${g}. клас` }))} onChange={setTableGrade} />
             <div className="setting-row setting-row--stack">
               <span className="setting-row__label">Изучени таблици</span>
@@ -112,10 +112,10 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
               </div>
             </div>
             <div className="teacher-toggles">
-              <Toggle label="Числото 0 на колелото" on={settings.spinZero} onChange={(v) => updateSettings({ spinZero: v })} />
+              <Toggle label="Умножение с 0" on={settings.spinZero} onChange={(v) => updateSettings({ spinZero: v })} />
               <Toggle label="Липсващ множител (Майстор)" on={settings.spinMissing} onChange={(v) => updateSettings({ spinMissing: v })} />
             </div>
-            <p className="teacher-note">Задачите са само от отметнатите таблици — за всеки клас поотделно и на всички нива.</p>
+            <p className="teacher-note">Таблиците и умножението с 0 важат за „Завърти колелото“ и „Попълни таблицата“ — за всеки клас поотделно и на всички нива.</p>
           </section>
         </div>
 

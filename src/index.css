@@ -5619,3 +5619,474 @@ button:focus-visible {
     min-height: 64px;
   }
 }
+
+/* ═════════════ Колелото: карта 3 „Попълни таблицата“ ═════════════ */
+
+.table-play .tp-grid {
+  position: absolute;
+  inset: 116px 24px 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'task side'
+    'stage side'
+    'steps side';
+  gap: 12px 18px;
+}
+
+.tp-task {
+  grid-area: task;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.tp-marquee {
+  flex: 0 0 auto;
+  justify-content: center;
+  min-width: 280px;
+  padding: 14px 18px 18px;
+}
+
+.tp-marquee .tp-marquee__text {
+  font-size: 34px;
+  line-height: 1.1;
+  white-space: normal;
+  text-align: center;
+}
+
+.tp-say {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tp-bubble {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+}
+
+.tp-bubble .speech-bubble {
+  flex: 1;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.table-play .tp-stage {
+  grid-area: stage;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.tp-board-area {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tp-stepsbar {
+  grid-area: steps;
+}
+
+.tp-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-height: 0;
+}
+
+.tp-pad {
+  align-items: center;
+  animation: none;
+}
+
+.table-play .tp-actions {
+  grid-area: auto;
+  gap: 12px;
+}
+
+/* светещото табло */
+.tt-board {
+  position: relative;
+  padding: 16px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #3b1f86, #24124f);
+  border: 6px solid var(--ink);
+  box-shadow:
+    0 0 0 6px #ffc928,
+    0 10px 0 6px #e08a00,
+    0 20px 30px rgba(0, 0, 0, 0.45);
+}
+
+.tt-board__lights,
+.tt-strip::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 24px;
+  border: 5px dotted #fff6a8;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.tt-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.tt-head,
+.tt-cell {
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: calc(var(--cell) * 0.16);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--cell-font);
+  line-height: 1;
+}
+
+.tt-head {
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  background: linear-gradient(180deg, #fff3a0, #ffc928);
+  transition: box-shadow 0.15s;
+}
+
+.tt-head--row {
+  background: linear-gradient(180deg, #ffb3d3, #ff5fa2);
+  color: #fff;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+.tt-head--corner {
+  background: #9b5de5;
+  color: #fff;
+}
+
+.tt-head.is-cross {
+  box-shadow: 0 0 0 4px #fff6a8, 0 0 16px #fff6a8;
+}
+
+.tt-cell {
+  position: relative;
+  padding: 0;
+  color: var(--ink);
+  background: #fffaf0;
+  border: 3px solid var(--ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s, background 0.15s, box-shadow 0.15s;
+}
+
+.tt-cell:disabled {
+  cursor: default;
+}
+
+/* открита грешка изглежда като всяка друга клетка, докато детето не я намери */
+.tt-cell--blank {
+  background: #efe2ff;
+  border: 3px dashed #9b5de5;
+}
+
+.tt-cell--filled,
+.tt-cell--marked {
+  color: #6a2fc0;
+  background: #fff;
+}
+
+.tt-cell--marked {
+  background: #fff1d6;
+  border: 3px dashed #ff9f43;
+}
+
+.tt-cell--locked {
+  color: #1d6b2a;
+  background: #c9f7c0;
+  border-color: #2f9e44;
+}
+
+.tt-cell.is-cross:not(.tt-cell--locked) {
+  background-color: #fff6c8;
+}
+
+.tt-cell.is-selected {
+  z-index: 1;
+  transform: scale(1.06);
+  box-shadow: 0 0 0 5px #ffd23f, 0 0 22px #fff6a8;
+}
+
+.tt-cell:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.tt-cell.is-flash {
+  background: #ffd0dc;
+  animation: shake 0.45s ease;
+}
+
+.tt-cell__expr {
+  font-size: 0.58em;
+  color: #9b5de5;
+}
+
+.tt-board.is-celebrate .tt-cell,
+.tt-strip.is-celebrate .tt-cell {
+  animation: cell-glow 0.6s ease both;
+}
+
+@keyframes cell-glow {
+  50% {
+    background: #fff6a8;
+    box-shadow: 0 0 22px #fff6a8;
+  }
+}
+
+/* редицата: кръгли лампички с дъгички за стъпката */
+.tp-pattern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+
+.tt-strip {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 26px 28px 24px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #3b1f86, #24124f);
+  border: 6px solid var(--ink);
+  box-shadow:
+    0 0 0 6px #ffc928,
+    0 10px 0 6px #e08a00,
+    0 20px 30px rgba(0, 0, 0, 0.45);
+}
+
+.tt-strip__item {
+  display: flex;
+  align-items: flex-end;
+}
+
+.tt-lamp {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #ffe9a8 70%);
+  box-shadow: 0 0 18px rgba(255, 246, 168, 0.55);
+}
+
+.tt-lamp.tt-cell--blank {
+  background: #efe2ff;
+  box-shadow: none;
+}
+
+.tt-lamp.tt-cell--locked {
+  background: radial-gradient(circle at 35% 30%, #fff, #b8f2ae 70%);
+}
+
+.tt-step {
+  width: calc(var(--cell) * 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: calc(var(--cell) * 0.62);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tt-step__arc {
+  width: 100%;
+  stroke: currentColor;
+}
+
+.tt-step b {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: calc(var(--cell) * 0.26);
+  line-height: 1;
+}
+
+.tt-step.is-known {
+  color: #ffd23f;
+}
+
+.tp-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.tp-steps__q {
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 32px;
+  color: #fff;
+  -webkit-text-stroke: 1.5px var(--ink);
+}
+
+.tp-step-btn {
+  min-width: 150px;
+  min-height: 92px;
+  padding: 0 24px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #fff3a0, #ffc928);
+  border: 5px solid var(--ink);
+  box-shadow: 0 7px 0 #e08a00;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 44px;
+  color: var(--ink);
+  touch-action: manipulation;
+}
+
+.tp-step-btn:active {
+  transform: translateY(5px);
+  box-shadow: 0 2px 0 #e08a00;
+}
+
+/* страници на таблицата (когато клетките иначе биха станали твърде малки) */
+.tp-pages {
+  position: relative;
+  display: flex;
+  gap: 16px;
+}
+
+.tp-page {
+  position: relative;
+  min-width: 180px;
+  min-height: 76px;
+  padding: 0 24px;
+  border-radius: 24px;
+  background: #fffaf0;
+  border: 5px solid var(--ink);
+  box-shadow: 0 6px 0 #c9bfdc;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 32px;
+  color: var(--ink);
+  touch-action: manipulation;
+}
+
+.tp-page.is-on {
+  background: var(--yellow);
+  box-shadow: 0 6px 0 var(--yellow-d);
+}
+
+.tp-page__badge {
+  position: absolute;
+  top: -14px;
+  right: -12px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  border-radius: 20px;
+  background: var(--pink-d);
+  color: #fff;
+  border: 3px solid var(--ink);
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+}
+
+/* тесен хоризонтален екран (4:3) */
+.table-play .tp-grid.is-narrow {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 10px 14px;
+}
+
+.table-play .tp-grid.is-narrow .tp-marquee {
+  min-width: 220px;
+}
+
+.table-play .tp-grid.is-narrow .tp-marquee .tp-marquee__text {
+  font-size: 28px;
+}
+
+.table-play .tp-grid.is-narrow .keypad__key {
+  height: 62px;
+  font-size: 32px;
+}
+
+/* вертикално: таблото отгоре, клавиатурата и бутоните отдолу */
+.is-portrait .table-play .tp-grid {
+  inset: 116px 18px 12px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'task'
+    'stage'
+    'steps'
+    'side';
+}
+
+.is-portrait .tp-marquee {
+  min-width: 0;
+  flex: 0 0 38%;
+}
+
+.is-portrait .tp-side {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.is-portrait .tp-pad {
+  flex: 1;
+  padding: 10px 14px;
+}
+
+.is-portrait .tp-pad .keypad {
+  max-width: calc(var(--key-h, 72px) * 3.6);
+  gap: 10px;
+}
+
+.is-portrait .tp-pad .keypad__key {
+  height: var(--key-h, 72px);
+  font-size: calc(var(--key-h, 72px) * 0.48);
+}
+
+.is-portrait .table-play .tp-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 36%;
+}
+
+.is-portrait .tp-stepsbar .steps-bar__info {
+  display: none;
+}
+
+.no-motion .tt-board.is-celebrate .tt-cell,
+.no-motion .tt-strip.is-celebrate .tt-cell,
+.no-motion .tt-cell.is-flash {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-board.is-celebrate .tt-cell,
+  .tt-strip.is-celebrate .tt-cell,
+  .tt-cell.is-flash {
+    animation: none !important;
+  }
+
+  .tt-cell {
+    transition: none;
+  }
+}
