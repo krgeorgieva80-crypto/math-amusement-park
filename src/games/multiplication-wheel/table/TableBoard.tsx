@@ -94,7 +94,7 @@ interface StripProps {
 export function PatternStrip({ task, cell, wrap = false, stepChosen, answers, locked, flash, selected, celebrate, disabled, onCell }: StripProps) {
   const style = { '--cell': `${cell}px`, '--cell-font': `${Math.round(cell * 0.4)}px` } as CSSProperties
   return (
-    <div className={`tt-strip ${wrap ? 'is-wrap' : ''} ${celebrate ? 'is-celebrate' : ''}`} style={{ ...style, maxWidth: wrap ? `calc(var(--cell) * ${Math.ceil(task.terms.length / 2) * 1.6 + 0.6} + 70px)` : undefined }} role="group" aria-label="Числова редица">
+    <div className={`tt-strip ${wrap ? 'is-wrap' : ''} ${celebrate ? 'is-celebrate' : ''}`} style={{ ...style, maxWidth: wrap ? `calc(var(--cell) * ${Math.ceil(task.terms.length / 2) * 1.6 + 0.2} + 68px)` : undefined, justifyContent: wrap ? 'center' : undefined }} role="group" aria-label="Числова редица">
       {task.terms.map((v, i) => {
         const blank = task.blanks.includes(i)
         const st = !blank ? 'given' : locked.has(i) ? 'locked' : answers[i] ? 'filled' : 'blank'

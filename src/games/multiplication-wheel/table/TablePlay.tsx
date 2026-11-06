@@ -368,7 +368,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
     // тясно (телефон вертикално): редицата е на два реда, лампичките са по-едри
     stripWrap = one * scale < MIN_TOUCH
     const per = stripWrap ? Math.ceil(n / 2) : n
-    cell = Math.floor(stripWrap ? Math.min(availW / (per + 0.6 * per), (availH - below) / 3.6, 160) : one)
+    cell = Math.floor(stripWrap ? Math.min((availW - beside - 90) / (per * 1.6 + 1), (availH - below) / 3.6, 160) : one)
   }
   const pageInfo = (p: number) => {
     if (!grid) return 0
