@@ -43,7 +43,7 @@ interface Props {
 }
 
 /** Минимален размер на клетка в реални пиксели (докосване на таблет и интерактивен дисплей). */
-const MIN_TOUCH = 56
+const MIN_TOUCH = 50
 const typeInto = (a: string, d: string) => (a === '0' ? d : (a + d).slice(0, 3))
 
 /** „Попълни таблицата“: четири дейности върху светещото табло на парка. */
@@ -141,7 +141,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
       play('star')
       setStepChosen(true)
       setPSel(pattern.blanks[0])
-      setFeedback({ kind: 'info', message: `Точно така — ${stepText(pattern.step)} всеки път! Сега попълни празните места.` })
+      setFeedback({ kind: 'info', message: `Точно така — всеки път с ${Math.abs(pattern.step)} ${pattern.step < 0 ? 'по-малко' : 'повече'}! Сега попълни празните места.` })
     } else fail(help === 'visual' && settings.hintsOn ? `Не е ${stepText(v)}. ${patternHint(pattern, false)}` : `Не е ${stepText(v)}. Виж пак как се променят числата.`)
   }
 
@@ -339,6 +339,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
   let cols = grid?.cols ?? []
   let cell = 100
   let paged = false
+  let stripWrap = false
   if (grid) {
     // клетка + 8 px зазор
     const fit = (nc: number, nr: number) => Math.min((availW - 8 * nc) / nc, (availH - 8 * nr) / nr, 150)
@@ -351,7 +352,11 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
     } else cell = Math.floor(full)
   } else if (pattern) {
     const n = pattern.terms.length
-    cell = Math.floor(Math.min(availW / (n + 0.6 * (n - 1)), availH * 0.55, 160))
+    const one = Math.min(availW / (n + 0.6 * (n - 1)), availH * 0.55, 160)
+    // тясно (телефон вертикално): редицата е на два реда, лампичките са по-едри
+    stripWrap = one * scale < MIN_TOUCH
+    const per = stripWrap ? Math.ceil(n / 2) : n
+    cell = Math.floor(stripWrap ? Math.min(availW / (per + 0.6 * per), availH * 0.3, 160) : one)
   }
   const pageInfo = (p: number) => {
     if (!grid) return 0
@@ -443,7 +448,7 @@ export function TablePlay({ grade, difficulty, tasks, onFinish, onExit }: Props)
           <div className="tp-board-area" ref={boardRef}>
             {pattern && (
               <div className="tp-pattern">
-                <PatternStrip task={pattern} cell={cell} stepChosen={stepChosen} answers={pAnswers} locked={pLocked} flash={pFlash} selected={pSel} celebrate={solved} disabled={solved} onCell={(i) => (setPSel(i), play('click'))} />
+                <PatternStrip task={pattern} cell={cell} wrap={stripWrap} stepChosen={stepChosen} answers={pAnswers} locked={pLocked} flash={pFlash} selected={pSel} celebrate={solved} disabled={solved} onCell={(i) => (setPSel(i), play('click'))} />
                 {!stepChosen && (
                   <div className="tp-steps" role="group" aria-label="Каква е стъпката?">
                     <span className="tp-steps__q">Каква е стъпката?</span>

@@ -6090,3 +6090,17 @@ button:focus-visible {
     transition: none;
   }
 }
+
+.tt-strip.is-wrap {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 18px;
+}
+
+.table-play .tp-grid.is-narrow {
+  grid-template-columns: minmax(0, 1fr) 260px;
+}
+
+.table-play .tp-grid.is-narrow .keypad {
+  gap: 8px;
+}

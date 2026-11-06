@@ -78,6 +78,8 @@ export function TableGrid({ task, cols, cell, answers, marked, locked, flash, se
 interface StripProps {
   task: PatternTask
   cell: number
+  /** На два реда (тесен екран). */
+  wrap?: boolean
   stepChosen: boolean
   answers: Record<number, string>
   locked: Set<number>
@@ -89,10 +91,10 @@ interface StripProps {
 }
 
 /** Редица от лампички с дъгички между тях: „+3“ се появява, щом стъпката е избрана. */
-export function PatternStrip({ task, cell, stepChosen, answers, locked, flash, selected, celebrate, disabled, onCell }: StripProps) {
+export function PatternStrip({ task, cell, wrap = false, stepChosen, answers, locked, flash, selected, celebrate, disabled, onCell }: StripProps) {
   const style = { '--cell': `${cell}px`, '--cell-font': `${Math.round(cell * 0.4)}px` } as CSSProperties
   return (
-    <div className={`tt-strip ${celebrate ? 'is-celebrate' : ''}`} style={style} role="group" aria-label="Числова редица">
+    <div className={`tt-strip ${wrap ? 'is-wrap' : ''} ${celebrate ? 'is-celebrate' : ''}`} style={{ ...style, maxWidth: wrap ? `calc(var(--cell) * ${Math.ceil(task.terms.length / 2) * 1.6 + 0.6} + 70px)` : undefined }} role="group" aria-label="Числова редица">
       {task.terms.map((v, i) => {
         const blank = task.blanks.includes(i)
         const st = !blank ? 'given' : locked.has(i) ? 'locked' : answers[i] ? 'filled' : 'blank'
