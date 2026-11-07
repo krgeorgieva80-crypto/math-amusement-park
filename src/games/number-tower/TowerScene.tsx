@@ -19,8 +19,8 @@ export const FLOOR_COLORS: [string, string][] = [
 export interface Floor {
   /** Числото на табелката (или null — празно място). */
   label: string | null
-  /** placed — построен; ghost — празно място за поставяне; hidden — тайният прозорец. */
-  state?: 'placed' | 'ghost' | 'hidden' | 'glow'
+  /** placed — построен; ghost — празно място за поставяне; next — следващото празно; hidden — тайният прозорец; wrong — не е на мястото си. */
+  state?: 'placed' | 'ghost' | 'next' | 'hidden' | 'glow' | 'wrong' | 'locked'
 }
 
 interface Props {
@@ -33,6 +33,12 @@ interface Props {
   side?: (string | null)[]
   width: number
   children?: ReactNode
+  /** Докосване на етаж (индекс отдолу нагоре). */
+  onFloor?: (i: number) => void
+  /** Ключ за пускане при влачене (data-drop) — за цялата кула. */
+  dropId?: string
+  /** Празничното изграждане: етажите „падат“ един след друг. */
+  celebrate?: boolean
 }
 
 const W = 560
@@ -81,55 +87,74 @@ function StarTop({ lit }: { lit: boolean }) {
 /** Един етаж: стена с цвят, два прозореца и табелка с числото. */
 function FloorArt({ f, i, y }: { f: Floor; i: number; y: number }) {
   const [main, light] = FLOOR_COLORS[i % FLOOR_COLORS.length]
-  if (f.state === 'ghost')
+  if (f.state === 'ghost' || f.state === 'next')
     return (
-      <g className="nt-floor is-ghost" transform={`translate(${W / 2 - 170} ${y})`}>
-        <rect width="340" height={FLOOR_H - 8} rx="22" fill="rgba(255,255,255,0.18)" stroke="#fff6a8" strokeWidth="5" strokeDasharray="16 12" />
-        <text x="170" y={FLOOR_H / 2 + 12} textAnchor="middle" className="art-text" fontSize="40" fill="#fff6a8">
-          ?
-        </text>
+      // анимацията е на вътрешната група — CSS transform не измества позицията (атрибута transform)
+      <g transform={`translate(${W / 2 - 170} ${y})`}>
+        <g className={`nt-floor is-ghost ${f.state === 'next' ? 'is-next' : ''}`}>
+          <rect width="340" height={FLOOR_H - 8} rx="22" fill="rgba(255,255,255,0.18)" stroke="#fff6a8" strokeWidth="5" strokeDasharray="16 12" />
+          <text x="170" y={FLOOR_H / 2 + 12} textAnchor="middle" className="art-text" fontSize="40" fill="#fff6a8">
+            ?
+          </text>
+        </g>
       </g>
     )
   const hidden = f.state === 'hidden'
   const glow = f.state === 'glow'
+  // табелката се разширява за многоцифрените числа (4. клас), а шрифтът следва дължината — числото се вижда изцяло
+  const len = (f.label ?? '').length
+  const plateW = len > 5 ? 250 : 176
+  const ww = plateW > 200 ? 13 : 22
+  const numSize = Math.min(50, Math.floor((plateW - 26) / Math.max(1, len * 0.62)))
   return (
-    <g className={`nt-floor ${glow ? 'is-glow' : ''}`} transform={`translate(${W / 2 - 170} ${y})`}>
-      <rect width="340" height={FLOOR_H - 8} rx="22" fill={main} stroke={O} strokeWidth="6" />
-      <rect x="10" y="8" width="320" height="18" rx="9" fill={light} opacity="0.55" />
-      {/* прозорчета */}
-      {[38, 302].map((cx) => (
-        <g key={cx}>
-          <path d={`M${cx - 22} ${FLOOR_H - 28} V42 Q${cx - 22} 26 ${cx} 26 Q${cx + 22} 26 ${cx + 22} 42 V${FLOOR_H - 28} Z`} fill="#bfefff" stroke={O} strokeWidth="4" />
-          <path d={`M${cx} 28 V${FLOOR_H - 28} M${cx - 22} 58 H${cx + 22}`} stroke={O} strokeWidth="3" />
-        </g>
-      ))}
-      {/* табелката с числото — голям прозорец в средата */}
-      <rect x="82" y="16" width="176" height={FLOOR_H - 40} rx="18" fill={hidden ? '#2a1660' : '#fffaf0'} stroke={O} strokeWidth="5" className="nt-floor__plate" />
-      {hidden ? (
-        <text x="170" y={FLOOR_H / 2 + 16} textAnchor="middle" className="art-text" fontSize="52" fill="#fff6a8">
-          ?
-        </text>
-      ) : (
-        <text x="170" y={FLOOR_H / 2 + 14} textAnchor="middle" className="art-text nt-floor__num" fontSize={f.label && f.label.length > 6 ? 38 : 50} fill={O}>
-          {f.label}
-        </text>
-      )}
-      {/* лампички по ръба */}
-      {Array.from({ length: 8 }, (_, k) => (
-        <circle key={k} className="bulb" style={{ animationDelay: `${(k % 3) * 0.25}s` }} cx={24 + k * 41} cy={FLOOR_H - 8} r="4.5" fill="#fff6a8" />
-      ))}
+    <g transform={`translate(${W / 2 - 170} ${y})`}>
+      <g className={`nt-floor ${glow ? 'is-glow' : ''} ${f.state === 'wrong' ? 'is-wrong' : ''} ${f.state === 'locked' ? 'is-locked' : ''}`}>
+        <rect width="340" height={FLOOR_H - 8} rx="22" fill={main} stroke={O} strokeWidth="6" />
+        <rect x="10" y="8" width="320" height="18" rx="9" fill={light} opacity="0.55" />
+        {/* прозорчета */}
+        {/* при широка табелка прозорчетата стават по-тесни и не се застъпват с числото */}
+        {(plateW > 200 ? [26, 314] : [38, 302]).map((cx) => (
+          <g key={cx}>
+            <path d={`M${cx - ww} ${FLOOR_H - 28} V42 Q${cx - ww} 26 ${cx} 26 Q${cx + ww} 26 ${cx + ww} 42 V${FLOOR_H - 28} Z`} fill="#bfefff" stroke={O} strokeWidth="4" />
+            <path d={`M${cx} 28 V${FLOOR_H - 28} M${cx - ww} 58 H${cx + ww}`} stroke={O} strokeWidth="3" />
+          </g>
+        ))}
+        {/* табелката с числото — голям прозорец в средата */}
+        <rect x={170 - plateW / 2} y="16" width={plateW} height={FLOOR_H - 40} rx="18" fill={hidden ? '#2a1660' : '#fffaf0'} stroke={O} strokeWidth="5" className="nt-floor__plate" />
+        {hidden ? (
+          <text x="170" y={FLOOR_H / 2 + 16} textAnchor="middle" className="art-text" fontSize="52" fill="#fff6a8">
+            ?
+          </text>
+        ) : (
+          <text x="170" y={FLOOR_H / 2 + 14} textAnchor="middle" className="art-text nt-floor__num" fontSize={numSize} fill={O}>
+            {f.label}
+          </text>
+        )}
+        {/* лампички по ръба */}
+        {Array.from({ length: 8 }, (_, k) => (
+          <circle key={k} className="bulb" style={{ animationDelay: `${(k % 3) * 0.25}s` }} cx={24 + k * 41} cy={FLOOR_H - 8} r="4.5" fill="#fff6a8" />
+        ))}
+      </g>
     </g>
   )
 }
 
 /** Цялата кула: основа с магическа врата, етажи (отдолу нагоре), асансьорна шахта и връх. */
-export function TowerScene({ floors, elevatorAt = null, topLit = false, side, width, children }: Props) {
+export function TowerScene({ floors, elevatorAt = null, topLit = false, side, width, children, onFloor, dropId, celebrate = false }: Props) {
   const H = TOP_H + floors.length * FLOOR_H + BASE_H
   // място вляво за подписите (по-широко, ако има дълги интервали)
   const SIDE_W = side?.some((x) => x && x.length > 9) ? 260 : side?.length ? 170 : 100
   const yOf = (i: number) => TOP_H + (floors.length - 1 - i) * FLOOR_H
   return (
-    <svg className="nt-tower" width={width} height={(width * H) / (W + 100 + SIDE_W)} viewBox={`${-SIDE_W} 0 ${W + 100 + SIDE_W} ${H}`} role="img" aria-label="Кулата на числата">
+    <svg
+      className={`nt-tower ${celebrate ? 'is-celebrate' : ''}`}
+      data-drop={dropId}
+      width={width}
+      height={(width * H) / (W + 100 + SIDE_W)}
+      viewBox={`${-SIDE_W} 0 ${W + 100 + SIDE_W} ${H}`}
+      role="img"
+      aria-label="Кулата на числата"
+    >
       <defs>
         <linearGradient id="nt-gold" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fff3a0" />
@@ -182,9 +207,33 @@ export function TowerScene({ floors, elevatorAt = null, topLit = false, side, wi
       </g>
 
       {/* етажите */}
-      {floors.map((f, i) => (
-        <FloorArt key={i} f={f} i={i} y={yOf(i)} />
-      ))}
+      {floors.map((f, i) =>
+        onFloor ? (
+          <g
+            key={i}
+            className="nt-floor-btn"
+            data-floor={i}
+            data-drop={`floor:${i}`}
+            data-state={f.state ?? 'placed'}
+            role="button"
+            tabIndex={0}
+            aria-label={f.label ? `Етаж ${i + 1}: ${f.label}` : `Етаж ${i + 1}: празно място`}
+            style={{ animationDelay: celebrate ? `${i * 0.12}s` : undefined }}
+            onClick={() => onFloor(i)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onFloor(i)
+              }
+            }}
+          >
+            <rect x={W / 2 - 180} y={yOf(i) - 4} width="360" height={FLOOR_H} rx="24" className="nt-floor-btn__hit" />
+            <FloorArt f={f} i={i} y={yOf(i)} />
+          </g>
+        ) : (
+          <FloorArt key={i} f={f} i={i} y={yOf(i)} />
+        ),
+      )}
 
       {/* подписи вляво (напр. интервали) */}
       {side?.map((s, i) =>

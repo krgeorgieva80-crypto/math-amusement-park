@@ -17,7 +17,7 @@ export interface PassportGame {
 }
 
 export interface PassportPage {
-  attraction: 'magic-tokens' | 'multiplication-wheel'
+  attraction: 'magic-tokens' | 'multiplication-wheel' | 'number-tower'
   name: string
   /** Кратко пожелание върху печата. */
   motto: string
@@ -50,6 +50,17 @@ export const PASSPORT_PAGES: PassportPage[] = [
       { key: 'mw-spin', name: 'Завърти колелото', prefixes: ['Колелото: Завърти колелото'] },
       { key: 'mw-table', name: 'Попълни таблицата', prefixes: ['Колелото: Попълни таблицата'] },
       { key: 'mw-challenge', name: 'Предизвикателството на колелото', prefixes: ['Колелото: Предизвикателството'] },
+    ],
+  },
+  {
+    attraction: 'number-tower',
+    name: 'Кулата на числата',
+    motto: 'Пазител на числата',
+    games: [
+      { key: 'nt-build', name: 'Построй кулата', prefixes: ['Кулата: Построй кулата'] },
+      { key: 'nt-secret', name: 'Тайните етажи', prefixes: ['Кулата: Тайните етажи'] },
+      { key: 'nt-lift', name: 'Числовият асансьор', prefixes: ['Кулата: Числовият асансьор'] },
+      { key: 'nt-top', name: 'Върхът на кулата', prefixes: ['Кулата: Върхът на кулата'] },
     ],
   },
 ]

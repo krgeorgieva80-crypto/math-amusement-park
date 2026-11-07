@@ -15,8 +15,8 @@ describe('страниците на паспорта', () => {
   it('само разработените атракции, всяка със своите игри', () => {
     const ready = ATTRACTIONS.filter((a) => a.status === 'ready').map((a) => a.id).sort()
     expect(PASSPORT_PAGES.map((p) => p.attraction).sort()).toEqual(ready)
-    expect(PASSPORT_PAGES.map((p) => p.games.length)).toEqual([4, 4])
-    expect(new Set(PASSPORT_PAGES.flatMap((p) => p.games.map((g) => g.key))).size).toBe(8)
+    expect(PASSPORT_PAGES.map((p) => p.games.length)).toEqual([4, 4, 4])
+    expect(new Set(PASSPORT_PAGES.flatMap((p) => p.games.map((g) => g.key))).size).toBe(12)
   })
 })
 
@@ -35,7 +35,7 @@ describe('изчисляване от резултатите', () => {
     expect(s.pages[1].done).toEqual(['mw-table'])
     expect(s.stamps).toBe(1)
     expect(s.games).toBe(5)
-    expect(s.totalGames).toBe(8)
+    expect(s.totalGames).toBe(12)
   })
 
   it('старите записи без режим са „С различни жетони“ (Състави числото)', () => {
@@ -82,5 +82,21 @@ describe('„Нов печат“ — веднъж', () => {
     markPassportSeen(passportFor(r, 3))
     markPassportSeen(passportFor([], 3))
     expect(passportNews(passportFor(r, 3)).stamps).toHaveLength(1)
+  })
+})
+
+describe('Кулата на числата в паспорта', () => {
+  const TOWER = ['Кулата: Построй кулата', 'Кулата: Тайните етажи', 'Кулата: Числовият асансьор', 'Кулата: Върхът на кулата']
+  it('„Построй кулата“ отбелязва една игра, но печатът „Пазител на числата“ е след четирите', () => {
+    const one = passportFor([rec("number-tower", TOWER[0], 2)], 2)
+    const page = one.pages.find((p) => p.page.attraction === 'number-tower')!
+    expect(page.done).toEqual(['nt-build'])
+    expect(page.stamped).toBe(false)
+    const all = passportFor(TOWER.map((m) => rec('number-tower', m, 2)), 2).pages.find((p) => p.page.attraction === 'number-tower')!
+    expect(all.stamped).toBe(true)
+    expect(all.page.motto).toBe('Пазител на числата')
+    // друг клас и други атракции не се засягат
+    expect(passportFor(TOWER.map((m) => rec('number-tower', m, 2)), 3).stamps).toBe(0)
+    expect(passportFor([rec('multiplication-wheel', TOWER[0])], 2).games).toBe(0)
   })
 })

@@ -219,7 +219,7 @@ export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher, onPas
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const freshIds = news.stamps.map((p) => p.attraction)
 
-  const totalStars = ['magic-tokens', 'multiplication-wheel'].reduce((sum, game) => sum + DIFFICULTIES.reduce((acc, d) => acc + (bestStars(results, game, grade, d) ?? 0), 0), 0)
+  const totalStars = ['magic-tokens', 'multiplication-wheel', 'number-tower'].reduce((sum, game) => sum + DIFFICULTIES.reduce((acc, d) => acc + (bestStars(results, game, grade, d) ?? 0), 0), 0)
 
   const say = (msg: string) => {
     setGuideMsg(msg)

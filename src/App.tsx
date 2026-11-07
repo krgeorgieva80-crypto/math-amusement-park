@@ -10,6 +10,7 @@ import { HomeScreen } from './screens/HomeScreen'
 import { ParkMap } from './screens/ParkMap'
 import { PassportScreen } from './screens/PassportScreen'
 import { TowerPrototype } from './games/number-tower/TowerPrototype'
+import { NumberTowerGame } from './games/number-tower/NumberTowerGame'
 import { TeacherScreen } from './screens/TeacherScreen'
 import type { AttractionId } from './attractions/registry'
 import { loadPlayerGrade, savePlayerGrade } from './core/storage'
@@ -44,6 +45,8 @@ function Router() {
     content =
       screen.game === 'multiplication-wheel' ? (
         <MultiplicationWheelGame grade={grade} onExit={() => setScreen('map')} />
+      ) : screen.game === 'number-tower' ? (
+        <NumberTowerGame grade={grade} onExit={() => setScreen('map')} />
       ) : (
         <MagicTokensGame grade={grade} onExit={() => setScreen('map')} />
       )

@@ -258,7 +258,7 @@ function ModeArt({ mode }: { mode: WheelModeId }): ReactNode {
  * ширина (с очертанието) и шрифтът се смалява само ако думата излиза от картата —
  * независимо от шрифта и от увеличения текст на устройството.
  */
-function FitName({ text, size }: { text: string; size: number }) {
+export function FitName({ text, size }: { text: string; size: number }) {
   const ref = useRef<HTMLSpanElement>(null)
   const [fit, setFit] = useState<{ base: number; px: number } | null>(null)
   const px = fit && fit.base === size ? fit.px : size

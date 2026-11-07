@@ -14,7 +14,7 @@ import { Icon } from '../components/ui/Icon'
 import { SoundControl } from '../components/ui/SoundControl'
 import { DIFFICULTIES, type Grade } from '../games/magic-tokens/logic'
 
-const ACCENT: Record<string, string> = { 'magic-tokens': '#ffd23f', 'multiplication-wheel': '#ff8cc0' }
+const ACCENT: Record<string, string> = { 'magic-tokens': '#ffd23f', 'multiplication-wheel': '#ff8cc0', 'number-tower': '#ffd23f' }
 
 /**
  * Приключенският паспорт: книжка с корица и разгръщащи се страници.
