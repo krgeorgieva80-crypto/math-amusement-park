@@ -115,7 +115,7 @@ export function TeacherScreen({ onBack }: { onBack: () => void }) {
               <Toggle label="Умножение с 0" on={settings.spinZero} onChange={(v) => updateSettings({ spinZero: v })} />
               <Toggle label="Липсващ множител (Майстор)" on={settings.spinMissing} onChange={(v) => updateSettings({ spinMissing: v })} />
             </div>
-            <p className="teacher-note">Таблиците и умножението с 0 важат за „Завърти колелото“ и „Попълни таблицата“ — за всеки клас поотделно и на всички нива.</p>
+            <p className="teacher-note">Таблиците и умножението с 0 важат за „Завърти колелото“, „Попълни таблицата“ и „Предизвикателството на колелото“ — за всеки клас поотделно и на всички нива.</p>
           </section>
         </div>
 

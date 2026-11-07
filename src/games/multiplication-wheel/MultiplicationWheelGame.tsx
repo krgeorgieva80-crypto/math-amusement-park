@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../../core/AppContext'
 import { useStage } from '../../core/Stage'
 import { bestStars, type TaskCount } from '../../core/storage'
@@ -76,6 +76,7 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
   const setDifficulty = (difficulty: Difficulty) => updateSettings({ difficulty })
   const setCount = (n: number) => updateSettings({ taskCount: (n === 5 || n === 15 ? n : 10) as TaskCount })
   const [phase, setPhase] = useState<Phase>({ name: 'modes' })
+  const savedGames = useRef(new Set<number>())
   const [mode, setMode] = useState<PlayMode>('equalGroups')
   const spinTables = settings.spinTables[grade]
   const [spinTable, setSpinTable] = useState<number>(spinTables[spinTables.length - 1])
@@ -96,6 +97,9 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
       : setPhase({ name: 'play', tasks: testTasks() ?? generateGroupsTasks(grade, d, n), startedAt: nowMs() })
 
   const finish = (outcomes: TaskOutcome[], startedAt: number) => {
+    // всяка игра (startedAt) се записва само веднъж — и при двойно докосване на „Резултат“
+    if (savedGames.current.has(startedAt)) return
+    savedGames.current.add(startedAt)
     const durationSec = Math.round((nowMs() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
