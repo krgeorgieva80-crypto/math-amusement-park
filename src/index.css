@@ -7688,3 +7688,14 @@ button:focus-visible {
   width: 42px;
   height: 52px;
 }
+
+/* ниска корица (телефон хоризонтално): без подзаглавието, за да се побере бутонът */
+@container (max-height: 640px) {
+  .pp-cover__sub {
+    display: none;
+  }
+
+  .pp-cover {
+    justify-content: space-between;
+  }
+}
