@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../../core/AppContext'
 import { useStage } from '../../core/Stage'
 import { bestStars, type TaskCount } from '../../core/storage'
@@ -253,6 +253,53 @@ function ModeArt({ mode }: { mode: WheelModeId }): ReactNode {
   }
 }
 
+/**
+ * Заглавие на карта, което винаги се побира: след изчертаване се измерва реалната
+ * ширина (с очертанието) и шрифтът се смалява само ако думата излиза от картата —
+ * независимо от шрифта и от увеличения текст на устройството.
+ */
+function FitName({ text, size }: { text: string; size: number }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [fit, setFit] = useState<{ base: number; px: number } | null>(null)
+  const px = fit && fit.base === size ? fit.px : size
+  useLayoutEffect(() => {
+    const el = ref.current
+    const card = el?.parentElement
+    if (!el || !card) return
+    const measure = () => {
+      const cs = getComputedStyle(card)
+      const room = card.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+      const stroke = parseFloat(getComputedStyle(el).webkitTextStrokeWidth || '0')
+      let cur = size
+      el.style.fontSize = `${cur}px`
+      // най-широкият ред (дълга дума не се пренася) + очертанието от двете страни
+      const widest = () => {
+        const r = document.createRange()
+        r.selectNodeContents(el)
+        const rs = [...r.getClientRects()]
+        return rs.length ? Math.max(...rs.map((q) => q.width)) / Math.max(0.01, el.getBoundingClientRect().width / el.offsetWidth || 1) : 0
+      }
+      while (cur > 12 && widest() + stroke + 2 > room) {
+        cur -= 1
+        el.style.fontSize = `${cur}px`
+      }
+      // крайният размер остава приложен (и в състоянието — за следващото изчертаване)
+      el.style.fontSize = `${cur}px`
+      setFit((f) => (f && f.base === size && f.px === cur ? f : { base: size, px: cur }))
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(card)
+    document.fonts?.ready.then(measure).catch(() => {})
+    return () => ro.disconnect()
+  }, [size, text])
+  return (
+    <span ref={ref} className="mode-card__name" style={{ fontSize: px }}>
+      {text}
+    </span>
+  )
+}
+
 function WheelModes({ grade, onChoose, onExit }: { grade: Grade; onChoose: (m: WheelModeId) => void; onExit: () => void }) {
   const { play } = useApp()
   const { width, portrait } = useStage()
@@ -306,9 +353,7 @@ function WheelModes({ grade, onChoose, onExit }: { grade: Grade; onChoose: (m: W
               <span className="mode-art mode-art--wheel">
                 <ModeArt mode={m.id} />
               </span>
-              <span className="mode-card__name" style={{ fontSize: nameSize(m.label) }}>
-                {m.label}
-              </span>
+              <FitName text={m.label} size={nameSize(m.label)} />
               <span className="mode-card__desc">{m.description}</span>
               {!m.ready && (
                 <span className="mode-card__soon">
