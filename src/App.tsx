@@ -8,16 +8,19 @@ import { AboutScreen } from './screens/AboutScreen'
 import { GradeScreen } from './screens/GradeScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { ParkMap } from './screens/ParkMap'
+import { PassportScreen } from './screens/PassportScreen'
 import { TeacherScreen } from './screens/TeacherScreen'
 import type { AttractionId } from './attractions/registry'
 import { loadPlayerGrade, savePlayerGrade } from './core/storage'
 
-export type ScreenName = 'home' | 'about' | 'teacher' | 'grade' | 'map' | { game: AttractionId }
+export type ScreenName = 'home' | 'about' | 'teacher' | 'grade' | 'map' | 'passport' | { game: AttractionId }
 
 function Router() {
   const { settings } = useApp()
   const [screen, setScreen] = useState<ScreenName>('home')
   const [returnTo, setReturnTo] = useState<ScreenName>('home')
+  // печатите, ударени току-що (анимация „удар“ в паспорта)
+  const [freshStamps, setFreshStamps] = useState<string[]>([])
   // Класът се избира само веднъж — с билетите — и се пази локално.
   const [savedGrade, setSavedGrade] = useState<Grade | null>(loadPlayerGrade)
   const [chosenGrade, setChosenGrade] = useState<Grade>(() => savedGrade ?? settings.grade)
@@ -75,8 +78,15 @@ function Router() {
             onHome={() => setScreen('home')}
             onChangeGrade={() => setScreen('grade')}
             onTeacher={() => openOverlay('teacher')}
+            onPassport={(fresh) => {
+              setFreshStamps(fresh)
+              setScreen('passport')
+            }}
           />
         )
+        break
+      case 'passport':
+        content = <PassportScreen grade={grade} fresh={freshStamps} onBack={() => setScreen('map')} onOpen={(id) => setScreen({ game: id })} />
         break
       case 'about':
         content = <AboutScreen onBack={() => setScreen(returnTo)} />

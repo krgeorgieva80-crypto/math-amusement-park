@@ -1,8 +1,12 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ATTRACTIONS, type Attraction, type AttractionId } from '../attractions/registry'
 import { useApp } from '../core/AppContext'
 import { useStage } from '../core/Stage'
 import { bestStars } from '../core/storage'
+import { markPassportSeen, passportFor, passportNews } from '../core/passport'
+import { PassportStamp } from '../components/art/PassportStamp'
+import { Confetti } from '../components/ui/Effects'
+import { GameButton } from '../components/ui/GameButton'
 import { GuideStar } from '../components/art/Mascot'
 import { Bench, DistantTrees, FarMountains, Fence, FlowerBed, Fountain, Lamp, ParkDefs, SmallBush, SunGlow } from '../components/scenery/ParkProps'
 import { Cloud, SkyDefs, Tree } from '../components/scenery/Scenery'
@@ -19,6 +23,8 @@ interface Props {
   onHome: () => void
   onChangeGrade: () => void
   onTeacher: () => void
+  /** Отваря паспорта (с току-що ударените печати за анимацията). */
+  onPassport: (fresh: string[]) => void
 }
 
 type Pt = { x: number; y: number }
@@ -38,6 +44,8 @@ interface MapLayout {
   fountain: Spot
   decor: Deco[]
   horizon: number
+  /** Будката на паспорта (само ако има място). */
+  booth?: Spot
 }
 
 /** Пренасяне на дългите имена на два реда — табелите остават компактни. */
@@ -50,7 +58,7 @@ const SIGN_LINES: Partial<Record<AttractionId, string[]>> = {
   'balloon-challenge': ['Балоненото', 'предизвикателство'],
 }
 
-const GUIDE_TIPS = ['Избери атракцион и играй!', '„Вълшебните жетони“ те чакат!', 'Качи се на „Колелото на умножението“!', 'Другите атракциони отварят скоро.']
+const GUIDE_TIPS = ['Избери атракцион и играй!', '„Вълшебните жетони“ те чакат!', 'Качи се на „Колелото на умножението“!', 'Завърши всички игри в атракцион и вземи печат в паспорта!', 'Другите атракциони отварят скоро.']
 
 /**
  * Хоризонтално: ръчно подредена, леко асиметрична композиция върху
@@ -76,6 +84,7 @@ function landscapeLayout(w: number): MapLayout {
   const p = (id: AttractionId) => ({ x: spots[id].x, y: spots[id].y + 10 })
   const entrance = { x: X(820), y: 935 }
   return {
+    booth: { x: X(824), y: 662, size: S(112) },
     spots,
     signScale: Math.max(0.78, ks),
     fountain,
@@ -89,7 +98,6 @@ function landscapeLayout(w: number): MapLayout {
       { kind: 'tree', x: X(1580), y: 640, s: 0.7, alt: true },
       { kind: 'lamp', x: X(418), y: 640, s: 0.62 },
       { kind: 'lamp', x: X(1196), y: 640, s: 0.62 },
-      { kind: 'bench', x: X(842), y: 612, s: 0.52 },
       { kind: 'bed', x: X(428), y: 862, s: 0.55 },
       { kind: 'bed', x: X(1196), y: 872, s: 0.5 },
       { kind: 'bush', x: -6, y: 900, s: 0.9 },
@@ -187,14 +195,29 @@ function Decoration({ d }: { d: Deco }) {
   }
 }
 
-export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher }: Props) {
+export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher, onPassport }: Props) {
   const { width: w, height: h, portrait } = useStage()
   const { play, results, settings } = useApp()
   const [wobble, setWobble] = useState<AttractionId | null>(null)
-  const [guideMsg, setGuideMsg] = useState<string | null>(null)
+  // при нова отметка в паспорта Звездичката го казва веднага при отваряне на картата
+  const [guideMsg, setGuideMsg] = useState<string | null>(() => {
+    const n = passportNews(passportFor(results, grade))
+    return !n.stamps.length && n.games.length ? `В паспорта има нова отметка: „${n.games[n.games.length - 1]}“!` : null
+  })
   const timer = useRef<number | undefined>(undefined)
   const map = portrait ? portraitLayout(w, h) : landscapeLayout(w)
   const { spots, horizon, fountain } = map
+
+  // паспортът: изчислява се от резултатите; новото се показва веднъж
+  const passport = passportFor(results, grade)
+  const [news] = useState(() => passportNews(passport))
+  const [showStamp, setShowStamp] = useState(news.stamps.length > 0)
+  useEffect(() => {
+    markPassportSeen(passport)
+    if (guideMsg) timer.current = window.setTimeout(() => setGuideMsg(null), 3600)
+    // само при отваряне на картата
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const freshIds = news.stamps.map((p) => p.attraction)
 
   const totalStars = ['magic-tokens', 'multiplication-wheel'].reduce((sum, game) => sum + DIFFICULTIES.reduce((acc, d) => acc + (bestStars(results, game, grade, d) ?? 0), 0), 0)
 
@@ -275,6 +298,18 @@ export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher }: Pro
         )}
         <GuideStar className="map-guide" tips={GUIDE_TIPS} size={portrait ? 84 : 88} message={guideMsg} mood={guideMsg ? 'think' : 'wave'} />
         <div className="top-bar__spacer" />
+        <button type="button" className="passport-btn" onClick={() => (play('drop'), onPassport([]))} aria-label={`Приключенски паспорт: ${passport.stamps} от ${passport.pages.length} печата`}>
+          <svg viewBox="0 0 40 48" aria-hidden="true">
+            <rect x="3" y="2" width="34" height="44" rx="5" fill="#9b5de5" stroke="#3b2a5a" strokeWidth="3.5" />
+            <rect x="8" y="2" width="4" height="44" fill="#7a3fd0" />
+            <circle cx="23" cy="20" r="9" fill="#ffd23f" stroke="#3b2a5a" strokeWidth="2.5" />
+            <path d="M23 14 l2 4 4.5 .6 -3.3 3.2 .8 4.5 -4 -2.1 -4 2.1 .8 -4.5 -3.3 -3.2 4.5 -.6z" fill="#fff6a8" />
+            <rect x="14" y="34" width="18" height="4" rx="2" fill="#fff6a8" />
+          </svg>
+          <span>
+            {passport.stamps}/{passport.pages.length}
+          </span>
+        </button>
         <div className="star-counter" title="Събрани звезди">
           <Icon name="star" size={34} />
           <span>{totalStars}</span>
@@ -282,6 +317,52 @@ export function ParkMap({ grade, onOpen, onHome, onChangeGrade, onTeacher }: Pro
         <RoundButton icon="teacher" label="За учителя" color="turquoise" onClick={onTeacher} />
         <SoundControl />
       </div>
+
+      {/* будката на паспорта до входа на парка */}
+      {map.booth && (
+        <button type="button" className="passport-booth" style={{ left: map.booth.x, top: map.booth.y - map.booth.size, width: map.booth.size }} onClick={() => (play('drop'), onPassport([]))} aria-label="Будка „Паспорт“ — отвори паспорта">
+          <svg viewBox="0 0 120 130" aria-hidden="true">
+            <ellipse cx="60" cy="124" rx="50" ry="6" fill="#3b2a5a" opacity="0.2" />
+            <rect x="16" y="52" width="88" height="70" rx="6" fill="#fffaf0" stroke="#3b2a5a" strokeWidth="4" />
+            <rect x="26" y="62" width="68" height="34" rx="5" fill="#bfefff" stroke="#3b2a5a" strokeWidth="3" />
+            <path d="M8 54 Q60 8 112 54 Z" fill="#ff5fa2" stroke="#3b2a5a" strokeWidth="4" strokeLinejoin="round" />
+            {[0, 1, 2, 3].map((k) => (k % 2 ? <path key={k} d={`M60 14 L${8 + k * 26} 54 L${34 + k * 26} 54 Z`} fill="#ffd23f" stroke="#3b2a5a" strokeWidth="2.5" /> : null))}
+            <rect x="4" y="50" width="112" height="10" rx="5" fill="#ffc928" stroke="#3b2a5a" strokeWidth="3" />
+            {/* книжка-паспорт на гишето */}
+            <g transform="translate(44 70) rotate(-8)">
+              <rect width="30" height="22" rx="3" fill="#9b5de5" stroke="#3b2a5a" strokeWidth="2.5" />
+              <circle cx="15" cy="11" r="6" fill="#ffd23f" stroke="#3b2a5a" strokeWidth="2" />
+            </g>
+            <rect x="22" y="100" width="76" height="16" rx="5" fill="#9b5de5" stroke="#3b2a5a" strokeWidth="3" />
+            <text x="60" y="113" textAnchor="middle" className="art-text" fontSize="13" fill="#fff">
+              ПАСПОРТ
+            </text>
+          </svg>
+        </button>
+      )}
+
+      {showStamp && news.stamps.length > 0 && (
+        <div className="success-overlay passport-news" role="dialog" aria-label="Нов печат в паспорта">
+          <Confetti seed={grade * 7} />
+          <div className="success-card">
+            <div className="success-card__burst" aria-hidden="true" />
+            <div className="success-card__title">Нов печат!</div>
+            {news.stamps.map((p) => {
+              const a = ATTRACTIONS.find((x) => x.id === p.attraction)!
+              return <PassportStamp key={p.attraction} Art={a.Art} name={p.name} motto={p.motto} color={a.color} accent="#ffd23f" size={Math.round(Math.min(320, h * 0.36))} stamped fresh grade={grade} />
+            })}
+            <div className="success-card__praise">Завърши всички игри в „{news.stamps.map((p) => p.name).join('“ и „')}“!</div>
+            <div className="passport-news__actions">
+              <GameButton color="purple" size="lg" icon="next" onClick={() => (setShowStamp(false), onPassport(freshIds))}>
+                Виж паспорта
+              </GameButton>
+              <GameButton color="green" size="lg" icon="map" onClick={() => setShowStamp(false)}>
+                Към парка
+              </GameButton>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* По-близките (по-ниско) атракциони се рисуват последни. */}
       {[...ATTRACTIONS]

@@ -7124,3 +7124,567 @@ button:focus-visible {
 .challenge-play .is-phone-land .ch-pad .keypad {
   gap: 8px;
 }
+
+/* ═════════════ Приключенски паспорт ═════════════ */
+
+.passport-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  padding: 0 16px 0 10px;
+  border-radius: 999px;
+  background: #fffaf0;
+  border: 4px solid var(--ink);
+  box-shadow: 0 5px 0 #c9bfdc;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 26px;
+  color: var(--purple);
+  touch-action: manipulation;
+}
+
+.passport-btn svg {
+  width: 34px;
+  height: 42px;
+}
+
+.passport-btn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.passport-booth {
+  position: absolute;
+  z-index: 3;
+  transform: translateX(-50%);
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  filter: drop-shadow(0 8px 8px rgba(59, 42, 90, 0.3));
+  transition: transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.passport-booth:hover,
+.passport-booth:focus-visible {
+  transform: translateX(-50%) translateY(-6px) scale(1.04);
+}
+
+.passport-booth svg {
+  width: 100%;
+  display: block;
+}
+
+.passport-news .success-card {
+  gap: 12px;
+}
+
+.passport-news__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+
+.pp-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* книжката */
+.pp-book {
+  position: absolute;
+  left: 50%;
+  top: 116px;
+  transform: translateX(-50%);
+  perspective: 2400px;
+  touch-action: pan-y;
+}
+
+.pp-sheet {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  animation: pp-turn-next 0.55s cubic-bezier(0.3, 0.8, 0.3, 1) both;
+}
+
+.pp-sheet.pp-turn--1 {
+  animation-name: pp-turn-prev;
+}
+
+@keyframes pp-turn-next {
+  from {
+    transform: rotateY(-70deg) translateX(8%);
+    opacity: 0.2;
+  }
+}
+
+@keyframes pp-turn-prev {
+  from {
+    transform: rotateY(70deg) translateX(-8%);
+    opacity: 0.2;
+  }
+}
+
+.pp-cover,
+.pp-page {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 10px;
+  padding: 26px 30px;
+  text-align: center;
+}
+
+.pp-cover {
+  margin: 0 auto;
+  width: min(100%, 720px);
+  border-radius: 18px 40px 40px 18px;
+  background: radial-gradient(circle at 30% 20%, #b98cf0, #7a3fd0 60%, #5a2aa0);
+  border: 6px solid var(--ink);
+  box-shadow: inset 16px 0 0 #5a2aa0, inset 22px 0 0 #ffc928, 0 14px 0 #3b1f86, 0 24px 40px rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+.pp-cover__lights {
+  position: absolute;
+  inset: 14px 14px 14px 34px;
+  border: 5px dotted #fff6a8;
+  border-radius: 14px 30px 30px 14px;
+  pointer-events: none;
+}
+
+.pp-cover__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(40px, 4.2vw, 68px);
+  line-height: 1.05;
+  color: #ffd23f;
+  -webkit-text-stroke: 2px var(--ink);
+  paint-order: stroke fill;
+}
+
+.pp-cover__sub {
+  font-size: 24px;
+  font-weight: 800;
+  color: #f4ecff;
+}
+
+.pp-cover__grade {
+  padding: 4px 22px;
+  border-radius: 999px;
+  background: #ffd23f;
+  color: var(--ink);
+  border: 4px solid var(--ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 30px;
+}
+
+.pp-cover__count {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 24px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.pp-cover__count b {
+  color: #ffd23f;
+  font-size: 1.25em;
+}
+
+.pp-open,
+.pp-go {
+  min-width: min(100%, 320px);
+}
+
+.pp-spread {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 26px 1fr;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #fffaf0 0 47%, #f3e8d4 49.5%, #e7d8bd 50%, #f3e8d4 50.5%, #fffaf0 53%);
+  border: 6px solid var(--ink);
+  box-shadow: 0 0 0 8px #7a3fd0, 0 14px 0 8px #3b1f86, 0 26px 40px rgba(0, 0, 0, 0.4);
+}
+
+.is-single .pp-page {
+  border-radius: 20px;
+  background: #fffaf0;
+  border: 6px solid var(--ink);
+  box-shadow: 0 0 0 8px #7a3fd0, 0 14px 0 8px #3b1f86, 0 26px 40px rgba(0, 0, 0, 0.4);
+}
+
+.pp-page {
+  background-image: radial-gradient(rgba(155, 93, 229, 0.08) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
+
+.pp-spine {
+  background: linear-gradient(90deg, transparent, rgba(59, 42, 90, 0.18), transparent);
+}
+
+.pp-page__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(28px, 2.6vw, 44px);
+  line-height: 1.1;
+  color: var(--purple);
+}
+
+.pp-page__note,
+.pp-page__best {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: max(20px, calc(var(--tap) * 0.36));
+  font-weight: 800;
+  color: #6d5f86;
+  line-height: 1.25;
+}
+
+.pp-stamp-slot {
+  display: grid;
+  place-items: center;
+}
+
+.pp-stamp {
+  overflow: visible;
+  filter: drop-shadow(0 6px 6px rgba(59, 42, 90, 0.25));
+}
+
+.pp-stamp.is-fresh .pp-stamp__body {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: stamp-hit 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@keyframes stamp-hit {
+  0% {
+    transform: rotate(-8deg) scale(2.2);
+    opacity: 0;
+  }
+  60% {
+    transform: rotate(-8deg) scale(0.92);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-8deg) scale(1);
+  }
+}
+
+.pp-visas {
+  width: 100%;
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pp-visa {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'mark name'
+    'mark state';
+  align-items: center;
+  column-gap: 14px;
+  min-height: var(--tap);
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: #fff;
+  border: 3px dashed #c9bfdc;
+  text-align: left;
+}
+
+.pp-visa.is-done {
+  border: 3px solid #2f9e44;
+  background: #effde9;
+}
+
+.pp-visa__mark {
+  grid-area: mark;
+  width: calc(var(--tap) * 0.8);
+  height: calc(var(--tap) * 0.8);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 3px dashed #c9bfdc;
+  color: #fff;
+}
+
+.pp-visa.is-done .pp-visa__mark {
+  background: #4fc46a;
+  border: 3px solid var(--ink);
+}
+
+.pp-visa__name {
+  grid-area: name;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(20px, calc(var(--tap) * 0.36));
+  color: var(--ink);
+}
+
+.pp-visa__state {
+  grid-area: state;
+  font-size: max(16px, calc(var(--tap) * 0.27));
+  font-weight: 700;
+  color: #8a7ca6;
+}
+
+.pp-visa.is-done .pp-visa__state {
+  color: #1d6b2a;
+}
+
+/* прелистване */
+.pp-nav {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.pp-nav__btn {
+  width: var(--tap);
+  height: var(--tap);
+  min-width: 64px;
+  min-height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--yellow);
+  border: 4px solid var(--ink);
+  box-shadow: 0 5px 0 var(--yellow-d);
+  color: var(--ink);
+  touch-action: manipulation;
+}
+
+.pp-nav__btn:disabled {
+  opacity: 0.4;
+}
+
+.pp-dots {
+  display: flex;
+  gap: 10px;
+}
+
+.pp-dot {
+  width: max(22px, calc(var(--tap) * 0.42));
+  height: max(22px, calc(var(--tap) * 0.42));
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--ink);
+}
+
+.pp-dot.is-on {
+  background: var(--pink);
+}
+
+.no-motion .pp-sheet,
+.no-motion .pp-stamp.is-fresh .pp-stamp__body {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-sheet,
+  .pp-stamp.is-fresh .pp-stamp__body {
+    animation: none !important;
+  }
+}
+
+/* „Нов печат!“ — заглавието в рамките на картата */
+.passport-news .success-card__title {
+  font-size: clamp(44px, 5vw, 76px);
+  line-height: 1.05;
+  text-align: center;
+}
+
+/* надписите в паспорта растат с размера за докосване (четими и на телефон) */
+.pp-cover__title {
+  font-size: max(clamp(40px, 4.2vw, 68px), calc(var(--tap) * 0.72));
+}
+
+.pp-cover__sub,
+.pp-cover__count {
+  font-size: max(24px, calc(var(--tap) * 0.38));
+}
+
+.pp-cover__grade {
+  font-size: max(30px, calc(var(--tap) * 0.5));
+}
+
+.pp-page__title {
+  font-size: max(clamp(28px, 2.6vw, 44px), calc(var(--tap) * 0.6));
+}
+
+.pp-visa__name {
+  font-size: max(24px, calc(var(--tap) * 0.4));
+}
+
+.pp-visa__state {
+  font-size: max(18px, calc(var(--tap) * 0.28));
+}
+
+/* надписите никога не излизат от книжката (мерене по ширината на книжката) */
+.pp-book {
+  container-type: inline-size;
+}
+
+.pp-cover__title {
+  font-size: min(max(clamp(40px, 4.2vw, 68px), calc(var(--tap) * 0.72)), 10.5cqi);
+}
+
+.is-single .pp-page__title {
+  font-size: min(max(28px, calc(var(--tap) * 0.6)), 9cqi);
+}
+
+.is-single .pp-visa__name {
+  font-size: min(max(24px, calc(var(--tap) * 0.4)), 5.6cqi);
+}
+
+.is-spread .pp-visa__name {
+  font-size: min(max(24px, calc(var(--tap) * 0.4)), 2.6cqi);
+}
+
+.pp-visa__name {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* книжката се мери и по височина: на нисък екран текстът се смалява, а бутоните остават за докосване */
+.pp-book {
+  container-type: size;
+}
+
+.pp-cover,
+.pp-page {
+  gap: min(10px, 1.5cqh);
+  padding: min(26px, 3cqh) min(30px, 3cqw);
+}
+
+.pp-cover__title {
+  font-size: min(max(clamp(40px, 4.2vw, 68px), calc(var(--tap) * 0.72)), 10.5cqi, 10cqh);
+}
+
+.pp-cover__sub,
+.pp-cover__count {
+  font-size: min(max(24px, calc(var(--tap) * 0.38)), 4.6cqh);
+}
+
+.pp-cover__grade {
+  font-size: min(max(30px, calc(var(--tap) * 0.5)), 6cqh);
+}
+
+.pp-page__title {
+  font-size: min(max(clamp(28px, 2.6vw, 44px), calc(var(--tap) * 0.6)), 9cqi, 7.5cqh);
+}
+
+.pp-page__note,
+.pp-page__best {
+  font-size: min(max(20px, calc(var(--tap) * 0.36)), 4.4cqh);
+}
+
+/* отметките за игрите не са бутони — височината следва текста */
+.pp-visa {
+  min-height: 0;
+  padding: min(6px, 0.8cqh) 14px;
+}
+
+.pp-visas {
+  gap: min(10px, 1.2cqh);
+}
+
+.is-single .pp-visa__name {
+  font-size: min(max(24px, calc(var(--tap) * 0.4)), 5.2cqi, 4.6cqh);
+}
+
+.is-spread .pp-visa__name {
+  font-size: min(max(24px, calc(var(--tap) * 0.4)), 2.6cqi, 4.6cqh);
+}
+
+.pp-visa__state {
+  font-size: min(max(18px, calc(var(--tap) * 0.28)), 3.4cqh);
+}
+
+.pp-visa__mark {
+  width: min(calc(var(--tap) * 0.8), 7cqh);
+  height: min(calc(var(--tap) * 0.8), 7cqh);
+}
+
+/* бутоните в паспорта — поне размера за докосване */
+.pp-go .game-btn__face,
+.pp-open .game-btn__face {
+  min-height: var(--tap);
+  font-size: min(max(26px, calc(var(--tap) * 0.38)), 5cqh);
+}
+
+.is-single .pp-visa__name {
+  font-size: min(max(24px, calc(var(--tap) * 0.4)), 4.4cqi, 4.6cqh);
+}
+
+.pp-go,
+.pp-open {
+  max-width: 100%;
+}
+
+.pp-go .game-btn__face,
+.pp-open .game-btn__face {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.15;
+}
+
+/* ниска книжка (телефон хоризонтално): състоянието се вижда от отметката и цвета */
+@container (max-height: 640px) {
+  .pp-visa__state {
+    display: none;
+  }
+
+  .pp-visa__mark {
+    width: min(calc(var(--tap) * 0.6), 8cqh);
+    height: min(calc(var(--tap) * 0.6), 8cqh);
+  }
+}
+
+.is-single .pp-visa__name {
+  font-size: min(max(24px, calc(var(--tap) * 0.4)), 3.9cqi, 4.6cqh);
+}
+
+.pp-cover__title {
+  font-size: min(max(clamp(40px, 4.2vw, 68px), calc(var(--tap) * 0.72)), 9.4cqi, 10cqh);
+}
+
+.is-spread .pp-go .game-btn__face {
+  font-size: min(max(26px, calc(var(--tap) * 0.38)), 2.3cqi, 5cqh);
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* бутонът „Паспорт“ е колкото кръглите бутони в горната лента */
+.park-map .passport-btn {
+  height: 84px;
+  padding: 0 20px 0 14px;
+  font-size: 30px;
+}
+
+.park-map .passport-btn svg {
+  width: 42px;
+  height: 52px;
+}
