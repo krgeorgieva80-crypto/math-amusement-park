@@ -9,6 +9,7 @@ import { GradeScreen } from './screens/GradeScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { ParkMap } from './screens/ParkMap'
 import { PassportScreen } from './screens/PassportScreen'
+import { TowerPrototype } from './games/number-tower/TowerPrototype'
 import { TeacherScreen } from './screens/TeacherScreen'
 import type { AttractionId } from './attractions/registry'
 import { loadPlayerGrade, savePlayerGrade } from './core/storage'
@@ -101,6 +102,8 @@ function Router() {
     }
   }
 
+  // Етап 1: визуалният прототип на „Кулата на числата“ — само при разработка
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('prototype') === 'number-tower') return <TowerPrototype />
   const key = typeof screen === 'object' ? `game-${screen.game}` : screen
   return (
     <div key={key} className="screen-enter">

@@ -7699,3 +7699,327 @@ button:focus-visible {
     justify-content: space-between;
   }
 }
+
+/* ═════════════ „Кулата на числата“ — прототип (Етап 1) ═════════════ */
+
+.nt-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.nt-grid {
+  position: absolute;
+  inset: 116px 24px 18px;
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr) 300px;
+  grid-template-areas: 'task stage side';
+  gap: 16px 18px;
+}
+
+.nt-task {
+  grid-area: task;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.nt-marquee {
+  padding: 14px 16px 18px;
+}
+
+.nt-marquee .nt-marquee__text {
+  font-size: 32px;
+  line-height: 1.1;
+  white-space: normal;
+  text-align: center;
+}
+
+.nt-say {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nt-bubble {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nt-bubble .speech-bubble {
+  flex: 1;
+  font-size: 22px;
+}
+
+.nt-stage {
+  grid-area: stage;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+}
+
+.nt-stage > :not(.nt-backdrop) {
+  position: relative;
+}
+
+.nt-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+
+.nt-actions {
+  grid-area: auto;
+}
+
+.nt-tower {
+  overflow: visible;
+  filter: drop-shadow(0 14px 14px rgba(40, 10, 80, 0.4));
+}
+
+.nt-floor.is-glow .nt-floor__plate {
+  fill: #fff6a8;
+}
+
+.nt-floor.is-ghost {
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+.nt-top.is-lit .nt-top__star {
+  filter: drop-shadow(0 0 18px #fff6a8);
+}
+
+.nt-top__glow {
+  opacity: 0;
+}
+
+.nt-top.is-lit .nt-top__glow {
+  opacity: 1;
+}
+
+.nt-lift {
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Игра 1: тава с етажи */
+.nt-build {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  height: 100%;
+}
+
+.nt-tray {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nt-block {
+  min-width: max(170px, calc(var(--tap) * 2.6));
+  min-height: max(72px, var(--tap));
+  border-radius: 22px;
+  background: var(--c);
+  border: 5px solid var(--ink);
+  box-shadow: 0 7px 0 rgba(59, 42, 90, 0.45);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(36px, calc(var(--tap) * 0.55));
+  color: #fff;
+  -webkit-text-stroke: 1.5px var(--ink);
+  touch-action: none;
+  cursor: grab;
+}
+
+.nt-block.is-picked {
+  transform: translateY(-6px) rotate(-3deg);
+  box-shadow: 0 0 0 6px #fff6a8, 0 12px 0 rgba(59, 42, 90, 0.45);
+}
+
+.nt-note {
+  padding: 16px;
+  border-radius: 22px;
+  background: #fffaf0;
+  border: 4px solid var(--ink);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Игра 3: избор и числова права */
+.nt-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nt-choice {
+  min-height: max(72px, var(--tap));
+  border-radius: 22px;
+  background: #fffaf0;
+  border: 5px solid var(--ink);
+  box-shadow: 0 6px 0 #c9bfdc;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(26px, calc(var(--tap) * 0.42));
+}
+
+.nt-choice.is-on {
+  background: var(--yellow);
+  box-shadow: 0 6px 0 var(--yellow-d);
+}
+
+.nt-numline {
+  padding: 8px 10px;
+  border-radius: 18px;
+  background: #fff;
+  border: 4px solid var(--ink);
+}
+
+/* Игра 4 */
+.nt-top-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.nt-path {
+  align-self: center;
+}
+
+.nt-proto-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.nt-proto-tabs .setup-pill {
+  min-height: 56px;
+  font-size: 22px;
+  padding: 0 16px;
+}
+
+.nt-head-art {
+  display: flex;
+}
+
+.nt-play .mode-select__body {
+  position: absolute;
+  inset: 116px 40px 30px;
+}
+
+/* вертикално */
+.is-portrait .nt-grid {
+  inset: 116px 12px 12px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'task'
+    'stage'
+    'side';
+}
+
+.is-portrait .nt-task {
+  flex-direction: row;
+}
+
+.is-portrait .nt-marquee {
+  flex: 0 0 42%;
+}
+
+.is-portrait .nt-side {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.is-portrait .nt-side > * {
+  flex: 1;
+}
+
+.is-portrait .nt-proto-tabs {
+  display: none;
+}
+
+.is-portrait .nt-build {
+  flex-direction: column;
+  align-items: center;
+}
+
+.is-portrait .nt-tray {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.no-motion .nt-floor.is-ghost {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nt-floor.is-ghost {
+    animation: none !important;
+  }
+
+  .nt-lift {
+    transition: none;
+  }
+}
+
+/* кулата заема цялата височина на сцената (ширината следва пропорцията) */
+.nt-stage .nt-tower {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.nt-build .nt-tower {
+  max-width: 62%;
+}
+
+.nt-top-stage {
+  width: 100%;
+  min-height: 0;
+}
+
+.nt-top-stage .nt-tower {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}
+
+.nt-build {
+  min-height: 0;
+}
+
+.nt-tray {
+  flex: 0 0 auto;
+}
+
+.wp-grid.is-narrow ~ * .nt-block,
+.nt-grid .nt-block {
+  min-width: max(150px, calc(var(--tap) * 2.4));
+}
+
+/* по-тесен хоризонтален екран (4:3) */
+@media (max-width: 1450px) {
+  .nt-grid {
+    grid-template-columns: 270px minmax(0, 1fr) 250px;
+    gap: 12px 14px;
+  }
+}
