@@ -258,7 +258,11 @@ function WheelModes({ grade, onChoose, onExit }: { grade: Grade; onChoose: (m: W
   const { width, portrait } = useStage()
   const [soon, setSoon] = useState<string | null>(null)
   const cardW = portrait ? (width - 60 - 26) / 2 : (width - 120 - 78) / 4
-  const nameSize = (name: string) => Math.max(18, Math.min(30, Math.floor((cardW - 40) / (Math.min(name.length, 16) * 0.64))))
+  // по дължината на името и по най-дългата дума (една дълга дума не се пренася), с място за очертанието
+  const nameSize = (name: string) => {
+    const word = Math.max(...name.split(/\s+/).map((x) => x.length))
+    return Math.max(16, Math.min(30, Math.floor((cardW - 40) / Math.max(Math.min(name.length, 16) * 0.64, word * 0.7))))
+  }
   return (
     <div className="screen mode-select wheel-modes">
       <BoothBackdrop />
