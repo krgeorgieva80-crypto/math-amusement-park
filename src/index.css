@@ -6326,3 +6326,801 @@ button:focus-visible {
   flex: 0 0 40%;
   justify-content: center;
 }
+
+/* ═════════════ Колелото: карта 4 „Предизвикателството на колелото“ ═════════════ */
+
+.challenge-play .ch-grid {
+  position: absolute;
+  inset: 116px 24px 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'task side'
+    'stage side';
+  gap: 12px 18px;
+}
+
+.ch-task {
+  grid-area: task;
+  display: flex;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ch-marquee {
+  flex: 0 0 auto;
+  justify-content: center;
+  min-width: 300px;
+  padding: 14px 18px 18px;
+}
+
+.ch-marquee .ch-marquee__text {
+  font-size: 32px;
+  line-height: 1.1;
+  white-space: normal;
+  text-align: center;
+}
+
+.ch-say {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ch-bubble {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+}
+
+.ch-bubble .speech-bubble {
+  flex: 1;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.challenge-play .ch-stagebox {
+  grid-area: stage;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px;
+}
+
+.ch-area {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.ch-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-height: 0;
+}
+
+.ch-pad {
+  align-items: center;
+  animation: none;
+}
+
+.challenge-play .ch-pad .keypad__key {
+  min-height: var(--tap);
+}
+
+.challenge-play .ch-actions {
+  grid-area: auto;
+  gap: 12px;
+}
+
+.challenge-play .ch-actions .game-btn__face {
+  min-height: var(--tap);
+}
+
+/* сцени */
+.ch-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ch-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* пътеката на приключението */
+.ch-path {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: rgba(36, 18, 79, 0.75);
+  border: 3px solid #ffc928;
+  align-self: center;
+}
+
+.ch-path::before {
+  content: '';
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  top: 50%;
+  border-top: 4px dashed #ffd23f;
+  opacity: 0.6;
+}
+
+.ch-lantern {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: #6a5a8a;
+  background: #2a1a5a;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.ch-lantern svg {
+  width: 26px;
+  height: 34px;
+}
+
+.ch-lantern__name {
+  color: #cfc3ee;
+}
+
+.ch-lantern.is-on {
+  color: #ffd23f;
+  background: #5a34b0;
+  box-shadow: 0 0 18px #ffd23f;
+}
+
+.ch-lantern.is-on .ch-lantern__name {
+  color: #fff;
+}
+
+.ch-lantern.is-done {
+  color: #6bd66b;
+}
+
+/* 1. детектив: табели на вериги */
+.ch-signs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  gap: calc(var(--sign-font) * 0.45) calc(var(--sign-font) * 0.6);
+  margin-top: 8%;
+}
+
+.ch-signs--3 {
+  grid-template-columns: repeat(3, minmax(0, auto));
+}
+
+.ch-sign {
+  position: relative;
+  min-height: max(var(--tap), calc(var(--sign-font) * 1.9));
+  padding: 0.35em 0.7em;
+  border-radius: 0.45em;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 5px solid var(--ink);
+  box-shadow: 0 0 0 4px #ffc928, 0 8px 0 4px #e08a00, 0 14px 24px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--sign-font);
+  color: var(--ink);
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition: transform 0.15s;
+  animation: sign-swing 3s ease-in-out infinite;
+  transform-origin: 50% -30%;
+}
+
+.ch-sign:nth-child(2n) {
+  animation-delay: -1.5s;
+}
+
+.ch-sign:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.ch-sign__chain {
+  position: absolute;
+  left: 50%;
+  top: -34px;
+  width: 6px;
+  height: 30px;
+  margin-left: -3px;
+  background: repeating-linear-gradient(180deg, #ffc928 0 6px, #e08a00 6px 10px);
+}
+
+.ch-sign.is-checked {
+  background: linear-gradient(180deg, #e9ffe4, #c9f7c0);
+  opacity: 0.85;
+  animation: none;
+}
+
+.ch-sign__ok {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #4fc46a;
+  color: #fff;
+  border: 3px solid var(--ink);
+  font-size: 22px;
+}
+
+.ch-sign.is-fixed {
+  background: linear-gradient(180deg, #fff6c8, #ffe9a8);
+  animation: cell-glow 0.6s ease 2;
+}
+
+.ch-sign s {
+  color: #c2185b;
+  text-decoration-thickness: 4px;
+}
+
+.ch-sign__right {
+  color: #1d6b2a;
+}
+
+.ch-sign__stamp {
+  position: absolute;
+  bottom: -18px;
+  right: -10px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: #ff5fa2;
+  color: #fff;
+  border: 3px solid var(--ink);
+  font-size: 18px;
+  transform: rotate(-8deg);
+}
+
+@keyframes sign-swing {
+  50% {
+    transform: rotate(1.5deg);
+  }
+}
+
+.ch-lens {
+  position: absolute;
+  width: 18%;
+  max-width: 140px;
+  right: 6%;
+  bottom: 8%;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.4));
+  transition: all 0.45s cubic-bezier(0.3, 1.3, 0.5, 1);
+  animation: lens-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes lens-bob {
+  50% {
+    translate: 0 -8px;
+  }
+}
+
+/* 2. фокусникът */
+.ch-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0.25em 0.8em 0.35em;
+  border-radius: 0.5em;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 5px solid var(--ink);
+  box-shadow: 0 0 0 5px #ff5fa2, 0 10px 0 5px #c2185b, 0 18px 26px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--eq-font);
+  color: var(--ink);
+}
+
+.ch-card__label {
+  font-size: max(18px, calc(var(--eq-font) * 0.28));
+  color: #9b5de5;
+}
+
+.ch-card__eq {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+
+.ch-card__box {
+  min-width: 1.6em;
+  padding: 0 0.25em;
+  border-radius: 0.3em;
+  text-align: center;
+  color: #6a2fc0;
+  background: #fff;
+  border: 4px solid var(--ink);
+}
+
+.ch-card__box.is-empty {
+  color: #9b5de5;
+  background: #efe2ff;
+  border-style: dashed;
+}
+
+.ch-card__box.is-right {
+  color: #1d6b2a;
+  background: #c9f7c0;
+  border-color: #2f9e44;
+}
+
+.ch-hat {
+  position: relative;
+  z-index: 1;
+  width: min(36%, 300px);
+  min-width: var(--tap);
+  aspect-ratio: 300 / 260;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  animation: hat-wiggle 0.4s ease;
+}
+
+.ch-hat svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+@keyframes hat-wiggle {
+  30% {
+    transform: rotate(-4deg);
+  }
+  70% {
+    transform: rotate(3deg);
+  }
+}
+
+.ch-hat__pop {
+  opacity: 0;
+  transform: translateY(70px) scale(0.5);
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  transition: all 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.ch-hat.is-open .ch-hat__pop {
+  opacity: 1;
+  transform: translateY(-10px) scale(1.15);
+}
+
+.ch-wand {
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
+  animation: wand-wave 2s ease-in-out infinite;
+}
+
+@keyframes wand-wave {
+  50% {
+    transform: rotate(-8deg);
+  }
+}
+
+/* 3. майсторът */
+.ch-master__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 94%;
+}
+
+.ch-riddle {
+  max-width: 34em;
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: #fff;
+  border: 4px solid var(--ink);
+  box-shadow: 0 6px 0 #9b5de5;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: max(22px, calc(var(--eq-font) * 0.36));
+  line-height: 1.25;
+  text-align: center;
+  color: var(--ink);
+}
+
+.ch-card--master {
+  box-shadow: 0 0 0 5px #2ed1c4, 0 10px 0 5px #1a9e94, 0 18px 26px rgba(0, 0, 0, 0.4);
+}
+
+.ch-cabins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ch-cabin {
+  position: relative;
+  width: max(var(--tap), calc(var(--eq-font) * 1.25));
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ch-cabin svg {
+  width: 100%;
+  display: block;
+}
+
+.ch-cabin.is-counted {
+  filter: drop-shadow(0 0 10px #fff6a8);
+}
+
+.ch-cabin__tally {
+  position: absolute;
+  top: -10px;
+  right: -6px;
+  min-width: 34px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ffc928;
+  border: 3px solid var(--ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(18px, calc(var(--eq-font) * 0.28));
+  animation: tally-in 0.3s ease-out both;
+}
+
+.ch-balance {
+  width: min(70%, 360px);
+}
+
+.ch-balance__beam {
+  transform-box: view-box;
+  transform-origin: 200px 60px;
+  transition: transform 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.ch-fireworks {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.ch-master.is-solved .ch-fireworks {
+  animation: fireworks 1.2s ease-out both;
+}
+
+@keyframes fireworks {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+/* преход и финал */
+.ch-intro__card .ch-path {
+  position: relative;
+  margin-bottom: 6px;
+}
+
+.ch-intro__step {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 26px;
+  color: #9b5de5;
+}
+
+.ch-medal {
+  width: 150px;
+  height: 165px;
+  animation: card-pop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.ch-finale__stages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ch-finale__stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 140px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: #fff;
+  border: 4px solid var(--ink);
+  font-size: 22px;
+}
+
+.ch-finale__stage b {
+  font-family: var(--font-display);
+  color: #9b5de5;
+}
+
+.ch-finale__stage span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* тесен хоризонтален екран (4:3) */
+.challenge-play .ch-grid.is-narrow {
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 10px 14px;
+}
+
+.challenge-play .ch-grid.is-narrow .ch-marquee {
+  min-width: 230px;
+}
+
+.challenge-play .ch-grid.is-narrow .ch-marquee__text {
+  font-size: 26px;
+}
+
+/* телефон хоризонтално */
+.challenge-play .ch-grid.is-phone-land {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.challenge-play .is-phone-land .ch-marquee {
+  display: none;
+}
+
+.challenge-play .is-phone-land .ch-say {
+  flex-direction: row;
+}
+
+.challenge-play .is-phone-land .ch-side {
+  flex-direction: row;
+  align-items: center;
+}
+
+.challenge-play .is-phone-land .ch-pad {
+  width: calc(var(--tap) * 3.7);
+  padding: 10px;
+}
+
+.challenge-play .is-phone-land .ch-actions {
+  width: calc(var(--tap) * 2.8);
+}
+
+.challenge-play .is-phone-land .ch-path {
+  display: none;
+}
+
+/* вертикално: сцената горе, клавиатурата и бутоните отдолу */
+.is-portrait .challenge-play .ch-grid {
+  inset: 116px 10px 10px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'task'
+    'stage'
+    'side';
+}
+
+.is-portrait .ch-marquee {
+  min-width: 0;
+  flex: 0 0 38%;
+}
+
+.is-portrait .ch-side {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.is-portrait .ch-pad {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 10px 14px;
+}
+
+.is-portrait .ch-pad .keypad {
+  width: 100%;
+  max-width: calc(var(--tap) * 3.5);
+  gap: 10px;
+}
+
+.is-portrait .challenge-play .ch-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 36%;
+}
+
+.is-portrait .challenge-play .ch-grid:not(.has-pad) .ch-actions {
+  width: 100%;
+  flex-direction: row;
+}
+
+.is-portrait .challenge-play .ch-grid:not(.has-pad) .ch-actions .game-btn {
+  flex: 1;
+}
+
+.is-portrait .ch-signs,
+.is-portrait .ch-signs--3 {
+  grid-template-columns: minmax(0, auto);
+}
+
+.is-portrait .ch-lantern__name {
+  display: none;
+}
+
+.no-motion .ch-sign,
+.no-motion .ch-lens,
+.no-motion .ch-wand,
+.no-motion .ch-hat,
+.no-motion .ch-master.is-solved .ch-fireworks {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ch-sign,
+  .ch-lens,
+  .ch-wand,
+  .ch-hat,
+  .ch-master.is-solved .ch-fireworks {
+    animation: none !important;
+  }
+
+  .ch-hat__pop,
+  .ch-balance__beam,
+  .ch-lens {
+    transition: none !important;
+  }
+}
+
+.ch-lens.ch-lens--on {
+  position: absolute;
+  width: calc(var(--sign-font) * 1.6);
+  right: calc(var(--sign-font) * -0.7);
+  bottom: calc(var(--sign-font) * -0.9);
+  top: auto;
+  z-index: 2;
+}
+
+.ch-intro__card .success-card__title {
+  font-size: clamp(40px, 5vw, 64px);
+  line-height: 1.05;
+  text-align: center;
+}
+
+.ch-hat {
+  width: min(42%, 360px);
+}
+
+.ch-bunny {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  transform: translateY(40px);
+  transition: transform 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.ch-hat:active .ch-bunny,
+.ch-hat:hover .ch-bunny {
+  transform: translateY(0);
+}
+
+.ch-hat.is-open .ch-bunny {
+  transform: translateY(-6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ch-bunny {
+    transition: none !important;
+  }
+}
+
+.ch-finale__card .success-card__title {
+  font-size: clamp(36px, 4.6vw, 60px);
+  line-height: 1.05;
+  text-align: center;
+}
+
+/* по-едри кабинки в загадката */
+.ch-cabin {
+  width: max(var(--tap), calc(var(--eq-font) * 2));
+}
+
+.ch-cabins {
+  max-width: 100%;
+}
+
+/* фокусникът: шапката се оразмерява и по височината на сцената */
+.ch-magician {
+  gap: 4%;
+}
+
+.ch-magician .ch-hat {
+  width: auto;
+  height: min(44%, 300px);
+}
+
+.ch-magician .ch-card {
+  max-height: 46%;
+}
+
+/* загадката с кабинките: по-компактен запис и кабинки по размер */
+.ch-master--groups .ch-master__body {
+  gap: 10px;
+}
+
+.ch-master--groups .ch-card {
+  font-size: calc(var(--eq-font) * 0.8);
+}
+
+.ch-master--groups .ch-riddle {
+  font-size: max(20px, calc(var(--eq-font) * 0.32));
+}
+
+.ch-cabins.is-two-rows {
+  max-width: calc(var(--eq-font) * 7.2 + 40px);
+}
+
+.ch-cabins.is-two-rows .ch-cabin {
+  width: max(var(--tap), calc(var(--eq-font) * 1.3));
+}
+
+/* телефон хоризонтално: клавиатурата не се свива */
+.challenge-play .is-phone-land .ch-pad {
+  flex: none;
+}
+
+.challenge-play .ch-pad .keypad {
+  max-width: max(360px, calc(var(--tap) * 3.5));
+}
+
+.challenge-play .is-phone-land .ch-pad .keypad {
+  gap: 8px;
+}

@@ -18,7 +18,7 @@ export const WHEEL_MODES: { id: WheelModeId; label: string; description: string;
   { id: 'equalGroups', label: 'Открий равните групи', description: 'Сложи по равно деца в кабинките', ready: true },
   { id: 'spin', label: 'Завърти колелото', description: 'Упражнявай таблицата', ready: true },
   { id: 'table', label: 'Попълни таблицата', description: 'Таблицата за умножение', ready: true },
-  { id: 'challenge', label: 'Предизвикателството на колелото', description: 'Трудни задачи', ready: false },
+  { id: 'challenge', label: 'Предизвикателството на колелото', description: 'Приключение в три етапа', ready: true },
 ]
 
 /**

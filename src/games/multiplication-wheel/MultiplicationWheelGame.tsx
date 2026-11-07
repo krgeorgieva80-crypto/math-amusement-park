@@ -23,6 +23,10 @@ import { ACTIVITIES, generateTableTasks, type ActivityId, type TableTask } from 
 import { TableModeArt } from './table/TableModeArt'
 import { TablePlay } from './table/TablePlay'
 import { TABLE_RESULT_MODE, TableSetup } from './table/TableSetup'
+import { generateChallenge, type ChallengeTask } from './challenge/logic'
+import { ChallengePlay } from './challenge/ChallengePlay'
+import { CHALLENGE_RESULT_MODE, ChallengeSetup } from './challenge/ChallengeSetup'
+import { ChallengeModeArt } from './challenge/ChallengeModeArt'
 
 const GAME_ID = 'multiplication-wheel'
 const nowMs = () => Date.now()
@@ -53,7 +57,7 @@ function testSpinTasks(): SpinTask[] | null {
   })
 }
 
-type PlayMode = 'equalGroups' | 'spin' | 'table'
+type PlayMode = 'equalGroups' | 'spin' | 'table' | 'challenge'
 
 type Phase =
   | { name: 'modes' }
@@ -61,6 +65,7 @@ type Phase =
   | { name: 'play'; tasks: GroupsTask[]; startedAt: number }
   | { name: 'spin'; tasks: SpinTask[]; startedAt: number }
   | { name: 'table'; tasks: TableTask[]; startedAt: number }
+  | { name: 'challenge'; tasks: ChallengeTask[]; startedAt: number }
   | { name: 'summary'; outcomes: TaskOutcome[]; durationSec: number }
 
 /** „Колелото на умножението“: режими → настройки → задачи → обобщение. */
@@ -82,7 +87,9 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
   const tableModeName = activity === 'route' ? 'Попълни таблицата' : `Попълни таблицата: ${ACTIVITIES.find((a) => a.id === activity)!.short}`
 
   const start = () =>
-    mode === 'table'
+    mode === 'challenge'
+      ? setPhase({ name: 'challenge', tasks: generateChallenge(d, { tables: spinTables, zero: settings.spinZero }, table, n), startedAt: nowMs() })
+      : mode === 'table'
       ? setPhase({ name: 'table', tasks: generateTableTasks(d, { tables: spinTables, zero: settings.spinZero }, table, activity, n), startedAt: nowMs() })
       : mode === 'spin'
       ? setPhase({ name: 'spin', tasks: testSpinTasks() ?? generateSpinTasks(d, { tables: spinTables, zero: settings.spinZero, missing: settings.spinMissing }, table, n), startedAt: nowMs() })
@@ -92,7 +99,7 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
     const durationSec = Math.round((nowMs() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
-      mode: mode === 'table' ? (activity === 'route' ? TABLE_RESULT_MODE : `${TABLE_RESULT_MODE} — ${ACTIVITIES.find((a) => a.id === activity)!.short}`) : mode === 'spin' ? SPIN_RESULT_MODE : GROUPS_RESULT_MODE,
+      mode: mode === 'challenge' ? CHALLENGE_RESULT_MODE : mode === 'table' ? (activity === 'route' ? TABLE_RESULT_MODE : `${TABLE_RESULT_MODE} — ${ACTIVITIES.find((a) => a.id === activity)!.short}`) : mode === 'spin' ? SPIN_RESULT_MODE : GROUPS_RESULT_MODE,
       grade,
       difficulty: d,
       total: outcomes.length,
@@ -111,13 +118,31 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
         <WheelModes
           grade={grade}
           onChoose={(m) => {
-            setMode(m === 'spin' ? 'spin' : m === 'table' ? 'table' : 'equalGroups')
+            setMode(m === 'spin' ? 'spin' : m === 'table' ? 'table' : m === 'challenge' ? 'challenge' : 'equalGroups')
             setPhase({ name: 'setup' })
           }}
           onExit={onExit}
         />
       )
     case 'setup':
+      if (mode === 'challenge')
+        return (
+          <ChallengeSetup
+            grade={grade}
+            gameId={GAME_ID}
+            difficulty={d}
+            count={n}
+            locked={locked}
+            tables={spinTables}
+            table={table}
+            onDifficulty={setDifficulty}
+            onCount={setCount}
+            onTable={setSpinTable}
+            onStart={start}
+            onBack={() => setPhase({ name: 'modes' })}
+            onExit={onExit}
+          />
+        )
       if (mode === 'table')
         return (
           <TableSetup
@@ -173,6 +198,8 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
       return <EqualGroupsBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'spin':
       return <SpinBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} zero={settings.spinZero} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+    case 'challenge':
+      return <ChallengePlay key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'table':
       return <TablePlay key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'summary':
@@ -180,7 +207,7 @@ export function MultiplicationWheelGame({ grade, onExit }: { grade: Grade; onExi
         <GameSummary
           grade={grade}
           difficulty={d}
-          modeName={mode === 'table' ? tableModeName : mode === 'spin' ? 'Завърти колелото' : 'Открий равните групи'}
+          modeName={mode === 'challenge' ? 'Предизвикателството на колелото' : mode === 'table' ? tableModeName : mode === 'spin' ? 'Завърти колелото' : 'Открий равните групи'}
           outcomes={phase.outcomes}
           durationSec={phase.durationSec}
           onAgain={start}
@@ -218,14 +245,7 @@ function ModeArt({ mode }: { mode: WheelModeId }): ReactNode {
     case 'table':
       return <TableModeArt />
     case 'challenge':
-      return (
-        <svg viewBox="0 0 160 120" width="170" height="128" aria-hidden="true">
-          <circle cx="80" cy="58" r="46" fill="#ffd23f" stroke="#3b2a5a" strokeWidth="5" />
-          <text x="80" y="80" textAnchor="middle" className="art-text" fontSize="62" fill="#9b5de5">
-            ?
-          </text>
-        </svg>
-      )
+      return <ChallengeModeArt />
   }
 }
 
