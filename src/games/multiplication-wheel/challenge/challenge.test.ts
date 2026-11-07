@@ -129,6 +129,17 @@ describe('нива: липсващият множител и загадките'
     expect(share('master')).toBeGreaterThan(0.35)
   })
 
+  it('Откривател в серия: първият множител най-много веднъж и само в етап с поне 3 задачи', () => {
+    const rng = seededRng(17)
+    for (let run = 0; run < 300; run++)
+      for (const n of [5, 10, 15]) {
+        const ms = generateChallenge('explorer', opts(ALL), 3, n, rng).filter((t) => t.stage === 'missing') as MissingTask[]
+        const first = ms.filter((t) => t.hide === 'first').length
+        expect(first).toBeLessThanOrEqual(ms.length >= 3 ? 1 : 0)
+        if (first) expect(ms[ms.length - 1].hide).toBe('first')
+      }
+  })
+
   it('видовете задачи в етап 3 по нива', () => {
     const rng = seededRng(6)
     const kinds = { explorer: new Set<string>(), researcher: new Set<string>(), master: new Set<string>() }

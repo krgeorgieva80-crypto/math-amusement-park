@@ -238,6 +238,11 @@ export function generateChallenge(d: Difficulty, o: ChallengeOptions, explorerTa
   }
   for (let i = 0; i < n1; i++) add(() => generateDetective(d, o, explorerTable, rng, 0, i))
   for (let i = 0; i < n2; i++) add(() => generateMissing(d, o, explorerTable, rng, 0, i))
+  // Откривател: предимно вторият множител — първият най-много веднъж, в последната задача на етапа (при поне 3)
+  if (d === 'explorer') {
+    const ms = out.filter((t) => t.stage === 'missing') as MissingTask[]
+    ms.forEach((t, i) => (t.hide = i === ms.length - 1 && ms.length >= 3 && rng() < 0.5 ? 'first' : 'second'))
+  }
   let last: MasterKind | null = null
   for (let i = 0; i < n3; i++) {
     add(() => generateMaster(d, o, explorerTable, rng, 0, last))
