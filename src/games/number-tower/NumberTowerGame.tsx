@@ -16,6 +16,8 @@ import { FitName } from '../multiplication-wheel/MultiplicationWheelGame'
 import { FLOOR_COLORS, TowerBackdrop } from './TowerScene'
 import { BuildBoard } from './build/BuildBoard'
 import { SecretBoard } from './secret/SecretBoard'
+import { LiftBoard } from './lift/LiftBoard'
+import { LEVEL_KINDS, generateLiftTasks, type LiftKind, type LiftTask } from './lift/logic'
 import { SECRET_FLOORS, SECRET_HIDDEN, STEPS, generateSecretTasks, type SecretTask } from './secret/logic'
 import { FLOORS, RANGE_MAX, fmt, generateBuildTasks, type BuildTask } from './build/logic'
 
@@ -27,11 +29,12 @@ export type TowerModeId = 'build' | 'secret' | 'lift' | 'top'
 export const TOWER_MODES: { id: TowerModeId; label: string; description: string; color: string; ready: boolean; result: string }[] = [
   { id: 'build', label: 'Построй кулата', description: 'Подреди етажите', color: 'pink', ready: true, result: 'Кулата: Построй кулата' },
   { id: 'secret', label: 'Тайните етажи', description: 'Открий липсващото число', color: 'purple', ready: true, result: 'Кулата: Тайните етажи' },
-  { id: 'lift', label: 'Числовият асансьор', description: 'Сравни и намери етажа', color: 'turquoise', ready: false, result: 'Кулата: Числовият асансьор' },
+  { id: 'lift', label: 'Числовият асансьор', description: 'Сравни и намери етажа', color: 'turquoise', ready: true, result: 'Кулата: Числовият асансьор' },
   { id: 'top', label: 'Върхът на кулата', description: 'Приключение в три етапа', color: 'orange', ready: false, result: 'Кулата: Върхът на кулата' },
 ]
 const BUILD_RESULT_MODE = TOWER_MODES[0].result
 const SECRET_RESULT_MODE = TOWER_MODES[1].result
+const LIFT_RESULT_MODE = TOWER_MODES[2].result
 
 /** Само при разработка: ?testBuild=12.35.81.7a,470.407.704.740d (числата в тавата; a — възходящо, d — низходящо). */
 function testBuildTasks(): BuildTask[] | null {
@@ -58,9 +61,10 @@ type Phase =
   | { name: 'setup' }
   | { name: 'build'; tasks: BuildTask[]; startedAt: number }
   | { name: 'secret'; tasks: SecretTask[]; startedAt: number }
+  | { name: 'lift'; tasks: LiftTask[]; startedAt: number }
   | { name: 'summary'; outcomes: TaskOutcome[]; durationSec: number }
 
-type PlayMode = 'build' | 'secret'
+type PlayMode = 'build' | 'secret' | 'lift'
 
 /** „Кулата на числата“: игри → настройки → задачи → обобщение. */
 export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () => void }) {
@@ -75,7 +79,9 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
   const n = settings.taskCount
 
   const start = () =>
-    mode === 'secret'
+    mode === 'lift'
+      ? setPhase({ name: 'lift', tasks: generateLiftTasks(grade, d, n), startedAt: nowMs() })
+      : mode === 'secret'
       ? setPhase({ name: 'secret', tasks: testSecretTasks() ?? generateSecretTasks(grade, d, n), startedAt: nowMs() })
       : setPhase({ name: 'build', tasks: testBuildTasks() ?? generateBuildTasks(grade, d, n), startedAt: nowMs() })
 
@@ -86,7 +92,7 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
     const durationSec = Math.round((nowMs() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
-      mode: mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE,
+      mode: mode === 'lift' ? LIFT_RESULT_MODE : mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE,
       grade,
       difficulty: d,
       total: outcomes.length,
@@ -105,7 +111,7 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
         <TowerModes
           grade={grade}
           onChoose={(m) => {
-            setMode(m === 'secret' ? 'secret' : 'build')
+            setMode(m === 'lift' ? 'lift' : m === 'secret' ? 'secret' : 'build')
             setPhase({ name: 'setup' })
           }}
           onExit={onExit}
@@ -118,10 +124,18 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
           difficulty={d}
           count={n}
           locked={locked}
-          title={mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
-          resultMode={mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE}
+          title={mode === 'lift' ? 'Числовият асансьор' : mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
+          resultMode={mode === 'lift' ? LIFT_RESULT_MODE : mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE}
           info={
-            mode === 'secret' ? (
+            mode === 'lift' ? (
+              <>
+                <span>0 – {fmt(RANGE_MAX[grade])}</span>
+                {LEVEL_KINDS[d].map((k) => (
+                  <span key={k}>{LIFT_KIND_TEXT[k]}</span>
+                ))}
+                <span>{LIFT_HELP_TEXT[d]}</span>
+              </>
+            ) : mode === 'secret' ? (
               <>
                 <span>
                   {SECRET_FLOORS[d]} етажа · {SECRET_HIDDEN[d] === 2 ? '2 тайни прозореца' : '1 таен прозорец'}
@@ -150,6 +164,8 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
       )
     case 'build':
       return <BuildBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+    case 'lift':
+      return <LiftBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'secret':
       return <SecretBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'summary':
@@ -157,7 +173,7 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
         <GameSummary
           grade={grade}
           difficulty={d}
-          modeName={mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
+          modeName={mode === 'lift' ? 'Числовият асансьор' : mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
           outcomes={phase.outcomes}
           durationSec={phase.durationSec}
           onAgain={start}
@@ -278,6 +294,19 @@ const HELP_TEXT: Record<Difficulty, string> = {
   explorer: 'Подсказка: сравни две числа',
   researcher: 'Една подсказка за разрядите',
   master: 'Без подсказки',
+}
+
+const LIFT_KIND_TEXT: Record<LiftKind, string> = {
+  find: 'Намери етажа',
+  neighbor: 'Съседните етажи',
+  compare: 'Кой етаж е по-високо',
+  route: 'Тайният маршрут',
+  mystery: 'Загадъчният етаж',
+}
+const LIFT_HELP_TEXT: Record<Difficulty, string> = {
+  explorer: 'Бутони ▲ ▼ и избор · подсказки',
+  researcher: 'Разреди и клавиатура · 1 подсказка',
+  master: 'Маршрути и загадки · без подсказки',
 }
 
 const SECRET_ORDER_TEXT: Record<Difficulty, string> = {

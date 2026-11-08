@@ -100,3 +100,15 @@ describe('Кулата на числата в паспорта', () => {
     expect(passportFor([rec('multiplication-wheel', TOWER[0])], 2).games).toBe(0)
   })
 })
+
+describe('„Числовият асансьор“ в паспорта', () => {
+  it('отбелязва игра 3 от 4 (без печат, докато не са всичките)', () => {
+    const page = passportFor([rec('number-tower', 'Кулата: Числовият асансьор', 4)], 4).pages.find((p) => p.page.attraction === 'number-tower')!
+    expect(page.done).toEqual(['nt-lift'])
+    expect(page.stamped).toBe(false)
+    const three = ['Кулата: Построй кулата', 'Кулата: Тайните етажи', 'Кулата: Числовият асансьор'].map((m) => rec('number-tower', m, 4))
+    const p3 = passportFor(three, 4).pages.find((p) => p.page.attraction === 'number-tower')!
+    expect(p3.done).toEqual(['nt-build', 'nt-secret', 'nt-lift'])
+    expect(p3.stamped).toBe(false)
+  })
+})
