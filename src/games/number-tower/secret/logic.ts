@@ -5,7 +5,7 @@
  * Задачите са еднозначни: винаги има два съседни видими етажа, от които се вижда стъпката.
  * Чист TypeScript — без React.
  */
-import type { Difficulty, Grade, Rng } from '../../magic-tokens/logic'
+import { starsForTask, type Difficulty, type Grade, type Rng } from '../../magic-tokens/logic'
 import { RANGE_MAX, fmt } from '../build/logic'
 
 export type Direction = 'up' | 'down'
@@ -160,4 +160,108 @@ export function checkSecret(t: SecretTask, answers: Record<number, number | null
     else wrong.push(i)
   }
   return { correct, wrong, empty }
+}
+
+/* ───────────────────── състояние на задачата (чиста логика, с тестове) ───────────────────── */
+
+/** Едно натискане на клавиатурата върху текущия низ (само цифри; без водещи нули). */
+export function typeKey(cur: string, k: string, maxDigits: number): string {
+  const s = cur.replace(/\D/g, '')
+  if (k === 'clear') return ''
+  if (k === 'back') return s.slice(0, -1)
+  if (!/^[0-9]$/.test(k) || s.length >= maxDigits) return s
+  return s === '0' ? k : s + k
+}
+
+/** Числото от въведения текст (само цифрите) или null, ако е празно. */
+export const parseTyped = (s: string | undefined): number | null => {
+  const d = (s ?? '').replace(/\D/g, '')
+  return d ? Number(d) : null
+}
+
+export interface SecretState {
+  index: number
+  /** Въведеното по прозорци (индекс на етажа → цифри). */
+  typed: Record<number, string>
+  /** Прозорецът, в който пише клавиатурата. */
+  active: number
+  /** Откривател: избраното фенерче. */
+  choice: number | null
+  /** Светналите (верни) прозорци. */
+  lit: number[]
+  wrong: number[]
+  mistakes: number
+  usedHint: boolean
+  /** Задачата е решена — показва се похвалата и бутонът „Следваща задача“ (нищо не може да ги скрие). */
+  solved: boolean
+  stars: 1 | 2 | 3 | null
+  message: null | { kind: 'wrong' | 'info'; text: string }
+  outcomes: { stars: 1 | 2 | 3; firstTry: boolean; solved: true }[]
+  finished: boolean
+}
+
+export type SecretAction = { type: 'select'; floor: number } | { type: 'key'; key: string } | { type: 'choose'; value: number } | { type: 'check' } | { type: 'hint' } | { type: 'next' }
+
+export function initialSecretState(tasks: SecretTask[]): SecretState {
+  return { index: 0, typed: {}, active: tasks[0].hidden[0], choice: null, lit: [], wrong: [], mistakes: 0, usedHint: false, solved: false, stars: null, message: null, outcomes: [], finished: false }
+}
+
+/**
+ * Преходите на играта. explorer — отговор с избор; maxDigits — по клас.
+ * Проверката сравнява всеки тъмен прозорец с очакваното число от редицата.
+ */
+export function secretReducer(tasks: SecretTask[], explorer: boolean, maxDigits: number) {
+  return (s: SecretState, a: SecretAction): SecretState => {
+    const task = tasks[s.index]
+    if (s.finished) return s
+    switch (a.type) {
+      case 'select':
+        // след решаване или върху светнал прозорец — нищо не се променя (похвалата остава)
+        if (s.solved || explorer || !task.hidden.includes(a.floor) || s.lit.includes(a.floor)) return s
+        return { ...s, active: a.floor }
+      case 'key': {
+        if (s.solved || explorer || s.lit.includes(s.active)) return s
+        return { ...s, typed: { ...s.typed, [s.active]: typeKey(s.typed[s.active] ?? '', a.key, maxDigits) }, wrong: s.wrong.filter((i) => i !== s.active), message: null }
+      }
+      case 'choose':
+        if (s.solved || !explorer) return s
+        return { ...s, choice: a.value, wrong: [], message: null }
+      case 'hint':
+        return s.solved ? s : { ...s, usedHint: true, message: null }
+      case 'check': {
+        if (s.solved) return s
+        const open = task.hidden.filter((i) => !s.lit.includes(i))
+        const value = (i: number) => (explorer ? s.choice : parseTyped(s.typed[i]))
+        const empty = open.filter((i) => value(i) === null)
+        if (empty.length) {
+          const text = explorer ? 'Първо избери едно от трите числа.' : open.length === 2 && empty.length === 1 ? 'Напиши число и в другия тъмен прозорец.' : 'Напиши числото с клавиатурата.'
+          return { ...s, active: explorer ? s.active : empty[0], message: { kind: 'info', text } }
+        }
+        const correct = open.filter((i) => value(i) === task.values[i])
+        const wrong = open.filter((i) => value(i) !== task.values[i])
+        const lit = [...s.lit, ...correct]
+        if (wrong.length) {
+          const part = correct.length ? 'Единият прозорец светна! ' : ''
+          return {
+            ...s,
+            lit,
+            wrong,
+            mistakes: s.mistakes + 1,
+            choice: explorer ? null : s.choice,
+            typed: explorer ? s.typed : { ...s.typed, ...Object.fromEntries(wrong.map((i) => [i, ''])) },
+            active: explorer ? s.active : wrong[0],
+            message: { kind: 'wrong', text: `${part}Това число не пасва. Провери с колко се променя числото от етаж на етаж.` },
+          }
+        }
+        const stars = starsForTask(s.mistakes, s.usedHint)
+        return { ...s, lit, wrong: [], solved: true, stars, message: null, outcomes: [...s.outcomes, { stars, firstTry: s.mistakes === 0, solved: true }] }
+      }
+      case 'next': {
+        if (!s.solved) return s
+        if (s.index >= tasks.length - 1) return { ...s, finished: true }
+        const t = tasks[s.index + 1]
+        return { ...initialSecretState(tasks), index: s.index + 1, active: t.hidden[0], outcomes: s.outcomes }
+      }
+    }
+  }
 }

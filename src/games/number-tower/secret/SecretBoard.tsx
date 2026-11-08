@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useReducer, useState, type CSSProperties, type ReactNode } from 'react'
 import { useApp } from '../../../core/AppContext'
 import { useStage } from '../../../core/Stage'
 import { Mascot, type MascotMood } from '../../../components/art/Mascot'
@@ -7,14 +7,12 @@ import { GameButton } from '../../../components/ui/GameButton'
 import { GradeTicket } from '../../../components/ui/GradeTicket'
 import { Icon } from '../../../components/ui/Icon'
 import { SoundControl } from '../../../components/ui/SoundControl'
-import { DIFFICULTY_LABELS, starsForTask, type Difficulty, type Grade } from '../../magic-tokens/logic'
+import { DIFFICULTY_LABELS, type Difficulty, type Grade } from '../../magic-tokens/logic'
 import type { TaskOutcome } from '../../magic-tokens/PlayBoard'
 import { fmt } from '../build/logic'
 import { FitText } from '../FitText'
 import { TowerBackdrop, TowerScene, type Floor } from '../TowerScene'
-import { HELP, MAX_DIGITS, checkSecret, choicesFor, ruleText, secretHint, type SecretTask } from './logic'
-
-type Feedback = null | { kind: 'correct'; stars: 1 | 2 | 3 } | { kind: 'wrong'; message: string } | { kind: 'info'; message: string }
+import { HELP, MAX_DIGITS, choicesFor, initialSecretState, parseTyped, ruleText, secretHint, secretReducer, type SecretAction, type SecretTask } from './logic'
 
 interface Props {
   grade: Grade
@@ -26,7 +24,16 @@ interface Props {
 
 /** Текст, в който думите с тире не се разделят на два реда. */
 function Words({ text }: { text: string }) {
-  return <>{text.split(' ').flatMap((w, i) => [i ? ' ' : '', <span key={i} className="nt-word">{w}</span>])}</>
+  return (
+    <>
+      {text.split(' ').flatMap((w, i) => [
+        i ? ' ' : '',
+        <span key={i} className="nt-word">
+          {w}
+        </span>,
+      ])}
+    </>
+  )
 }
 
 /** Ключовете на клавиатурата: 3 колони (хоризонтално) и 6 колони на 2 реда (вертикално) — подредбата е чрез CSS order. */
@@ -41,138 +48,86 @@ const KEYS: { k: string; o3: number; o6: number }[] = [
 export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Props) {
   const { settings, play } = useApp()
   const { scale, portrait } = useStage()
-  const [index, setIndex] = useState(0)
-  const task = tasks[index]
   const help = HELP[difficulty]
   const hintsOn = settings.hintsOn && help !== 'none'
   const explorer = difficulty === 'explorer'
-  const choices = useMemo(() => (explorer ? choicesFor(task, grade) : []), [task, grade, explorer])
 
-  const [typed, setTyped] = useState<Record<number, string>>({})
-  const [active, setActive] = useState(tasks[0].hidden[0])
-  const [choice, setChoice] = useState<number | null>(null)
-  const [lit, setLit] = useState<Set<number>>(new Set())
-  const [wrongAt, setWrongAt] = useState<Set<number>>(new Set())
-  const [mistakes, setMistakes] = useState(0)
-  const [usedHint, setUsedHint] = useState(false)
+  // единственият източник на състоянието: чиста логика (secretReducer) — входът, проверката и преминаването
+  const reduce = useMemo(() => secretReducer(tasks, explorer, MAX_DIGITS[grade]), [tasks, explorer, grade])
+  const [st, dispatch] = useReducer(reduce, tasks, initialSecretState)
+  const index = st.index
+  const task = tasks[index]
+  const choices = useMemo(() => (explorer ? choicesFor(task, grade) : []), [task, grade, explorer])
   const [hint, setHint] = useState<{ text: string; pair: [number, number] | null } | null>(null)
-  const [feedback, setFeedback] = useState<Feedback>(null)
-  const [outcomes, setOutcomes] = useState<TaskOutcome[]>([])
-  const [solved, setSolved] = useState(false)
   const [shake, setShake] = useState(0)
+  const { typed, active, choice, solved, outcomes } = st
+  const lit = new Set(st.lit)
+  const wrongAt = new Set(st.wrong)
 
   const isLast = index === tasks.length - 1
   const stars = outcomes.reduce((a, o) => a + o.stars, 0)
   const open = task.hidden.filter((i) => !lit.has(i))
   const two = task.hidden.length === 2
 
-  const clearMsg = () => {
-    setHint(null)
-    if (feedback?.kind !== 'correct') setFeedback(null)
+  // края на играта — резултатът се предава веднъж
+  useEffect(() => {
+    if (st.finished) onFinish(st.outcomes)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [st.finished])
+
+  const act = (a: SecretAction) => {
+    const after = reduce(st, a)
+    dispatch(a)
+    return after
   }
 
   // ── въвеждане ──
   const pressKey = (k: string) => {
     if (solved || explorer || lit.has(active)) return
     play('pick')
-    clearMsg()
-    setWrongAt((w) => {
-      const n = new Set(w)
-      n.delete(active)
-      return n
-    })
-    setTyped((t) => {
-      const cur = t[active] ?? ''
-      if (k === 'clear') return { ...t, [active]: '' }
-      if (k === 'back') return { ...t, [active]: cur.slice(0, -1) }
-      if (cur.length >= MAX_DIGITS[grade]) return t
-      return { ...t, [active]: cur === '0' ? k : cur + k }
-    })
+    setHint(null)
+    act({ type: 'key', key: k })
   }
 
   const selectWindow = (i: number) => {
-    if (solved || !task.hidden.includes(i) || lit.has(i)) {
-      if (lit.has(i)) setFeedback({ kind: 'info', message: 'Този прозорец вече свети.' })
-      return
-    }
+    if (solved || explorer || !task.hidden.includes(i) || lit.has(i)) return
     play('pick')
-    setActive(i)
+    act({ type: 'select', floor: i })
   }
 
   const pickChoice = (v: number) => {
     if (solved) return
     play('pick')
-    clearMsg()
-    setWrongAt(new Set())
-    setChoice(v)
-  }
-
-  const answerOf = (i: number): number | null => {
-    if (explorer) return choice
-    const s = typed[i]
-    return s ? Number(s) : null
+    setHint(null)
+    act({ type: 'choose', value: v })
   }
 
   const check = () => {
     if (solved) return
     setHint(null)
-    const r = checkSecret(task, Object.fromEntries(open.map((i) => [i, answerOf(i)])))
-    if (r.empty.length) {
-      play('hint')
-      if (!explorer) setActive(r.empty[0])
-      return setFeedback({ kind: 'info', message: explorer ? 'Първо избери едно от трите числа.' : two && r.empty.length === 1 && open.length === 2 ? 'Напиши число и в другия тъмен прозорец.' : 'Напиши числото с клавиатурата.' })
-    }
-    const nowLit = new Set([...lit, ...r.correct])
-    setLit(nowLit)
-    if (r.wrong.length) {
-      // верните прозорци светват; грешният се изчиства — отговорът не се показва
-      setWrongAt(new Set(r.wrong))
-      setMistakes((m) => m + 1)
+    const after = act({ type: 'check' })
+    if (after.solved) {
+      play('success')
+      for (let k = 0; k < (after.stars ?? 0); k++) window.setTimeout(() => play('star'), 900 + k * 230)
+    } else if (after.message?.kind === 'wrong') {
       setShake((x) => x + 1)
       play('tryAgain')
-      if (explorer) setChoice(null)
-      else {
-        setTyped((t) => ({ ...t, ...Object.fromEntries(r.wrong.map((i) => [i, ''])) }))
-        setActive(r.wrong[0])
-      }
-      const part = r.correct.length ? 'Единият прозорец светна! ' : ''
-      return setFeedback({ kind: 'wrong', message: `${part}Това число не пасва. Провери с колко се променя числото от етаж на етаж.` })
-    }
-    const s = starsForTask(mistakes, usedHint)
-    setSolved(true)
-    setOutcomes((o) => [...o, { stars: s, firstTry: mistakes === 0, solved: true }])
-    setFeedback({ kind: 'correct', stars: s })
-    play('success')
-    for (let k = 0; k < s; k++) window.setTimeout(() => play('star'), 900 + k * 230)
+    } else play('hint')
   }
 
   const askHelp = () => {
     if (!hintsOn || solved) return
-    if (help === 'limited' && usedHint) return
+    if (help === 'limited' && st.usedHint) return
     play('hint')
-    setUsedHint(true)
-    setFeedback(null)
+    act({ type: 'hint' })
     setHint(secretHint(task, help === 'visual' ? 'visual' : 'limited'))
   }
 
   const next = () => {
     if (!solved) return
-    if (isLast) {
-      play('fanfare')
-      return onFinish(outcomes)
-    }
-    const t = tasks[index + 1]
-    setIndex(index + 1)
-    setTyped({})
-    setActive(t.hidden[0])
-    setChoice(null)
-    setLit(new Set())
-    setWrongAt(new Set())
-    setMistakes(0)
-    setUsedHint(false)
+    if (isLast) play('fanfare')
     setHint(null)
-    setFeedback(null)
-    setSolved(false)
+    act({ type: 'next' })
   }
 
   // физическа клавиатура: цифри, Backspace, Delete, Enter, стрелки (между двата прозореца)
@@ -199,15 +154,16 @@ export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Prop
   const floors: Floor[] = task.values.map((v, i) => {
     if (!task.hidden.includes(i)) return { label: fmt(v), hint: !!hint?.pair?.includes(i) }
     if (lit.has(i) || solved) return { label: fmt(v), state: 'glow' }
-    const shown = explorer ? choice : typed[i] ? Number(typed[i]) : null
+    // същото четене като при проверката (parseTyped) — видимото и провереното винаги съвпадат
+    const shown = explorer ? choice : parseTyped(typed[i])
     return { label: shown === null ? null : fmt(shown), state: 'hidden', active: !explorer && i === active }
   })
 
   let mood: MascotMood = 'happy'
   let bubble: ReactNode
-  if (feedback?.kind === 'wrong') {
+  if (st.message?.kind === 'wrong') {
     mood = 'encourage'
-    bubble = <Words text={feedback.message} />
+    bubble = <Words text={st.message.text} />
   } else if (hint) {
     mood = 'think'
     bubble = (
@@ -216,16 +172,16 @@ export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Prop
         <Words text={hint.text} />
       </>
     )
-  } else if (feedback?.kind === 'info') {
+  } else if (st.message?.kind === 'info') {
     mood = 'think'
-    bubble = <Words text={feedback.message} />
+    bubble = <Words text={st.message.text} />
   } else if (solved) {
     mood = 'cheer'
     bubble = <Words text={two ? 'Браво! Тайните прозорци светнаха!' : 'Браво! Тайният прозорец светна!'} />
   } else bubble = <Words text={explorer ? 'Избери едно от трите числа.' : two ? 'Докосни поле или тъмен прозорец и напиши числото.' : 'Напиши числото с клавиатурата.'} />
 
   const tap = Math.ceil(52 / Math.max(0.1, scale))
-  const helpDisabled = !hintsOn || solved || (help === 'limited' && usedHint)
+  const helpDisabled = !hintsOn || solved || (help === 'limited' && st.usedHint)
   const helpTitle =
     help === 'none' ? 'На ниво „Майстор“ работиш самостоятелно' : !settings.hintsOn ? 'Подсказките са изключени от учителя' : help === 'limited' ? 'Една подсказка на задача' : 'Подсказка'
   const longest = Math.max(...task.values.map((v) => fmt(v).length))
@@ -276,14 +232,14 @@ export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Prop
             </div>
             <div className="nt-bubble">
               <Mascot mood={mood} size={72} />
-              <div className={`speech-bubble speech-bubble--game ${feedback?.kind === 'wrong' ? 'is-wrong' : ''}`} key={`${feedback?.kind}-${hint?.text}-${shake}`}>
+              <div className={`speech-bubble speech-bubble--game ${st.message?.kind === 'wrong' ? 'is-wrong' : ''}`} key={`${st.message?.text}-${hint?.text}-${shake}-${solved}`}>
                 {bubble}
               </div>
             </div>
           </div>
         </section>
 
-        <section className={`wp-stage nt-stage nt-night ${feedback?.kind === 'wrong' ? 'is-shake' : ''}`}>
+        <section className={`wp-stage nt-stage nt-night ${st.message?.kind === 'wrong' ? 'is-shake' : ''}`}>
           <TowerBackdrop />
           <svg className="nt-moon" viewBox="0 0 100 100" aria-hidden="true">
             <circle cx="50" cy="50" r="46" fill="#fff6c8" opacity="0.25" />
@@ -324,7 +280,8 @@ export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Prop
               <div className={`nt-fields ${two ? 'is-two' : ''}`}>
                 {[...task.hidden].reverse().map((i) => {
                   const done = lit.has(i) || solved
-                  const val = done ? fmt(task.values[i]) : typed[i] ? fmt(Number(typed[i])) : ''
+                  const typedNum = parseTyped(typed[i])
+                  const val = done ? fmt(task.values[i]) : typedNum === null ? '' : fmt(typedNum)
                   return (
                     <button
                       key={i}
@@ -361,9 +318,16 @@ export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Prop
             </div>
           )}
           <div className="nt-secret-actions">
-            <GameButton color="green" size="lg" icon="check" onClick={check} disabled={solved} silent>
-              Провери
-            </GameButton>
+            {solved ? (
+              // резервен път напред (и при скрита похвала): активен бутон „Следваща задача“
+              <GameButton color="purple" size="lg" icon="next" onClick={next} className="is-ready nt-next-side">
+                {isLast ? 'Резултат' : 'Следваща'}
+              </GameButton>
+            ) : (
+              <GameButton color="green" size="lg" icon="check" onClick={check} silent>
+                Провери
+              </GameButton>
+            )}
             <GameButton color="turquoise" size="lg" icon="help" onClick={askHelp} disabled={helpDisabled} title={helpTitle} silent>
               Помощ
             </GameButton>
@@ -371,7 +335,8 @@ export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Prop
         </section>
       </div>
 
-      {feedback?.kind === 'correct' && (
+      {/* похвалата зависи само от „решено“ — нищо не може да я скрие */}
+      {solved && (
         <div className="success-overlay nt-success">
           <Confetti seed={index + 41} />
           <div className="success-card">
@@ -381,7 +346,7 @@ export function SecretBoard({ grade, difficulty, tasks, onFinish, onExit }: Prop
             <div className="success-card__praise">
               <Words text={two ? 'Тайните прозорци светнаха!' : 'Тайният прозорец светна!'} />
             </div>
-            <StarRow stars={feedback.stars} size={86} animate />
+            <StarRow stars={st.stars ?? 1} size={86} animate />
             <div className="success-card__text nt-sequence">
               {/* отдолу нагоре — както расте кулата */}
               {task.values.map((v, i) => (

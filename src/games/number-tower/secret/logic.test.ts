@@ -122,3 +122,131 @@ describe('помощ по нива', () => {
     for (const g of GRADES) for (const d of LEVELS) for (const s of STEPS[g][d]) expect(s * (SECRET_FLOORS[d] - 1)).toBeLessThanOrEqual(RANGE_MAX[g])
   })
 })
+
+/* ── състояние на играта: въвеждане, проверка и преминаване (сигнал от прегледа: 2. клас, Майстор, задача 3/10) ── */
+import { initialSecretState, parseTyped, secretReducer, typeKey, type SecretAction, type SecretState, type SecretTask } from './logic'
+
+const mk = (values: number[], hidden: number[], id: number): SecretTask => ({ id, values, hidden, step: Math.abs(values[1] - values[0]), direction: values[1] > values[0] ? 'up' : 'down' })
+const run = (r: ReturnType<typeof secretReducer>, s: SecretState, ...acts: SecretAction[]) => acts.reduce(r, s)
+const keys = (digits: string): SecretAction[] => [...digits].map((key) => ({ type: 'key', key }))
+
+describe('клавиатурата', () => {
+  it('само цифри, без водещи нули, с ограничение на дължината; изтриване', () => {
+    expect(typeKey('', '6', 3)).toBe('6')
+    expect(typeKey('6', '2', 3)).toBe('62')
+    expect(typeKey('0', '2', 3)).toBe('2')
+    expect(typeKey('123', '4', 3)).toBe('123')
+    expect(typeKey('62', 'back', 3)).toBe('6')
+    expect(typeKey('62', 'clear', 3)).toBe('')
+    expect(parseTyped('62')).toBe(62)
+    expect(parseTyped('')).toBeNull()
+    expect(parseTyped(undefined)).toBeNull()
+  })
+})
+
+describe('Майстор, два тайни прозореца — задача 3/10: 2, 17, 32, 47, 62, 77', () => {
+  // задачите 1–4 на серия от 10; задача 3 е редицата от сигнала (тайни: долу = 2, пети етаж = 62)
+  const tasks = [mk([10, 20, 30, 40, 50, 60], [1, 4], 1), mk([5, 10, 15, 20, 25, 30], [0, 3], 2), mk([2, 17, 32, 47, 62, 77], [0, 4], 3), mk([1, 4, 7, 10, 13, 16], [2, 5], 4), ...Array.from({ length: 6 }, (_, k) => mk([k, k + 3, k + 6, k + 9, k + 12, k + 15], [1, 4], 5 + k))]
+  const r = secretReducer(tasks, false, 3)
+  const solveCurrent = (s: SecretState) => {
+    const t = tasks[s.index]
+    return run(r, s, ...t.hidden.flatMap((i) => [{ type: 'select', floor: i } as SecretAction, ...keys(String(t.values[i]))]), { type: 'check' })
+  }
+  const toTask3 = () => {
+    let s = initialSecretState(tasks)
+    for (let k = 0; k < 2; k++) s = r(solveCurrent(s), { type: 'next' })
+    return s
+  }
+
+  it('индексите и очакваните стойности: долу (етаж 0) = 2, горе (етаж 4) = 62', () => {
+    const t = tasks[2]
+    expect(t.hidden).toEqual([0, 4])
+    expect(t.values[0]).toBe(2)
+    expect(t.values[4]).toBe(62)
+  })
+
+  it('стойностите от клавиатурата се записват в правилния прозорец', () => {
+    const s = run(r, toTask3(), { type: 'select', floor: 4 }, ...keys('62'), { type: 'select', floor: 0 }, ...keys('2'))
+    expect(s.index).toBe(2)
+    expect(s.typed).toEqual({ 4: '62', 0: '2' })
+  })
+
+  it('горе 62 и долу 2 → „Провери“ → решено, похвала, после задача 4/10', () => {
+    let s = run(r, toTask3(), { type: 'select', floor: 4 }, ...keys('62'), { type: 'select', floor: 0 }, ...keys('2'), { type: 'check' })
+    expect(s.solved).toBe(true)
+    expect(s.stars).toBe(3)
+    expect(s.lit.sort()).toEqual([0, 4])
+    expect(s.message).toBeNull()
+    s = r(s, { type: 'next' })
+    expect(s.index).toBe(3) // задача 4/10
+    expect(s.solved).toBe(false)
+    expect(s.typed).toEqual({})
+    expect(s.active).toBe(tasks[3].hidden[0])
+    expect(s.outcomes).toHaveLength(3)
+  })
+
+  it('и в обратен ред (първо долу, после горе), и без избор на поле за първото число', () => {
+    const a = run(r, toTask3(), { type: 'select', floor: 0 }, ...keys('2'), { type: 'select', floor: 4 }, ...keys('62'), { type: 'check' })
+    expect(a.solved).toBe(true)
+    // активен по подразбиране е долният прозорец
+    const b = run(r, toTask3(), ...keys('2'), { type: 'select', floor: 4 }, ...keys('62'), { type: 'check' })
+    expect(b.solved).toBe(true)
+  })
+
+  it('след грешка: верният прозорец свети, грешният се изчиства; поправката завършва задачата', () => {
+    let s = run(r, toTask3(), { type: 'select', floor: 4 }, ...keys('62'), { type: 'select', floor: 0 }, ...keys('3'), { type: 'check' })
+    expect(s.solved).toBe(false)
+    expect(s.lit).toEqual([4])
+    expect(s.typed[0]).toBe('')
+    expect(s.active).toBe(0)
+    s = run(r, s, ...keys('2'), { type: 'check' })
+    expect(s.solved).toBe(true)
+    expect(s.stars).toBe(2)
+  })
+
+  it('с празен прозорец: подсказва да се попълни другият, без да брои грешка', () => {
+    const s = run(r, toTask3(), { type: 'select', floor: 4 }, ...keys('62'), { type: 'check' })
+    expect(s.solved).toBe(false)
+    expect(s.mistakes).toBe(0)
+    expect(s.active).toBe(0)
+    expect(s.message?.kind).toBe('info')
+  })
+
+  it('похвалата не може да бъде скрита след решаване (докосване на прозорец, клавиш, проверка)', () => {
+    let s = run(r, toTask3(), { type: 'select', floor: 4 }, ...keys('62'), { type: 'select', floor: 0 }, ...keys('2'), { type: 'check' })
+    s = run(r, s, { type: 'select', floor: 4 }, { type: 'select', floor: 0 }, ...keys('9'), { type: 'check' }, { type: 'hint' })
+    expect(s.solved).toBe(true)
+    expect(s.message).toBeNull()
+    expect(s.typed).toEqual({ 4: '62', 0: '2' })
+  })
+
+  it('цялата серия от 10 задачи се завършва', () => {
+    let s = initialSecretState(tasks)
+    for (let k = 0; k < 10; k++) {
+      s = solveCurrent(s)
+      expect(s.solved).toBe(true)
+      s = r(s, { type: 'next' })
+    }
+    expect(s.finished).toBe(true)
+    expect(s.outcomes).toHaveLength(10)
+  })
+})
+
+describe.each(GRADES)('%i. клас — всяка генерирана задача се решава с клавиатурата', (grade) => {
+  it.each(LEVELS)('ниво %s: серия от 10 задачи (вкл. два прозореца)', (d) => {
+    for (let s0 = 0; s0 < 30; s0++) {
+      const tasks = generateSecretTasks(grade, d, 10, seeded(s0 * 101 + grade))
+      const explorer = d === 'explorer'
+      const r = secretReducer(tasks, explorer, ({ 2: 3, 3: 4, 4: 7 } as const)[grade])
+      let s = initialSecretState(tasks)
+      for (let k = 0; k < 10; k++) {
+        const t = tasks[s.index]
+        const acts: SecretAction[] = explorer ? [{ type: 'choose', value: t.values[t.hidden[0]] }] : [...t.hidden].reverse().flatMap((i) => [{ type: 'select', floor: i } as SecretAction, ...keys(String(t.values[i]))])
+        s = run(r, s, ...acts, { type: 'check' })
+        expect(s.solved).toBe(true)
+        s = r(s, { type: 'next' })
+      }
+      expect(s.finished).toBe(true)
+    }
+  })
+})
