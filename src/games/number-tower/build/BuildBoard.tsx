@@ -10,6 +10,7 @@ import { SoundControl } from '../../../components/ui/SoundControl'
 import { DIFFICULTY_LABELS, starsForTask, type Difficulty, type Grade } from '../../magic-tokens/logic'
 import type { TaskOutcome } from '../../magic-tokens/PlayBoard'
 import { usePointerDrag } from '../../magic-tokens/usePointerDrag'
+import { FitText } from '../FitText'
 import { FLOOR_COLORS, TowerBackdrop, TowerScene, FLOOR_LEFT, floorCenter, towerAspect, type Floor } from '../TowerScene'
 import { HELP, buildHint, checkBuild, fmt, instruction, praise, ruleBottom, type BuildTask } from './logic'
 
@@ -54,7 +55,7 @@ function Words({ text }: { text: string }) {
 /** „Построй кулата“: етажите от тавата се поставят в кулата отдолу нагоре. */
 export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props) {
   const { settings, play } = useApp()
-  const { scale } = useStage()
+  const { scale, portrait } = useStage()
   // табелките „горе/долу“ застъпват празното небе вляво от кулата; само това, което стърчи, получава място
   const towerRef = useRef<HTMLDivElement>(null)
   // размерите на кулата и мястото за табелките (в логически px) — изчисляват се от наличното място
@@ -328,7 +329,7 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
         <section className="nt-task">
           <div className="marquee tb-marquee nt-marquee" key={task.id}>
             <span className="marquee__lights" aria-hidden="true" />
-            <span className="marquee__label nt-marquee__title">Построй кулата</span>
+            <FitText text="Построй кулата" max={portrait ? 56 : 40} className="marquee__label nt-marquee__title" />
           </div>
           <div className="nt-say">
             {/* кратка инструкция: какво се прави и кое число е най-долу */}

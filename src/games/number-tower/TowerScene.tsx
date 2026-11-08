@@ -21,6 +21,10 @@ export interface Floor {
   label: string | null
   /** placed — построен; ghost — празно място за поставяне; next — следващото празно; hidden — тайният прозорец; wrong — не е на мястото си. */
   state?: 'placed' | 'ghost' | 'next' | 'hidden' | 'glow' | 'wrong' | 'locked'
+  /** Тайният прозорец, в който се въвежда в момента (светеща рамка). */
+  active?: boolean
+  /** Етаж, към който сочи подсказката. */
+  hint?: boolean
 }
 
 interface Props {
@@ -117,22 +121,29 @@ function FloorArt({ f, i, y }: { f: Floor; i: number; y: number }) {
   const numSize = Math.min(50, Math.floor((plateW - 26) / Math.max(1, len * 0.62)))
   return (
     <g transform={`translate(${W / 2 - 170} ${y})`}>
-      <g className={`nt-floor ${glow ? 'is-glow' : ''} ${f.state === 'wrong' ? 'is-wrong' : ''} ${f.state === 'locked' ? 'is-locked' : ''}`}>
+      <g className={`nt-floor ${glow ? 'is-glow' : ''} ${hidden ? 'is-hidden' : ''} ${f.active ? 'is-active' : ''} ${f.hint ? 'is-hint' : ''} ${f.state === 'wrong' ? 'is-wrong' : ''} ${f.state === 'locked' ? 'is-locked' : ''}`}>
+        {/* светлина зад току-що светналия прозорец */}
+        {glow && <ellipse className="nt-floor__rays" cx="170" cy={FLOOR_H / 2 - 4} rx="230" ry="92" fill="url(#nt-glow)" />}
         <rect width="340" height={FLOOR_H - 8} rx="22" fill={main} stroke={O} strokeWidth="6" />
         <rect x="10" y="8" width="320" height="18" rx="9" fill={light} opacity="0.55" />
         {/* прозорчета */}
         {/* при широка табелка прозорчетата стават по-тесни и не се застъпват с числото */}
         {(plateW > 200 ? [26, 314] : [38, 302]).map((cx) => (
           <g key={cx}>
-            <path d={`M${cx - ww} ${FLOOR_H - 28} V42 Q${cx - ww} 26 ${cx} 26 Q${cx + ww} 26 ${cx + ww} 42 V${FLOOR_H - 28} Z`} fill="#bfefff" stroke={O} strokeWidth="4" />
+            <path d={`M${cx - ww} ${FLOOR_H - 28} V42 Q${cx - ww} 26 ${cx} 26 Q${cx + ww} 26 ${cx + ww} 42 V${FLOOR_H - 28} Z`} fill={glow ? '#fff3a0' : '#bfefff'} stroke={O} strokeWidth="4" />
             <path d={`M${cx} 28 V${FLOOR_H - 28} M${cx - ww} 58 H${cx + ww}`} stroke={O} strokeWidth="3" />
           </g>
         ))}
         {/* табелката с числото — голям прозорец в средата */}
         <rect x={170 - plateW / 2} y="16" width={plateW} height={FLOOR_H - 40} rx="18" fill={hidden ? '#2a1660' : '#fffaf0'} stroke={O} strokeWidth="5" className="nt-floor__plate" />
-        {hidden ? (
-          <text x="170" y={FLOOR_H / 2 + 16} textAnchor="middle" className="art-text" fontSize="52" fill="#fff6a8">
+        {hidden && !f.label ? (
+          <text x="170" y={FLOOR_H / 2 + 16} textAnchor="middle" className="art-text nt-floor__secret" fontSize="52" fill="#fff6a8">
             ?
+          </text>
+        ) : hidden ? (
+          // въвежданото число се вижда в тайния прозорец
+          <text x="170" y={FLOOR_H / 2 + 14} textAnchor="middle" className="art-text nt-floor__num nt-floor__typed" fontSize={numSize} fill="#fff6a8">
+            {f.label}
           </text>
         ) : (
           <text x="170" y={FLOOR_H / 2 + 14} textAnchor="middle" className="art-text nt-floor__num" fontSize={numSize} fill={O}>

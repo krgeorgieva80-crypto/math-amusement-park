@@ -8403,7 +8403,7 @@ button:focus-visible {
 }
 
 /* балонът на Звездичка: на цялата ширина на колоната, Звездичка под него — текстът не се разтяга на тясна ивица */
-.nt-build-play .nt-bubble {
+:is(.nt-build-play, .nt-secret-play) .nt-bubble {
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-areas:
@@ -8413,7 +8413,7 @@ button:focus-visible {
   align-items: start;
 }
 
-.nt-build-play .nt-bubble > .speech-bubble {
+:is(.nt-build-play, .nt-secret-play) .nt-bubble > .speech-bubble {
   grid-area: bubble;
   min-width: 0;
   font-size: 21px;
@@ -8423,17 +8423,17 @@ button:focus-visible {
   transform-origin: left bottom;
 }
 
-.nt-build-play .nt-bubble > :not(.speech-bubble) {
+:is(.nt-build-play, .nt-secret-play) .nt-bubble > :not(.speech-bubble) {
   grid-area: mascot;
   margin-left: 6px;
 }
 
-.nt-build-play .nt-bubble > .speech-bubble .bubble-title {
+:is(.nt-build-play, .nt-secret-play) .nt-bubble > .speech-bubble .bubble-title {
   font-size: 22px;
 }
 
 /* опашката сочи надолу към Звездичка */
-.nt-build-play .nt-bubble > .speech-bubble::before {
+:is(.nt-build-play, .nt-secret-play) .nt-bubble > .speech-bubble::before {
   left: 28px;
   top: auto;
   bottom: -22px;
@@ -8443,7 +8443,7 @@ button:focus-visible {
   border-bottom: 0;
 }
 
-.nt-build-play .nt-bubble > .speech-bubble::after {
+:is(.nt-build-play, .nt-secret-play) .nt-bubble > .speech-bubble::after {
   left: 32px;
   top: auto;
   bottom: -14px;
@@ -8454,18 +8454,18 @@ button:focus-visible {
 }
 
 /* вертикално: Звездичка вляво от балона (височината е ценна) */
-.is-portrait .nt-build-play .nt-bubble {
+.is-portrait :is(.nt-build-play, .nt-secret-play) .nt-bubble {
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-areas: 'mascot bubble';
   gap: 0 14px;
   align-items: center;
 }
 
-.is-portrait .nt-build-play .nt-bubble > :not(.speech-bubble) {
+.is-portrait :is(.nt-build-play, .nt-secret-play) .nt-bubble > :not(.speech-bubble) {
   margin-left: 0;
 }
 
-.is-portrait .nt-build-play .nt-bubble > .speech-bubble::before {
+.is-portrait :is(.nt-build-play, .nt-secret-play) .nt-bubble > .speech-bubble::before {
   left: -22px;
   top: 50%;
   bottom: auto;
@@ -8475,7 +8475,7 @@ button:focus-visible {
   border-left: 0;
 }
 
-.is-portrait .nt-build-play .nt-bubble > .speech-bubble::after {
+.is-portrait :is(.nt-build-play, .nt-secret-play) .nt-bubble > .speech-bubble::after {
   left: -14px;
   top: 50%;
   bottom: auto;
@@ -8485,15 +8485,15 @@ button:focus-visible {
   border-left: 0;
 }
 
-.is-portrait .nt-build-play .nt-instruction {
+.is-portrait :is(.nt-build-play, .nt-secret-play) .nt-instruction {
   font-size: 30px;
 }
 
-.is-portrait .nt-build-play .nt-instruction b {
+.is-portrait :is(.nt-build-play, .nt-secret-play) .nt-instruction b {
   font-size: 32px;
 }
 
-.is-portrait .nt-build-play .nt-bubble > .speech-bubble {
+.is-portrait :is(.nt-build-play, .nt-secret-play) .nt-bubble > .speech-bubble {
   font-size: 28px;
 }
 
@@ -8638,4 +8638,523 @@ button:focus-visible {
 .is-landscape .nt-build-play .nt-block {
   font-size: clamp(34px, calc(var(--tap) * 0.55), 50px);
   min-width: max(150px, min(calc(var(--tap) * 2.4), 210px), calc(var(--chars, 3) * 0.66em + 30px));
+}
+
+/* ═════════════ „Кулата на числата“ — игра 2 „Тайните етажи“ ═════════════ */
+
+/* по-широка дясна колона: кулата е тясна и висока, а клавиатурата има нужда от място */
+.is-landscape .nt-secret-play .nt-grid {
+  grid-template-columns: 300px minmax(0, 1fr) 400px;
+}
+
+@media (max-width: 1450px) {
+  .is-landscape .nt-secret-play .nt-grid {
+    grid-template-columns: 250px minmax(0, 1fr) 340px;
+  }
+}
+
+.nt-secret-play .nt-task {
+  container-type: inline-size;
+}
+
+.nt-secret-play .nt-marquee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 26px 14px 30px;
+}
+
+/* нощната сцена: по-тъмно небе и луна */
+.nt-night::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 8, 60, 0.45), rgba(20, 8, 60, 0.05) 70%);
+  pointer-events: none;
+}
+
+.nt-moon {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 92px;
+  height: 92px;
+  z-index: 1;
+  filter: drop-shadow(0 0 18px rgba(255, 246, 168, 0.7));
+}
+
+.nt-secret-tower {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* тайните прозорци */
+.nt-floor.is-hidden .nt-floor__plate {
+  fill: #2a1660;
+}
+
+.nt-floor.is-hidden .nt-floor__secret {
+  animation: nt-twinkle 1.6s ease-in-out infinite;
+}
+
+@keyframes nt-twinkle {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.nt-floor.is-active .nt-floor__plate {
+  stroke: #fff6a8;
+  stroke-width: 8;
+  animation: nt-active 1.2s ease-in-out infinite;
+}
+
+@keyframes nt-active {
+  50% {
+    stroke: #ffd23f;
+  }
+}
+
+.nt-floor.is-hint .nt-floor__plate {
+  stroke: #2ed1c4;
+  stroke-width: 9;
+}
+
+/* светването: прозорецът се пълни със светлина, около него — сияние */
+.nt-floor.is-glow .nt-floor__plate {
+  fill: #fff6a8;
+  animation: nt-light 0.9s ease-out;
+}
+
+.nt-floor__rays {
+  animation: nt-rays 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes nt-light {
+  0% {
+    fill: #2a1660;
+  }
+  40% {
+    fill: #fffbe0;
+  }
+}
+
+@keyframes nt-rays {
+  0%,
+  100% {
+    opacity: 0.55;
+    scale: 0.9;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.05;
+  }
+}
+
+.nt-floor-btn:has(.nt-floor.is-hidden) {
+  cursor: pointer;
+}
+
+/* дясната колона */
+.nt-secret-side {
+  justify-content: flex-start;
+  gap: 14px;
+  min-height: 0;
+}
+
+.nt-secret-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.nt-secret-actions .game-btn {
+  min-width: 0;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* Откривател: три фенерчета-отговора */
+.nt-lanterns {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nt-lantern {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: max(88px, var(--tap));
+  padding: 8px 18px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #3d2490, #2a1660);
+  border: 5px solid var(--ink);
+  box-shadow: 0 7px 0 rgba(20, 8, 60, 0.55);
+  color: #8f7cc7;
+  transition: transform 0.12s, box-shadow 0.12s, background 0.2s;
+  touch-action: manipulation;
+}
+
+.nt-lantern__icon {
+  width: 40px;
+  height: 52px;
+  flex: 0 0 auto;
+}
+
+.nt-lantern__num {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(40px, calc(var(--tap) * 0.6));
+  color: #fff6a8;
+  white-space: nowrap;
+}
+
+.nt-lantern.is-on {
+  background: linear-gradient(180deg, #fff6a8, #ffd23f);
+  color: #ffd23f;
+  transform: translateY(-4px);
+  box-shadow: 0 0 0 6px rgba(255, 246, 168, 0.55), 0 11px 0 rgba(20, 8, 60, 0.55);
+}
+
+.nt-lantern.is-on .nt-lantern__num {
+  color: var(--ink);
+}
+
+.nt-lantern:active:not(:disabled) {
+  transform: translateY(3px);
+}
+
+/* Изследовател и Майстор: полета и собствена клавиатура */
+.nt-pad {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 5px solid var(--ink);
+  box-shadow: 0 8px 0 var(--yellow-d);
+}
+
+.nt-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.nt-fields.is-two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.nt-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px 8px;
+  border-radius: 20px;
+  background: #2a1660;
+  border: 4px solid var(--ink);
+  box-shadow: 0 5px 0 rgba(20, 8, 60, 0.45);
+  touch-action: manipulation;
+}
+
+.nt-field__name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #cbb9ff;
+  white-space: nowrap;
+}
+
+.nt-field__value {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(36px, calc(var(--tap) * 0.6));
+  line-height: 1.1;
+  color: #fff6a8;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.nt-fields.is-two .nt-field__value {
+  font-size: max(28px, calc(var(--tap) * 0.46));
+}
+
+.nt-field__value.is-empty {
+  opacity: 0.55;
+}
+
+.nt-field.is-active {
+  box-shadow: 0 0 0 6px #ffd23f, 0 5px 0 rgba(20, 8, 60, 0.45);
+  animation: answer-blink 1.6s ease-in-out infinite;
+}
+
+.nt-field.is-wrong {
+  box-shadow: 0 0 0 6px var(--orange), 0 5px 0 rgba(20, 8, 60, 0.45);
+  animation: shake 0.45s ease;
+}
+
+.nt-field.is-correct {
+  background: #fff6a8;
+  box-shadow: 0 0 0 6px var(--green), 0 5px 0 rgba(20, 8, 60, 0.3);
+}
+
+.nt-field.is-correct .nt-field__name {
+  color: var(--purple-d);
+}
+
+.nt-field.is-correct .nt-field__value {
+  color: var(--ink);
+}
+
+.nt-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.nt-key {
+  order: var(--o3);
+  min-height: max(72px, calc(var(--tap) * 0.92));
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff, #efe6ff);
+  border: 4px solid var(--ink);
+  box-shadow: 0 6px 0 #b9a6e8;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(40px, calc(var(--tap) * 0.62));
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  touch-action: manipulation;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.nt-key:active:not(:disabled) {
+  transform: translateY(5px);
+  box-shadow: 0 1px 0 #b9a6e8;
+}
+
+.nt-key:disabled {
+  opacity: 0.45;
+}
+
+.nt-key:focus-visible,
+.nt-field:focus-visible,
+.nt-lantern:focus-visible {
+  outline: 5px solid #fff6a8;
+  outline-offset: 3px;
+}
+
+.nt-key--clear {
+  background: linear-gradient(180deg, #ffe3c2, #ffc98f);
+  color: var(--orange-d);
+}
+
+.nt-key--back {
+  background: linear-gradient(180deg, #ffe0ee, #ffb8d6);
+  color: var(--pink-d);
+}
+
+/* редицата в похвалата */
+.nt-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 6px;
+  white-space: nowrap;
+}
+
+.nt-sequence > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nt-sequence .is-secret {
+  color: var(--pink-d);
+  font-weight: 900;
+}
+
+.nt-sequence__arrow {
+  color: var(--purple);
+}
+
+.nt-sequence__rule {
+  flex-basis: 100%;
+  justify-content: center;
+  white-space: normal;
+  color: var(--purple-d);
+  font-weight: 900;
+}
+
+/* луната е в горния десен ъгъл (общото правило за сцената я прави relative) */
+.nt-stage > .nt-moon {
+  position: absolute;
+}
+
+/* бутоните под клавиатурата: шрифтът и отстъпът следват ширината — надписите не се отрязват */
+.nt-secret-side {
+  container-type: inline-size;
+}
+
+.nt-secret-actions .game-btn__face {
+  padding: 0 12px;
+  font-size: clamp(22px, 7.5cqi, 32px);
+  white-space: nowrap;
+}
+
+/* вертикално: полета → клавиатура 6 × 2 на цялата ширина → бутоните в един ред */
+.is-portrait .nt-secret-side {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.is-portrait .nt-keypad {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.is-portrait .nt-key {
+  order: var(--o6);
+  min-height: max(64px, calc(var(--tap) * 0.85));
+  font-size: max(36px, calc(var(--tap) * 0.5));
+}
+
+.is-portrait .nt-pad {
+  padding: 12px;
+}
+
+.is-portrait .nt-lanterns {
+  flex-direction: row;
+}
+
+.is-portrait .nt-lantern {
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+}
+
+.is-portrait .nt-field__name {
+  font-size: 24px;
+}
+
+.is-portrait .nt-secret-actions .game-btn__face {
+  font-size: clamp(30px, 4cqi, 44px);
+}
+
+.no-motion .nt-floor.is-hidden .nt-floor__secret,
+.no-motion .nt-floor.is-active .nt-floor__plate,
+.no-motion .nt-floor.is-glow .nt-floor__plate,
+.no-motion .nt-floor__rays,
+.no-motion .nt-field.is-active {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nt-floor.is-hidden .nt-floor__secret,
+  .nt-floor.is-active .nt-floor__plate,
+  .nt-floor.is-glow .nt-floor__plate,
+  .nt-floor__rays,
+  .nt-field.is-active {
+    animation: none !important;
+  }
+}
+
+/* таблет вертикално (по-широк екран): полето вляво от клавиатурата — повече височина за кулата */
+@media (orientation: portrait) and (min-aspect-ratio: 3/5) {
+  .is-portrait .nt-secret-play .nt-pad {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .is-portrait .nt-secret-play .nt-fields {
+    flex: 0 0 26%;
+    grid-template-columns: 1fr;
+    align-content: center;
+  }
+
+  .is-portrait .nt-secret-play .nt-keypad {
+    flex: 1;
+  }
+}
+
+/* кулата е винаги в средата на сцената (независимо от общите правила за сцената) */
+.nt-stage > .nt-secret-tower {
+  position: absolute;
+  inset: 12px 12px 10px;
+  height: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* етикетът на нивото се съкращава според ширината на платното (вкл. таблет 4:3) — звукът винаги се побира */
+.nt-play {
+  container-type: inline-size;
+}
+
+@container (max-width: 1700px) {
+  .nt-play .nt-chip-pre {
+    display: none;
+  }
+}
+
+/* числата в полетата и фенерчетата следват дължината си — 1 000 000 се вижда изцяло */
+.nt-field,
+.nt-lantern__num {
+  container-type: inline-size;
+}
+
+.nt-field__value,
+.nt-fields.is-two .nt-field__value {
+  font-size: min(max(36px, calc(var(--tap) * 0.6)), calc(132cqi / var(--len, 3)));
+}
+
+.nt-lantern {
+  min-width: 0;
+}
+
+.nt-lantern__num {
+  min-width: 0;
+  font-size: min(max(40px, calc(var(--tap) * 0.6)), calc(132cqi / var(--len, 3)));
+}
+
+/* телефон хоризонтално: по-широка дясна колона — клавишите остават големи за пръст */
+@media (orientation: landscape) and (max-height: 520px) {
+  .is-landscape .nt-secret-play .nt-grid {
+    grid-template-columns: 240px minmax(0, 1fr) 560px;
+  }
+}
+
+.is-portrait .nt-lantern__num {
+  align-self: stretch;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+/* фенерчето е контейнерът; числото заема ширината без иконката и отстъпите */
+.nt-lantern {
+  container-type: inline-size;
+}
+
+.nt-lantern .nt-lantern__num {
+  container-type: normal;
+  font-size: min(max(40px, calc(var(--tap) * 0.6)), calc((100cqi - 96px) * 1.32 / var(--len, 3)));
+}
+
+.is-portrait .nt-lantern .nt-lantern__num {
+  font-size: min(max(40px, calc(var(--tap) * 0.6)), calc((100cqi - 30px) * 1.32 / var(--len, 3)));
 }

@@ -15,6 +15,8 @@ import type { TaskOutcome } from '../magic-tokens/PlayBoard'
 import { FitName } from '../multiplication-wheel/MultiplicationWheelGame'
 import { FLOOR_COLORS, TowerBackdrop } from './TowerScene'
 import { BuildBoard } from './build/BuildBoard'
+import { SecretBoard } from './secret/SecretBoard'
+import { SECRET_FLOORS, SECRET_HIDDEN, STEPS, generateSecretTasks, type SecretTask } from './secret/logic'
 import { FLOORS, RANGE_MAX, fmt, generateBuildTasks, type BuildTask } from './build/logic'
 
 const GAME_ID = 'number-tower'
@@ -24,11 +26,12 @@ export type TowerModeId = 'build' | 'secret' | 'lift' | 'top'
 
 export const TOWER_MODES: { id: TowerModeId; label: string; description: string; color: string; ready: boolean; result: string }[] = [
   { id: 'build', label: 'Построй кулата', description: 'Подреди етажите', color: 'pink', ready: true, result: 'Кулата: Построй кулата' },
-  { id: 'secret', label: 'Тайните етажи', description: 'Открий липсващото число', color: 'purple', ready: false, result: 'Кулата: Тайните етажи' },
+  { id: 'secret', label: 'Тайните етажи', description: 'Открий липсващото число', color: 'purple', ready: true, result: 'Кулата: Тайните етажи' },
   { id: 'lift', label: 'Числовият асансьор', description: 'Сравни и намери етажа', color: 'turquoise', ready: false, result: 'Кулата: Числовият асансьор' },
   { id: 'top', label: 'Върхът на кулата', description: 'Приключение в три етапа', color: 'orange', ready: false, result: 'Кулата: Върхът на кулата' },
 ]
 const BUILD_RESULT_MODE = TOWER_MODES[0].result
+const SECRET_RESULT_MODE = TOWER_MODES[1].result
 
 /** Само при разработка: ?testBuild=12.35.81.7a,470.407.704.740d (числата в тавата; a — възходящо, d — низходящо). */
 function testBuildTasks(): BuildTask[] | null {
@@ -38,7 +41,26 @@ function testBuildTasks(): BuildTask[] | null {
   return raw.split(',').map((q, i) => ({ id: i + 1, order: q.endsWith('d') ? ('desc' as const) : ('asc' as const), numbers: q.replace(/[ad]$/, '').split('.').map(Number) }))
 }
 
-type Phase = { name: 'modes' } | { name: 'setup' } | { name: 'build'; tasks: BuildTask[]; startedAt: number } | { name: 'summary'; outcomes: TaskOutcome[]; durationSec: number }
+/** Само при разработка: ?testSecret=20.30.40.50.60:2,100.90.80.70.60.50:1-4 (етажите отдолу нагоре : тайните прозорци). */
+function testSecretTasks(): SecretTask[] | null {
+  if (!import.meta.env.DEV) return null
+  const raw = new URLSearchParams(window.location.search).get('testSecret')
+  if (!raw) return null
+  return raw.split(',').map((q, i) => {
+    const [vs, hs] = q.split(':')
+    const values = vs.split('.').map(Number)
+    return { id: i + 1, values, hidden: hs.split('-').map(Number), step: Math.abs(values[1] - values[0]), direction: values[1] > values[0] ? ('up' as const) : ('down' as const) }
+  })
+}
+
+type Phase =
+  | { name: 'modes' }
+  | { name: 'setup' }
+  | { name: 'build'; tasks: BuildTask[]; startedAt: number }
+  | { name: 'secret'; tasks: SecretTask[]; startedAt: number }
+  | { name: 'summary'; outcomes: TaskOutcome[]; durationSec: number }
+
+type PlayMode = 'build' | 'secret'
 
 /** „Кулата на числата“: игри → настройки → задачи → обобщение. */
 export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () => void }) {
@@ -47,11 +69,15 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
   const setDifficulty = (difficulty: Difficulty) => updateSettings({ difficulty })
   const setCount = (n: number) => updateSettings({ taskCount: (n === 5 || n === 15 ? n : 10) as TaskCount })
   const [phase, setPhase] = useState<Phase>({ name: 'modes' })
+  const [mode, setMode] = useState<PlayMode>('build')
   const savedGames = useRef(new Set<number>())
   const d = settings.difficulty
   const n = settings.taskCount
 
-  const start = () => setPhase({ name: 'build', tasks: testBuildTasks() ?? generateBuildTasks(grade, d, n), startedAt: nowMs() })
+  const start = () =>
+    mode === 'secret'
+      ? setPhase({ name: 'secret', tasks: testSecretTasks() ?? generateSecretTasks(grade, d, n), startedAt: nowMs() })
+      : setPhase({ name: 'build', tasks: testBuildTasks() ?? generateBuildTasks(grade, d, n), startedAt: nowMs() })
 
   const finish = (outcomes: TaskOutcome[], startedAt: number) => {
     // всяка игра се записва само веднъж — и при двойно докосване на „Резултат“
@@ -60,7 +86,7 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
     const durationSec = Math.round((nowMs() - startedAt) / 1000)
     saveResult({
       game: GAME_ID,
-      mode: BUILD_RESULT_MODE,
+      mode: mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE,
       grade,
       difficulty: d,
       total: outcomes.length,
@@ -75,19 +101,63 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
 
   switch (phase.name) {
     case 'modes':
-      return <TowerModes grade={grade} onChoose={() => setPhase({ name: 'setup' })} onExit={onExit} />
+      return (
+        <TowerModes
+          grade={grade}
+          onChoose={(m) => {
+            setMode(m === 'secret' ? 'secret' : 'build')
+            setPhase({ name: 'setup' })
+          }}
+          onExit={onExit}
+        />
+      )
     case 'setup':
       return (
-        <BuildSetup grade={grade} difficulty={d} count={n} locked={locked} onDifficulty={setDifficulty} onCount={setCount} onStart={start} onBack={() => setPhase({ name: 'modes' })} onExit={onExit} />
+        <TowerSetup
+          grade={grade}
+          difficulty={d}
+          count={n}
+          locked={locked}
+          title={mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
+          resultMode={mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE}
+          info={
+            mode === 'secret' ? (
+              <>
+                <span>
+                  {SECRET_FLOORS[d]} етажа · {SECRET_HIDDEN[d] === 2 ? '2 тайни прозореца' : '1 таен прозорец'}
+                </span>
+                <span>Стъпки: {STEPS[grade][d].map(fmt).join(', ')}</span>
+                <span>{SECRET_ORDER_TEXT[d]}</span>
+                <span>{SECRET_ANSWER_TEXT[d]}</span>
+              </>
+            ) : (
+              <>
+                <span>
+                  {FLOORS[d]} етажа · 0 – {fmt(RANGE_MAX[grade])}
+                </span>
+                <span>{NUMBERS_TEXT[d]}</span>
+                <span>{ORDER_TEXT[d]}</span>
+                <span>{HELP_TEXT[d]}</span>
+              </>
+            )
+          }
+          onDifficulty={setDifficulty}
+          onCount={setCount}
+          onStart={start}
+          onBack={() => setPhase({ name: 'modes' })}
+          onExit={onExit}
+        />
       )
     case 'build':
       return <BuildBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+    case 'secret':
+      return <SecretBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'summary':
       return (
         <GameSummary
           grade={grade}
           difficulty={d}
-          modeName="Построй кулата"
+          modeName={mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
           outcomes={phase.outcomes}
           durationSec={phase.durationSec}
           onAgain={start}
@@ -210,11 +280,25 @@ const HELP_TEXT: Record<Difficulty, string> = {
   master: 'Без подсказки',
 }
 
-function BuildSetup(p: {
+const SECRET_ORDER_TEXT: Record<Difficulty, string> = {
+  explorer: 'Етажите растат нагоре',
+  researcher: 'Растат или намаляват',
+  master: 'Растат или намаляват',
+}
+const SECRET_ANSWER_TEXT: Record<Difficulty, string> = {
+  explorer: 'Избор от 3 числа · подсказка',
+  researcher: 'Клавиатура · 1 подсказка',
+  master: 'Клавиатура · без подсказки',
+}
+
+function TowerSetup(p: {
   grade: Grade
   difficulty: Difficulty
   count: number
   locked: boolean
+  title: string
+  resultMode: string
+  info: ReactNode
   onDifficulty: (d: Difficulty) => void
   onCount: (n: number) => void
   onStart: () => void
@@ -258,7 +342,7 @@ function BuildSetup(p: {
           Игри
         </GameButton>
         <GradeTicket grade={p.grade} />
-        <div className="level-chip">Построй кулата</div>
+        <div className="level-chip">{p.title}</div>
         <div className="top-bar__spacer" />
         <GameButton color="yellow" size="md" icon="map" onClick={p.onExit}>
           Към парка
@@ -268,7 +352,7 @@ function BuildSetup(p: {
       <div className="setup-card">
         <div className="setup-card__title">
           <NumberTowerArt size={84} />
-          <span>Построй кулата</span>
+          <span>{p.title}</span>
         </div>
         <div className="setup-grid">
           {pills(
@@ -285,14 +369,7 @@ function BuildSetup(p: {
           )}
           <div className="setup-row is-wide">
             <span className="setup-row__label">Какво те чака</span>
-            <div className="wheel-setup-info">
-              <span>
-                {FLOORS[p.difficulty]} етажа · 0 – {fmt(RANGE_MAX[p.grade])}
-              </span>
-              <span>{NUMBERS_TEXT[p.difficulty]}</span>
-              <span>{ORDER_TEXT[p.difficulty]}</span>
-              <span>{HELP_TEXT[p.difficulty]}</span>
-            </div>
+            <div className="wheel-setup-info">{p.info}</div>
           </div>
         </div>
         <div className="setup-card__footer">
@@ -301,7 +378,7 @@ function BuildSetup(p: {
             <StarRow
               stars={
                 bestStars(
-                  results.filter((r) => r.mode === BUILD_RESULT_MODE),
+                  results.filter((r) => r.mode === p.resultMode),
                   GAME_ID,
                   p.grade,
                   p.difficulty,
