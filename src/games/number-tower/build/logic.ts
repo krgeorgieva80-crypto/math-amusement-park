@@ -130,10 +130,10 @@ export const ruleBottom = (t: BuildTask) => (t.order === 'asc' ? 'Най-дол�
 /** Подсказка без готовия отговор: сравняване на две от оставащите числа или правило за разрядите. */
 export function buildHint(t: BuildTask, remaining: number[], level: 'visual' | 'limited'): string {
   if (!remaining.length) return 'Провери кулата отдолу нагоре.'
-  if (level === 'limited') return 'Сравни цифрите отляво надясно: първо най-големия разряд. Ако е еднакъв — следващия.'
+  if (level === 'limited') return 'Сравни първо най-левите цифри. Ако са еднакви — следващите.'
   // две числа поред от тавата (не непременно следващото) — детето сравнява само
   const want = t.order === 'asc' ? 'по-малкото' : 'по-голямото'
-  return remaining.length === 1 ? 'Остана само един етаж — той е последен.' : `Сравни ${fmt(remaining[0])} и ${fmt(remaining[1])}. Кое е ${want}? Сравнявай така всички етажи.`
+  return remaining.length === 1 ? 'Остана само един етаж — той е последен.' : `Сравни ${fmt(remaining[0])} и ${fmt(remaining[1])}. Кое е ${want}?`
 }
 
 export const praise = (t: BuildTask) => (t.order === 'asc' ? 'Браво! Кулата е подредена от най-малкото до най-голямото!' : 'Браво! Кулата е подредена от най-голямото до най-малкото!')

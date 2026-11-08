@@ -46,6 +46,15 @@ const FLOOR_H = 112
 const BASE_H = 190
 const TOP_H = 230
 
+/** Лявата стена на етажите — дял от ширината на кулата без подписи (празното небе вляво). */
+export const FLOOR_LEFT = (100 + W / 2 - 170) / (W + 200)
+
+/** Съотношение ширина/височина на кулата без подписи (n етажа). */
+export const towerAspect = (n: number) => (W + 200) / (TOP_H + n * FLOOR_H + BASE_H)
+
+/** Средата на етаж i (отдолу нагоре) от n — като дял от височината на кулата (за табелки извън SVG). */
+export const floorCenter = (i: number, n: number) => (TOP_H + (n - 1 - i) * FLOOR_H + FLOOR_H / 2 - 4) / (TOP_H + n * FLOOR_H + BASE_H)
+
 function Sparkle({ x, y, s, c = '#fff6a8', d = 0 }: { x: number; y: number; s: number; c?: string; d?: number }) {
   return (
     <path

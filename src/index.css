@@ -8314,3 +8314,328 @@ button:focus-visible {
 .nt-build-play .nt-marquee .nt-marquee__text {
   font-size: min(30px, 9.5cqi);
 }
+
+/* ── корекции след прегледа: табелки за посоката, кратка инструкция, балон ── */
+
+/* хоризонтални табелки „горе / долу“ вместо вертикалните надписи */
+.nt-build-play .nt-build__order,
+.is-portrait .nt-build-play .nt-build__order {
+  width: auto;
+  padding: 14% 0 10%;
+  gap: 6px;
+  font-size: inherit;
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+
+.nt-build-play .nt-build__order svg {
+  width: 26px;
+  min-height: 40px;
+}
+
+.nt-sign {
+  writing-mode: horizontal-tb !important;
+  transform: none !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 14px 8px;
+  border-radius: 16px;
+  background: #fffaf0;
+  border: 4px solid var(--ink);
+  box-shadow: 0 5px 0 rgba(59, 42, 90, 0.45);
+  color: var(--ink);
+  white-space: nowrap;
+  line-height: 1.05;
+}
+
+.nt-sign small {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--purple);
+}
+
+.nt-sign b {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.nt-sign--top {
+  background: #fff6a8;
+}
+
+.is-portrait .nt-sign small {
+  font-size: 22px;
+}
+
+.is-portrait .nt-sign b {
+  font-size: 30px;
+}
+
+/* заглавието на табелата — само „Построй кулата“ */
+.nt-build-play .nt-marquee {
+  padding: 12px 14px 16px;
+}
+
+.nt-build-play .nt-marquee .nt-marquee__title {
+  margin-top: 0;
+  font-size: min(36px, 13cqi);
+  white-space: nowrap;
+}
+
+/* кратка инструкция на два реда */
+.nt-instruction {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.nt-instruction b {
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--ink);
+}
+
+/* балонът на Звездичка: на цялата ширина на колоната, Звездичка под него — текстът не се разтяга на тясна ивица */
+.nt-build-play .nt-bubble {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'bubble bubble'
+    'mascot .';
+  gap: 14px 0;
+  align-items: start;
+}
+
+.nt-build-play .nt-bubble > .speech-bubble {
+  grid-area: bubble;
+  min-width: 0;
+  font-size: 21px;
+  line-height: 1.25;
+  padding: 12px 16px;
+  overflow-wrap: break-word;
+  transform-origin: left bottom;
+}
+
+.nt-build-play .nt-bubble > :not(.speech-bubble) {
+  grid-area: mascot;
+  margin-left: 6px;
+}
+
+.nt-build-play .nt-bubble > .speech-bubble .bubble-title {
+  font-size: 22px;
+}
+
+/* опашката сочи надолу към Звездичка */
+.nt-build-play .nt-bubble > .speech-bubble::before {
+  left: 28px;
+  top: auto;
+  bottom: -22px;
+  margin-top: 0;
+  border: 14px solid transparent;
+  border-top: 22px solid var(--ink);
+  border-bottom: 0;
+}
+
+.nt-build-play .nt-bubble > .speech-bubble::after {
+  left: 32px;
+  top: auto;
+  bottom: -14px;
+  margin-top: 0;
+  border: 10px solid transparent;
+  border-top: 16px solid #fff;
+  border-bottom: 0;
+}
+
+/* вертикално: Звездичка вляво от балона (височината е ценна) */
+.is-portrait .nt-build-play .nt-bubble {
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: 'mascot bubble';
+  gap: 0 14px;
+  align-items: center;
+}
+
+.is-portrait .nt-build-play .nt-bubble > :not(.speech-bubble) {
+  margin-left: 0;
+}
+
+.is-portrait .nt-build-play .nt-bubble > .speech-bubble::before {
+  left: -22px;
+  top: 50%;
+  bottom: auto;
+  margin-top: -14px;
+  border: 14px solid transparent;
+  border-right: 22px solid var(--ink);
+  border-left: 0;
+}
+
+.is-portrait .nt-build-play .nt-bubble > .speech-bubble::after {
+  left: -14px;
+  top: 50%;
+  bottom: auto;
+  margin-top: -10px;
+  border: 10px solid transparent;
+  border-right: 16px solid #fff;
+  border-left: 0;
+}
+
+.is-portrait .nt-build-play .nt-instruction {
+  font-size: 30px;
+}
+
+.is-portrait .nt-build-play .nt-instruction b {
+  font-size: 32px;
+}
+
+.is-portrait .nt-build-play .nt-bubble > .speech-bubble {
+  font-size: 28px;
+}
+
+/* табелките са закачени за кулата: дясната им страна сочи към етажа */
+.nt-build-play .nt-build__tower {
+  position: relative;
+}
+
+.is-portrait .nt-build-play .nt-build__tower {
+  width: auto;
+  align-self: center;
+  margin-left: 0;
+}
+
+.nt-build__tower .nt-sign {
+  position: absolute;
+  right: calc(72.4% + 12px);
+  translate: 0 -50%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* малка стрелка-опашка към етажа */
+.nt-build__tower .nt-sign::after {
+  content: '';
+  position: absolute;
+  right: -16px;
+  top: 50%;
+  margin-top: -10px;
+  border: 10px solid transparent;
+  border-left: 14px solid var(--ink);
+  border-right: 0;
+}
+
+/* заглавието е самата табела (без тъмното табло) — побира се на всяка ширина */
+.nt-build-play .nt-marquee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 26px 14px 30px;
+}
+
+.nt-build-play .nt-marquee .nt-marquee__title {
+  font-size: min(40px, 11cqi);
+  line-height: 1.1;
+  white-space: nowrap;
+  text-align: center;
+}
+
+/* табелките растат на малък екран (по --tap), за да се четат и на телефон */
+.nt-build__tower .nt-sign small {
+  font-size: max(15px, calc(var(--tap) * 0.27));
+}
+
+.nt-build__tower .nt-sign b {
+  font-size: max(22px, calc(var(--tap) * 0.36));
+}
+
+
+
+/* по-тесен таблет хоризонтално: повече място за сцената с кулата */
+@media (max-width: 1150px) {
+  .is-landscape .nt-build-play .nt-grid {
+    grid-template-columns: 236px minmax(0, 1fr) 216px;
+  }
+}
+
+/* размерът на кулата в играта се задава точно (от наличното място) — без разтягане от CSS */
+.nt-build-play .nt-build__tower .nt-tower {
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  flex: 0 0 auto;
+}
+
+.is-landscape .nt-build-play .nt-build__tower {
+  height: 100%;
+  flex: 0 0 auto;
+}
+
+/* вертикално: по-компактни блокове — по два на ред и при 1 000 000 */
+.is-portrait .nt-build-play .nt-block {
+  min-width: max(150px, calc(var(--tap) * 2), calc(var(--chars, 3) * 0.66em + 30px));
+  min-height: max(64px, calc(var(--tap) * 0.85));
+  font-size: max(30px, calc(var(--tap) * 0.42));
+  padding: 0 12px;
+}
+
+/* компактни табелки — кулата остава голяма */
+.nt-build__tower .nt-sign {
+  padding: 4px 10px 6px;
+  border-width: 3px;
+  border-radius: 14px;
+}
+
+.nt-build__tower .nt-sign small {
+  font-size: max(13px, calc(var(--tap) * 0.22));
+}
+
+.nt-build__tower .nt-sign b {
+  font-size: max(18px, calc(var(--tap) * 0.3));
+}
+
+/* тясна сцена хоризонтално (таблет 4:3): тавата е над кулата на редове — кулата получава цялата ширина */
+.nt-build-play .nt-stage {
+  container-type: inline-size;
+}
+
+@container (max-width: 760px) {
+  .nt-build-play .nt-build {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .nt-build-play .nt-tray {
+    align-self: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .nt-build-play .nt-block {
+    min-height: max(60px, calc(var(--tap) * 0.85));
+    font-size: max(30px, calc(var(--tap) * 0.46));
+  }
+
+  .is-landscape .nt-build-play .nt-build__tower {
+    height: auto;
+    flex: 1 1 0;
+    min-height: 0;
+    width: auto;
+    align-self: center;
+  }
+}
+
+/* телефон хоризонтално: блоковете остават удобни за докосване (височина), но не са прекалено широки */
+.is-landscape .nt-build-play .nt-block {
+  font-size: clamp(34px, calc(var(--tap) * 0.55), 50px);
+  min-width: max(150px, min(calc(var(--tap) * 2.4), 210px), calc(var(--chars, 3) * 0.66em + 30px));
+}

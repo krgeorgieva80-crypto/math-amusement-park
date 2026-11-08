@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useApp } from '../../../core/AppContext'
 import { useStage } from '../../../core/Stage'
 import { Mascot, type MascotMood } from '../../../components/art/Mascot'
@@ -10,7 +10,7 @@ import { SoundControl } from '../../../components/ui/SoundControl'
 import { DIFFICULTY_LABELS, starsForTask, type Difficulty, type Grade } from '../../magic-tokens/logic'
 import type { TaskOutcome } from '../../magic-tokens/PlayBoard'
 import { usePointerDrag } from '../../magic-tokens/usePointerDrag'
-import { FLOOR_COLORS, TowerBackdrop, TowerScene, type Floor } from '../TowerScene'
+import { FLOOR_COLORS, TowerBackdrop, TowerScene, FLOOR_LEFT, floorCenter, towerAspect, type Floor } from '../TowerScene'
 import { HELP, buildHint, checkBuild, fmt, instruction, praise, ruleBottom, type BuildTask } from './logic'
 
 type Feedback = null | { kind: 'correct'; stars: 1 | 2 | 3 } | { kind: 'wrong'; message: string } | { kind: 'info'; message: string }
@@ -25,6 +25,17 @@ interface Props {
 
 /** Цветът на блока в тавата — по стойността (един и същ етаж запазва цвета си). */
 const colorOf = (t: BuildTask, v: number) => FLOOR_COLORS[(t.numbers.indexOf(v) + 2) % FLOOR_COLORS.length][0]
+
+/**
+ * Позиция на табелка „горе/долу“ (px от върха на обвивката; кулата е долепена долу).
+ * Обикновено — срещу най-горния/най-долния етаж; при малко място — в ъглите: над върха и при основата.
+ */
+function signTop(g: { w: number; h: number; tight: boolean }, n: number, which: 'top' | 'bottom'): CSSProperties {
+  const svgH = g.w / towerAspect(n)
+  const offY = Math.max(0, g.h - svgH)
+  if (g.tight) return which === 'top' ? { top: offY + svgH * 0.02, translate: '0 0' } : { top: offY + svgH * 0.98, translate: '0 -100%' }
+  return { top: offY + floorCenter(which === 'top' ? n - 1 : 0, n) * svgH }
+}
 
 /** Текст, в който думите с тире („най-малкото“) не се разделят на два реда. */
 function Words({ text }: { text: string }) {
@@ -44,6 +55,10 @@ function Words({ text }: { text: string }) {
 export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props) {
   const { settings, play } = useApp()
   const { scale } = useStage()
+  // табелките „горе/долу“ застъпват празното небе вляво от кулата; само това, което стърчи, получава място
+  const towerRef = useRef<HTMLDivElement>(null)
+  // размерите на кулата и мястото за табелките (в логически px) — изчисляват се от наличното място
+  const [geo, setGeo] = useState({ w: 360, h: 0, room: 0, tight: false })
   const [index, setIndex] = useState(0)
   const task = tasks[index]
   const help = HELP[difficulty]
@@ -94,7 +109,7 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
     if (picked === v) return placeAt(v, firstEmpty >= 0 ? firstEmpty : placed.length - 1)
     setPicked(v)
     clearMsg()
-    setFeedback({ kind: 'info', message: `Избра ${fmt(v)}. Докосни етажа, на който да го поставиш.` })
+    setFeedback({ kind: 'info', message: `Избра ${fmt(v)}. Докосни празен етаж.` })
   }
 
   const tapFloor = (i: number) => {
@@ -113,7 +128,7 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
       return
     }
     play('hint')
-    setFeedback({ kind: 'info', message: 'Първо избери етаж от тавата — или го плъзни до кулата.' })
+    setFeedback({ kind: 'info', message: 'Първо избери етаж от тавата.' })
   }
 
   const { drag, bind } = usePointerDrag<number>({
@@ -196,6 +211,42 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
     setSolved(false)
   }
 
+  useLayoutEffect(() => {
+    const el = towerRef.current
+    if (!el) return
+    const fit = () => {
+      const parent = el.parentElement
+      // откачен елемент (сцената се презарежда при „разклащане“) или още без размер — не се мери
+      if (!parent || !el.isConnected || el.offsetHeight === 0) return
+      const n = task.numbers.length
+      const aspect = towerAspect(n)
+      const signW = Math.max(0, ...[...el.querySelectorAll<HTMLElement>('.nt-sign')].map((x) => x.offsetWidth))
+      // вертикално тавата е над кулата (отделен ред) — не отнема ширина
+      const column = getComputedStyle(parent).flexDirection.startsWith('column')
+      const others = column ? 0 : [...parent.children].filter((c) => c !== el).reduce((a, c) => a + (c as HTMLElement).offsetWidth + 24, 0)
+      const availW = parent.clientWidth - others - 16
+      const h = el.offsetHeight
+      const w0 = Math.max(80, Math.min(h * aspect, availW))
+      const over = (w: number) => Math.max(0, Math.ceil(signW + 18 - w * FLOOR_LEFT))
+      let w = w0
+      let tight = false
+      if (w0 + over(w0) > availW) {
+        // кулата се смалява толкова, колкото е нужно, за да са табелките до етажите (без да застъпват тавата)
+        const w1 = (availW - signW - 18) / (1 - FLOOR_LEFT)
+        if (w1 >= w0 * 0.55) w = w1
+        else tight = true
+      }
+      const room = tight ? Math.max(0, Math.min(over(w), availW - w)) : over(w)
+      setGeo((g) => (Math.abs(g.w - w) > 2 || Math.abs(g.h - h) > 2 || Math.abs(g.room - room) > 2 || g.tight !== tight ? { w: Math.floor(w), h, room, tight } : g))
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(el)
+    if (el.parentElement) ro.observe(el.parentElement)
+    document.fonts?.ready.then(fit).catch(() => {})
+    return () => ro.disconnect()
+  }, [task.id, task.order, task.numbers.length, scale, shake])
+
   // клавиатура: Enter — Провери / Следваща; Escape — отказ от избора
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -220,12 +271,7 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
   let bubble: ReactNode
   if (feedback?.kind === 'wrong') {
     mood = 'encourage'
-    bubble = (
-      <>
-        <b className="bubble-title">Опитай отново!</b>
-        <Words text={feedback.message} />
-      </>
-    )
+    bubble = <Words text={feedback.message} />
   } else if (hint) {
     mood = 'think'
     bubble = (
@@ -239,8 +285,8 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
     bubble = <Words text={feedback.message} />
   } else if (solved) {
     mood = 'cheer'
-    bubble = <Words text={praise(task)} />
-  } else bubble = <Words text={ruleBottom(task)} />
+    bubble = <Words text="Браво! Кулата е готова!" />
+  } else bubble = <Words text="Плъзни етаж до кулата или го докосни." />
 
   const tap = Math.ceil(52 / Math.max(0.1, scale))
   const helpDisabled = !hintsOn || solved || (help === 'limited' && usedHint)
@@ -282,17 +328,18 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
         <section className="nt-task">
           <div className="marquee tb-marquee nt-marquee" key={task.id}>
             <span className="marquee__lights" aria-hidden="true" />
-            <span className="marquee__label">Построй кулата</span>
-            <span className="marquee__number tb-marquee__text nt-marquee__text">
-              <Words text={task.order === 'asc' ? 'От най-малкото към най-голямото' : 'От най-голямото към най-малкото'} />
-            </span>
+            <span className="marquee__label nt-marquee__title">Построй кулата</span>
           </div>
           <div className="nt-say">
-            <div className="tb-instruction">
-              <Words text={solved ? praise(task) : instruction(task)} />
+            {/* кратка инструкция: какво се прави и кое число е най-долу */}
+            <div className="tb-instruction nt-instruction" aria-label={instruction(task)}>
+              <b>Подреди етажите.</b>
+              <span>
+                <Words text={ruleBottom(task)} />
+              </span>
             </div>
             <div className="nt-bubble">
-              <Mascot mood={mood} size={84} />
+              <Mascot mood={mood} size={72} />
               <div className={`speech-bubble speech-bubble--game ${feedback?.kind === 'wrong' ? 'is-wrong' : ''}`} key={`${feedback?.kind}-${hint}-${shake}`}>
                 {bubble}
               </div>
@@ -324,15 +371,17 @@ export function BuildBoard({ grade, difficulty, tasks, onFinish, onExit }: Props
                 </button>
               ))}
             </div>
-            <div className="nt-build__tower" data-drop="tower">
-              <div className="nt-build__order" aria-hidden="true">
-                <span>{task.order === 'asc' ? 'най-голямото' : 'най-малкото'}</span>
-                <svg viewBox="0 0 24 120">
-                  <path d="M12 116 V8 M4 18 L12 6 L20 18" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>{task.order === 'asc' ? 'най-малкото' : 'най-голямото'}</span>
-              </div>
-              <TowerScene floors={floors} topLit={solved} celebrate={solved} width={420} onFloor={tapFloor} />
+            <div className={`nt-build__tower ${geo.tight ? 'is-tight' : ''}`} data-drop="tower" ref={towerRef} style={{ marginLeft: geo.room }}>
+              {/* табелки за посоката — до най-горния и най-долния етаж на кулата */}
+              <span className="nt-sign nt-sign--top" style={signTop(geo, task.numbers.length, 'top')} aria-hidden="true">
+                <small>горе</small>
+                <b>{task.order === 'asc' ? 'най-голямото' : 'най-малкото'}</b>
+              </span>
+              <span className="nt-sign nt-sign--bottom" style={signTop(geo, task.numbers.length, 'bottom')} aria-hidden="true">
+                <small>долу</small>
+                <b>{task.order === 'asc' ? 'най-малкото' : 'най-голямото'}</b>
+              </span>
+              <TowerScene floors={floors} topLit={solved} celebrate={solved} width={geo.w} onFloor={tapFloor} />
             </div>
           </div>
         </section>
