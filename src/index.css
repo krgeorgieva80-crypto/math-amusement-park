@@ -9509,3 +9509,566 @@ button:focus-visible {
     display: none;
   }
 }
+
+/* ═════════════ „Кулата на числата“ — игра 4 „Върхът на кулата“ ═════════════ */
+
+/* кулата отвън и „камерата“ */
+.nt-stage > .tt-camera__track,
+.tt-camera__track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(100% / var(--view, 0.45));
+  transform: translateY(calc(-100% * var(--shift, 0)));
+  transition: transform 1.6s cubic-bezier(0.45, 0.05, 0.25, 1);
+  display: flex;
+  justify-content: center;
+  z-index: 2;
+}
+
+.tt-tower {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  filter: drop-shadow(0 18px 22px rgba(40, 10, 80, 0.35));
+}
+
+.tt-hall--locked {
+  filter: saturate(0.55) brightness(0.88);
+}
+
+.tt-badge-now {
+  animation: breathe 1.6s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.tt-top__glow {
+  opacity: 0;
+  transition: opacity 0.8s 0.6s;
+}
+
+.tt-top.is-lit .tt-top__glow {
+  opacity: 1;
+}
+
+.tt-top.is-lit .tt-top__star {
+  filter: drop-shadow(0 0 16px #fff6a8);
+}
+
+.tt-side {
+  justify-content: center;
+  gap: 18px;
+}
+
+.tt-keys-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #fffaf0, #ffeec2);
+  border: 5px solid var(--ink);
+  box-shadow: 0 8px 0 var(--yellow-d);
+}
+
+.tt-keys-panel small {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--purple-d);
+}
+
+.tt-keys {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 10px;
+}
+
+.tt-key:not(.is-got) {
+  opacity: 0.75;
+}
+
+.tt-key.is-got {
+  filter: drop-shadow(0 0 8px rgba(255, 210, 63, 0.8));
+}
+
+.tt-go {
+  grid-template-columns: 1fr;
+}
+
+/* зала 1: стълбата */
+.nt-stage > .tt-stairs,
+.tt-stairs {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.tt-hallbg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.tt-flame {
+  animation: tt-flicker 1.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: bottom center;
+}
+
+@keyframes tt-flicker {
+  50% {
+    scale: 0.9 1.08;
+  }
+}
+
+.tt-steps {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tt-step-li {
+  position: absolute;
+  bottom: 0;
+}
+
+.tt-step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 4px;
+  border-radius: 14px 14px 0 0;
+  border: 5px solid var(--ink);
+  border-bottom: 0;
+  background: linear-gradient(180deg, #e9dcc3, #c9b693 60%, #b39e7a);
+  box-shadow: inset -8px 0 0 rgba(59, 42, 90, 0.12), inset 0 -40px 30px -30px rgba(59, 42, 90, 0.25);
+  container-type: inline-size;
+  touch-action: manipulation;
+  transition: background 0.4s, box-shadow 0.4s;
+}
+
+/* горната (стъпна) повърхност */
+.tt-step__top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 16px;
+  border-radius: 10px 10px 0 0;
+  background: #f6eedd;
+  border-bottom: 4px solid rgba(59, 42, 90, 0.35);
+}
+
+.tt-step__plate {
+  margin-top: 24px;
+  min-width: 70%;
+  max-width: 100%;
+  padding: 4px 6px 6px;
+  border-radius: 12px;
+  background: #fffaf0;
+  border: 4px solid var(--ink);
+  box-shadow: 0 4px 0 rgba(59, 42, 90, 0.35);
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: min(max(26px, calc(var(--tap) * 0.44)), calc(128cqi / var(--chars, 3)));
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.tt-step.is-slot .tt-step__plate {
+  background: #fff6a8;
+}
+
+.tt-step.is-empty .tt-step__plate {
+  background: rgba(42, 22, 96, 0.55);
+  border-style: dashed;
+  border-color: #fff6a8;
+  color: #fff6a8;
+}
+
+.tt-step.is-ready .tt-step__plate {
+  box-shadow: 0 0 0 5px #7ef2e7, 0 4px 0 rgba(59, 42, 90, 0.35);
+}
+
+.tt-step.is-selected .tt-step__plate {
+  box-shadow: 0 0 0 6px #ff9f43, 0 4px 0 rgba(59, 42, 90, 0.35);
+}
+
+.tt-step.is-lit {
+  background: linear-gradient(180deg, #fff6a8, #ffd23f 60%, #ffb400);
+  box-shadow: 0 0 28px rgba(255, 246, 168, 0.9), inset -8px 0 0 rgba(59, 42, 90, 0.12);
+}
+
+.tt-step:focus-visible {
+  outline: 5px solid #fff6a8;
+  outline-offset: 3px;
+}
+
+.tt-hero {
+  position: absolute;
+  z-index: 4;
+  transition: left 1.2s cubic-bezier(0.45, 0.05, 0.3, 1.05), bottom 1.2s cubic-bezier(0.45, 0.05, 0.3, 1.05);
+  filter: drop-shadow(0 8px 6px rgba(40, 10, 80, 0.35));
+}
+
+.tt-hero.is-up {
+  animation: tt-hop 0.5s 1.2s ease-out 2;
+}
+
+@keyframes tt-hop {
+  50% {
+    translate: 0 -14px;
+  }
+}
+
+/* плочките */
+.tt-bank {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.tt-tile {
+  min-width: max(110px, calc(var(--tap) * 1.9), calc(var(--len, 3) * 0.66em + 30px));
+  min-height: max(68px, calc(var(--tap) * 0.95));
+  padding: 0 14px;
+  border-radius: 18px;
+  border: 5px solid var(--ink);
+  background: linear-gradient(180deg, #f6eedd, #d9c7a4);
+  box-shadow: 0 6px 0 #9c8460;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(30px, calc(var(--tap) * 0.5), 46px);
+  white-space: nowrap;
+  color: var(--ink);
+  touch-action: none;
+  cursor: grab;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.tt-tile.is-picked {
+  transform: translateY(-5px) rotate(-3deg);
+  box-shadow: 0 0 0 6px #7ef2e7, 0 10px 0 #9c8460;
+}
+
+.tt-tile:focus-visible {
+  outline: 5px solid #fff6a8;
+  outline-offset: 3px;
+}
+
+.drag-ghost.tt-tile--ghost {
+  width: auto;
+  height: auto;
+  margin: 0;
+  translate: -50% -50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tt-bank__empty {
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: #fffaf0;
+  border: 4px solid var(--ink);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.tt-skip,
+.tt-clear {
+  align-self: center;
+}
+
+.tt-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 4px 16px;
+  border-radius: 999px;
+  border: 3px solid var(--ink);
+  background: #fffaf0;
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.tt-next {
+  grid-column: 1 / -1;
+}
+
+.tt-bubble-stars {
+  display: flex;
+  margin-top: 4px;
+}
+
+/* ключът */
+.tt-key-big {
+  display: flex;
+  justify-content: center;
+  animation: tt-key-in 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+@keyframes tt-key-in {
+  from {
+    scale: 0.2;
+    rotate: -40deg;
+    opacity: 0;
+  }
+}
+
+/* финален отчет и възстановяване */
+.tt-summary {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 3;
+}
+
+.tt-summary__card {
+  max-width: min(1100px, 100%);
+  max-height: 100%;
+  overflow: auto;
+}
+
+.tt-chest {
+  display: flex;
+  justify-content: center;
+}
+
+.tt-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.tt-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  border-radius: 18px;
+  background: #fffaf0;
+  border: 4px solid var(--ink);
+}
+
+.tt-stat b {
+  font-family: var(--font-display);
+  font-size: 30px;
+  color: var(--ink);
+}
+
+.tt-stat small {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--purple-d);
+  text-align: center;
+}
+
+.tt-summary__msg {
+  max-width: 760px;
+}
+
+.tt-summary__btns,
+.tt-resume__btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.tt-resume__stats {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.tt-resume__stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.is-portrait .tt-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.no-motion .tt-camera__track,
+.no-motion .tt-hero,
+.no-motion .tt-flame,
+.no-motion .tt-badge-now,
+.no-motion .tt-key-big {
+  transition: none !important;
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tt-camera__track,
+  .tt-hero,
+  .tt-flame,
+  .tt-badge-now,
+  .tt-key-big {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.tt-counter {
+  gap: 6px;
+}
+
+.tt-counter .tt-key {
+  margin-left: 6px;
+}
+
+.tt-clear {
+  min-height: max(48px, calc(var(--tap) * 0.95));
+}
+
+.tt-counter__keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tt-inline-keys {
+  display: none;
+}
+
+.is-portrait .tt-counter__keys {
+  display: none;
+}
+
+.is-portrait .tt-inline-keys {
+  display: flex;
+  gap: 8px;
+}
+
+/* табелката на стъпалото: шрифтът следва ширината на стъпалото без отстъпите */
+.tt-step__plate {
+  font-size: min(max(24px, calc(var(--tap) * 0.44)), calc((100cqi - 28px) * 1.5 / var(--chars, 3)));
+}
+
+/* по-тясно платно (таблет 4:3): ключовете — в залата, горе остават звездите */
+@container (max-width: 1700px) {
+  .tt-play .tt-counter__keys {
+    display: none;
+  }
+
+  .tt-play .tt-inline-keys {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.tt-extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.tt-extra .tt-skip .game-btn__face {
+  min-height: max(56px, calc(var(--tap) * 1));
+  padding: 0 16px;
+  font-size: clamp(20px, calc(var(--tap) * 0.4), 26px);
+  white-space: nowrap;
+}
+
+/* финалният отчет: две колони (хоризонтално), една (вертикално); винаги в екрана */
+.tt-summary__card.success-card {
+  width: min(1180px, 100%);
+  max-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 18px 28px;
+  align-items: center;
+  padding: 44px 32px 30px;
+  overflow: auto;
+}
+
+.tt-summary__left,
+.tt-summary__right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tt-summary__title {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.tt-summary__title .success-card__title {
+  -webkit-text-stroke-width: 10px;
+}
+
+.tt-summary .tt-chest svg {
+  width: 160px;
+  height: auto;
+}
+
+.tt-summary__msg {
+  font-size: 22px;
+}
+
+.tt-summary__btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+}
+
+.tt-summary__btns .game-btn,
+.tt-summary__btns .game-btn__face {
+  width: 100%;
+}
+
+.tt-summary__btns .game-btn__face {
+  padding: 0 12px;
+  font-size: clamp(22px, calc(var(--tap) * 0.42), 30px);
+  min-height: max(64px, var(--tap));
+  white-space: nowrap;
+}
+
+.is-portrait .tt-summary__card.success-card {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 40px 22px 24px;
+  gap: 12px;
+}
+
+.is-portrait .tt-summary .tt-chest svg {
+  width: 120px;
+}
+
+/* съдържанието се побира на всички размери — Звездичка над картата остава видима */
+.tt-summary__card.success-card {
+  overflow: visible;
+}

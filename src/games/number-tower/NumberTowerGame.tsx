@@ -17,6 +17,7 @@ import { FLOOR_COLORS, TowerBackdrop } from './TowerScene'
 import { BuildBoard } from './build/BuildBoard'
 import { SecretBoard } from './secret/SecretBoard'
 import { LiftBoard } from './lift/LiftBoard'
+import { TOP_RESULT_MODE, TopGame } from './top/TopGame'
 import { LEVEL_KINDS, generateLiftTasks, type LiftKind, type LiftTask } from './lift/logic'
 import { SECRET_FLOORS, SECRET_HIDDEN, STEPS, generateSecretTasks, type SecretTask } from './secret/logic'
 import { FLOORS, RANGE_MAX, fmt, generateBuildTasks, type BuildTask } from './build/logic'
@@ -30,7 +31,7 @@ export const TOWER_MODES: { id: TowerModeId; label: string; description: string;
   { id: 'build', label: 'Построй кулата', description: 'Подреди етажите', color: 'pink', ready: true, result: 'Кулата: Построй кулата' },
   { id: 'secret', label: 'Тайните етажи', description: 'Открий липсващото число', color: 'purple', ready: true, result: 'Кулата: Тайните етажи' },
   { id: 'lift', label: 'Числовият асансьор', description: 'Сравни и намери етажа', color: 'turquoise', ready: true, result: 'Кулата: Числовият асансьор' },
-  { id: 'top', label: 'Върхът на кулата', description: 'Приключение в три етапа', color: 'orange', ready: false, result: 'Кулата: Върхът на кулата' },
+  { id: 'top', label: 'Върхът на кулата', description: 'Приключение в три етапа', color: 'orange', ready: true, result: 'Кулата: Върхът на кулата' },
 ]
 const BUILD_RESULT_MODE = TOWER_MODES[0].result
 const SECRET_RESULT_MODE = TOWER_MODES[1].result
@@ -62,9 +63,10 @@ type Phase =
   | { name: 'build'; tasks: BuildTask[]; startedAt: number }
   | { name: 'secret'; tasks: SecretTask[]; startedAt: number }
   | { name: 'lift'; tasks: LiftTask[]; startedAt: number }
+  | { name: 'top'; startedAt: number }
   | { name: 'summary'; outcomes: TaskOutcome[]; durationSec: number }
 
-type PlayMode = 'build' | 'secret' | 'lift'
+type PlayMode = 'build' | 'secret' | 'lift' | 'top'
 
 /** „Кулата на числата“: игри → настройки → задачи → обобщение. */
 export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () => void }) {
@@ -79,7 +81,9 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
   const n = settings.taskCount
 
   const start = () =>
-    mode === 'lift'
+    mode === 'top'
+      ? setPhase({ name: 'top', startedAt: nowMs() })
+      : mode === 'lift'
       ? setPhase({ name: 'lift', tasks: generateLiftTasks(grade, d, n), startedAt: nowMs() })
       : mode === 'secret'
       ? setPhase({ name: 'secret', tasks: testSecretTasks() ?? generateSecretTasks(grade, d, n), startedAt: nowMs() })
@@ -111,7 +115,7 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
         <TowerModes
           grade={grade}
           onChoose={(m) => {
-            setMode(m === 'lift' ? 'lift' : m === 'secret' ? 'secret' : 'build')
+            setMode(m === 'top' ? 'top' : m === 'lift' ? 'lift' : m === 'secret' ? 'secret' : 'build')
             setPhase({ name: 'setup' })
           }}
           onExit={onExit}
@@ -124,10 +128,19 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
           difficulty={d}
           count={n}
           locked={locked}
-          title={mode === 'lift' ? 'Числовият асансьор' : mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
-          resultMode={mode === 'lift' ? LIFT_RESULT_MODE : mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE}
+          hideCount={mode === 'top'}
+          title={mode === 'top' ? 'Върхът на кулата' : mode === 'lift' ? 'Числовият асансьор' : mode === 'secret' ? 'Тайните етажи' : 'Построй кулата'}
+          resultMode={mode === 'top' ? TOP_RESULT_MODE : mode === 'lift' ? LIFT_RESULT_MODE : mode === 'secret' ? SECRET_RESULT_MODE : BUILD_RESULT_MODE}
           info={
-            mode === 'lift' ? (
+            mode === 'top' ? (
+              <>
+                <span>3 зали · 12 задачи · 3 ключа</span>
+                <span>1. Стълбата на числата</span>
+                <span>2. Мостът на загадките</span>
+                <span>3. Тайната на върха</span>
+                <span>{TOP_HELP_TEXT[d]}</span>
+              </>
+            ) : mode === 'lift' ? (
               <>
                 <span>0 – {fmt(RANGE_MAX[grade])}</span>
                 {LEVEL_KINDS[d].map((k) => (
@@ -164,6 +177,9 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
       )
     case 'build':
       return <BuildBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
+    case 'top':
+      // приключението има собствен финален отчет и запазване на прогреса
+      return <TopGame key={phase.startedAt} grade={grade} difficulty={d} onExit={onExit} onChooseLevel={() => setPhase({ name: 'setup' })} onChooseMode={() => setPhase({ name: 'modes' })} />
     case 'lift':
       return <LiftBoard key={phase.startedAt} grade={grade} difficulty={d} tasks={phase.tasks} onFinish={(o) => finish(o, phase.startedAt)} onExit={onExit} />
     case 'secret':
@@ -296,6 +312,12 @@ const HELP_TEXT: Record<Difficulty, string> = {
   master: 'Без подсказки',
 }
 
+const TOP_HELP_TEXT: Record<Difficulty, string> = {
+  explorer: 'Подреждане, редици, сравняване',
+  researcher: 'Действия и изучените таблици',
+  master: 'Съставни задачи и логика',
+}
+
 const LIFT_KIND_TEXT: Record<LiftKind, string> = {
   find: 'Намери етажа',
   neighbor: 'Съседните етажи',
@@ -328,6 +350,8 @@ function TowerSetup(p: {
   title: string
   resultMode: string
   info: ReactNode
+  /** Без избор на брой задачи (приключението е винаги 12 задачи). */
+  hideCount?: boolean
   onDifficulty: (d: Difficulty) => void
   onCount: (n: number) => void
   onStart: () => void
@@ -390,12 +414,13 @@ function TowerSetup(p: {
             DIFFICULTIES.map((x) => ({ value: x, label: DIFFICULTY_LABELS[x], hint: DIFFICULTY_DESCRIPTIONS[x] })),
             p.onDifficulty,
           )}
-          {pills(
-            'Брой задачи',
-            p.count,
-            [5, 10, 15].map((x) => ({ value: x, label: String(x) })),
-            p.onCount,
-          )}
+          {!p.hideCount &&
+            pills(
+              'Брой задачи',
+              p.count,
+              [5, 10, 15].map((x) => ({ value: x, label: String(x) })),
+              p.onCount,
+            )}
           <div className="setup-row is-wide">
             <span className="setup-row__label">Какво те чака</span>
             <div className="wheel-setup-info">{p.info}</div>
