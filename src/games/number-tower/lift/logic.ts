@@ -9,8 +9,8 @@ import { starsForTask, type Difficulty, type Grade, type Rng } from '../../magic
 import { RANGE_MAX, fmt } from '../build/logic'
 
 export type LiftKind = 'find' | 'neighbor' | 'compare' | 'route' | 'mystery'
-/** Как детето отговаря: управлява асансьора, избира карта или пише с клавиатурата. */
-export type AnswerMode = 'drive' | 'choose' | 'keypad'
+/** Как детето отговаря: избира карта или пише с клавиатурата. */
+export type AnswerMode = 'choose' | 'keypad'
 
 export interface LiftStep {
   /** Разредна единица: 1, 10, 100 … */
@@ -30,10 +30,8 @@ export interface LiftTask {
   answer: number
   /** Условието с думи. */
   question: string
-  /** Тайният маршрут — действията поред. */
+  /** Тайният маршрут — действията поред; „Намери етажа“ — придвижването (1–2 разреда, една посока). */
   steps?: LiftStep[]
-  /** Управление: разредите на бутоните (низходящо). */
-  buttons?: number[]
   /** Избор: възможните отговори (в разбъркан ред). */
   options?: number[]
   /** Загадъчният етаж: разредният състав (в реда на условието). */
@@ -99,30 +97,41 @@ export function routeValues(start: number, steps: LiftStep[]): number[] {
 
 /* ───────── генериране ───────── */
 
+/** Разредите за „Намери етажа“ по клас и ниво. */
+export const FIND_PLACES: Record<Grade, Record<Difficulty, number[]>> = {
+  2: { explorer: [1, 10], researcher: [1, 10], master: [1, 10] },
+  3: { explorer: [1, 10], researcher: [1, 10, 100], master: [1, 10, 100] },
+  4: { explorer: [1, 10, 100], researcher: [1, 10, 100, 1000, 10_000], master: [1, 10, 100, 1000, 10_000, 100_000] },
+}
+
+const floorsWord = (n: number) => `${fmt(n)} ${n === 1 ? 'етаж' : 'етажа'}`
+
+/**
+ * Мисия 1: началният етаж и придвижването са дадени, целта — не. Детето пресмята и пише отговора.
+ * Откривател — един разред, 1–5, без преминаване; Изследовател — един разред, 1–9, с преминаване;
+ * Майстор — два разреда в една посока (напр. 205 = 2 стотици и 5 единици).
+ */
 function genFind(grade: Grade, d: Difficulty, rng: Rng, id: number): LiftTask {
   const max = RANGE_MAX[grade]
-  if (d === 'explorer') {
-    const dist = randInt(rng, 1, 5) * (rng() < 0.5 ? 1 : -1)
-    const start = randInt(rng, Math.max(0, -dist), Math.min(max, max - dist))
-    return { id, kind: 'find', mission: 1, mode: 'drive', start, answer: start + dist, buttons: [1], question: `Закарай асансьора от ${fmt(start)} до ${fmt(start + dist)}.` }
-  }
-  const places = PLACES[grade].filter((p) => p * 2 <= max)
+  const places = FIND_PLACES[grade][d]
   for (;;) {
-    const n = d === 'researcher' ? randInt(rng, 1, Math.min(2, places.length)) : randInt(rng, 2, Math.min(3, places.length))
-    const used = shuffle(places, rng).slice(0, n)
-    const sign = rng() < 0.5 ? 1 : -1
-    const steps: LiftStep[] = used.map((place) => ({ place, count: randInt(rng, 1, d === 'researcher' ? 4 : 5) * (d === 'researcher' ? sign : rng() < 0.5 ? 1 : -1) }))
-    const pos = steps.filter((s) => s.count > 0).reduce((a, s) => a + s.place * s.count, 0)
-    const neg = steps.filter((s) => s.count < 0).reduce((a, s) => a + s.place * s.count, 0)
-    // всяка подредба на натисканията остава в обхвата: start + neg ≥ 0 и start + pos ≤ max
-    if (-neg > max - pos) continue
-    const start = randInt(rng, -neg, max - pos)
-    const answer = start + pos + neg
-    if (answer === start) continue
-    // бутоните: използваните разреди и още един съседен (за избор), най-много 3
-    const extra = places.filter((p) => !used.includes(p))
-    const buttons = [...used, ...(extra.length ? [pick(extra, rng)] : [])].slice(0, 3).sort((a, b) => b - a)
-    return { id, kind: 'find', mission: 1, mode: 'drive', start, answer, buttons, question: `Закарай асансьора от ${fmt(start)} до ${fmt(answer)}.` }
+    const dir = rng() < 0.5 ? 1 : -1
+    const used = d === 'master' ? shuffle(places, rng).slice(0, 2).sort((a, b) => b - a) : [pick(places, rng)]
+    const steps: LiftStep[] = used.map((place) => ({ place, count: dir * randInt(rng, 1, d === 'explorer' ? 5 : 9) }))
+    const total = sum(steps)
+    const start = randInt(rng, Math.max(0, -total), Math.min(max, max - total))
+    const answer = start + total
+    if (answer < 0 || answer > max || answer === start) continue
+    if (d === 'explorer') {
+      // без преминаване: цифрата на разреда остава 0–9 (12 → 10, но не 12 → 9)
+      const p = steps[0].place
+      const digit = Math.floor(start / p) % 10
+      if (digit + steps[0].count < 0 || digit + steps[0].count > 9) continue
+    }
+    const verb = dir > 0 ? 'Качи се' : 'Слез'
+    const parts = steps.map((x) => placeWords(x.place, x.count)).join(' и ')
+    const move = d === 'master' ? `${verb} с ${floorsWord(Math.abs(total))} (${parts})` : `${verb} с ${floorsWord(Math.abs(total))}`
+    return { id, kind: 'find', mission: 1, mode: 'keypad', start, answer, steps, question: `Асансьорът е на етаж ${fmt(start)}. ${move}. На кой етаж ще пристигнеш?` }
   }
 }
 
@@ -257,10 +266,13 @@ export function generateLiftTasks(grade: Grade, d: Difficulty, count: number, rn
 
 export function liftHint(t: LiftTask, level: 'visual' | 'limited'): string {
   switch (t.kind) {
-    case 'find':
+    case 'find': {
+      const up = t.answer > (t.start ?? 0)
+      const total = Math.abs(t.answer - (t.start ?? 0))
       return level === 'visual'
-        ? `Целта е ${t.answer > (t.start ?? 0) ? 'по-нагоре — натискай ▲' : 'по-надолу — натискай ▼'}. Брой етажите по пътя.`
-        : 'Сравни двете числа разред по разред: кои цифри са различни и с колко?'
+        ? `${up ? 'Качваш се — събери' : 'Слизаш — извади'}: ${fmt(t.start ?? 0)} ${up ? '+' : '−'} ${fmt(total)}. Започни от разреда, който се променя.`
+        : 'Запиши числата по разреди. Ако цифрата мине 9 или стане по-малка от 0, промени и следващия разред.'
+    }
     case 'neighbor':
       return level === 'visual'
         ? t.dir === 1
@@ -308,7 +320,7 @@ export interface LiftState {
   finished: boolean
 }
 
-export type LiftAction = { type: 'step'; place: number; dir: 1 | -1 } | { type: 'choose'; value: number } | { type: 'key'; key: string } | { type: 'check' } | { type: 'hint' } | { type: 'next' }
+export type LiftAction = { type: 'choose'; value: number } | { type: 'key'; key: string } | { type: 'check' } | { type: 'hint' } | { type: 'next' }
 
 export const initialLiftState = (tasks: LiftTask[]): LiftState => ({
   index: 0,
@@ -330,12 +342,6 @@ export function liftReducer(tasks: LiftTask[], grade: Grade) {
     const t = tasks[s.index]
     if (s.finished) return s
     switch (a.type) {
-      case 'step': {
-        if (s.solved || t.mode !== 'drive' || s.pos === null) return s
-        const v = s.pos + a.place * a.dir
-        if (v < 0 || v > max) return { ...s, message: { kind: 'info', text: `Кулата има етажи от 0 до ${fmt(max)}.` } }
-        return { ...s, pos: v, message: null }
-      }
       case 'choose':
         if (s.solved || t.mode !== 'choose' || !t.options?.includes(a.value)) return s
         return { ...s, choice: a.value, pos: a.value, message: null }
@@ -347,8 +353,7 @@ export function liftReducer(tasks: LiftTask[], grade: Grade) {
       case 'check': {
         if (s.solved) return s
         let value: number | null
-        if (t.mode === 'drive') value = s.pos
-        else if (t.mode === 'choose') {
+        if (t.mode === 'choose') {
           value = s.choice
           if (value === null) return { ...s, message: { kind: 'info', text: t.kind === 'compare' ? 'Избери един от двата етажа.' : 'Избери един от етажите.' } }
         } else {
@@ -356,14 +361,15 @@ export function liftReducer(tasks: LiftTask[], grade: Grade) {
           if (value === null) return { ...s, message: { kind: 'info', text: 'Напиши номера на етажа с клавиатурата.' } }
           if (value > max) return { ...s, message: { kind: 'info', text: `Кулата има етажи от 0 до ${fmt(max)}.` } }
         }
-        const pos = t.mode === 'keypad' ? value : s.pos
+        // „Намери етажа“: асансьорът тръгва само при верен отговор; иначе остава на началния етаж
+        const pos = t.kind === 'find' ? s.pos : t.mode === 'keypad' ? value : s.pos
         if (value === t.answer) {
           const stars = starsForTask(s.mistakes, s.usedHint)
-          return { ...s, pos, solved: true, stars, message: null, outcomes: [...s.outcomes, { stars, firstTry: s.mistakes === 0, solved: true }] }
+          return { ...s, pos: t.answer, solved: true, stars, message: null, outcomes: [...s.outcomes, { stars, firstTry: s.mistakes === 0, solved: true }] }
         }
         const text =
-          t.mode === 'drive'
-            ? `Асансьорът е на ${fmt(value ?? 0)}, а целта е ${fmt(t.answer)}. Продължи!`
+          t.kind === 'find'
+            ? `Почти! Асансьорът чака на етаж ${fmt(t.start ?? 0)}. Пресметни пак и опитай отново.`
             : `Асансьорът спря на ${fmt(value ?? 0)}. Това не е търсеният етаж — опитай отново.`
         return { ...s, pos, mistakes: s.mistakes + 1, message: { kind: 'wrong', text } }
       }

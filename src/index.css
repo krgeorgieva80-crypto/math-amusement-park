@@ -9228,18 +9228,6 @@ button:focus-visible {
   right: 14%;
 }
 
-.nl-tick {
-  position: absolute;
-  left: -16px;
-  width: 14px;
-  height: 5px;
-  border-radius: 3px;
-  background: #fff6a8;
-  border: 2px solid var(--ink);
-  translate: 0 50%;
-  transition: bottom 0.7s ease;
-}
-
 /* етажите на скалата: табелка вляво, линия през шахтата */
 .nl-floor {
   position: absolute;
@@ -9453,132 +9441,8 @@ button:focus-visible {
   background: #fff6a8;
 }
 
-/* управление */
-.nl-drive {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 30px;
-  background: linear-gradient(180deg, #fffaf0, #ffeec2);
-  border: 5px solid var(--ink);
-  box-shadow: 0 8px 0 var(--yellow-d);
-}
-
-.nl-now {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4px 8px 8px;
-  border-radius: 18px;
-  background: #2a1660;
-  border: 4px solid var(--ink);
-  color: #fff6a8;
-  container-type: inline-size;
-}
-
-.nl-now small {
-  font-size: 16px;
-  font-weight: 900;
-  color: #cbb9ff;
-}
-
-.nl-now b {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: min(max(36px, calc(var(--tap) * 0.6)), calc(132cqi / var(--chars, 3)));
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-.nl-drive__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    'name name'
-    'down up';
-  gap: 4px 10px;
-}
-
-.nl-drive__name {
-  grid-area: name;
-  text-align: center;
-  font-size: 17px;
-  font-weight: 900;
-  color: var(--purple-d);
-}
-
-.nl-step {
-  min-height: max(68px, calc(var(--tap) * 0.92));
-  border-radius: 22px;
-  border: 4px solid var(--ink);
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: max(28px, calc(var(--tap) * 0.46));
-  white-space: nowrap;
-  touch-action: manipulation;
-  transition: transform 0.08s, box-shadow 0.08s;
-}
-
-.nl-step.is-up {
-  grid-area: up;
-  background: linear-gradient(180deg, #e6ffd9, #9be38f);
-  box-shadow: 0 6px 0 #4fae53;
-}
-
-.nl-step.is-down {
-  grid-area: down;
-  background: linear-gradient(180deg, #ffe7f1, #ffa8cb);
-  box-shadow: 0 6px 0 #d0538b;
-}
-
-.nl-step:active:not(:disabled) {
-  transform: translateY(5px);
-  box-shadow: none;
-}
-
-.nl-step:disabled {
-  opacity: 0.5;
-}
-
-.nl-step:focus-visible {
-  outline: 5px solid #fff6a8;
-  outline-offset: 3px;
-}
-
-/* вертикално: дисплеят вляво, всеки разред е колона — ▲ отгоре, ▼ отдолу */
-.is-portrait .nl-drive {
-  flex-direction: row;
-  align-items: stretch;
-}
-
-.is-portrait .nl-now {
-  flex: 0 0 26%;
-  justify-content: center;
-}
-
-.is-portrait .nl-drive__row {
-  flex: 1 1 0;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas:
-    'name'
-    'up'
-    'down';
-}
-
-.is-portrait .nl-step {
-  min-width: 0;
-  font-size: max(26px, calc(var(--tap) * 0.4));
-}
-
-.is-portrait .nl-drive__name {
-  font-size: 22px;
-}
-
 .no-motion .nl-cabin,
 .no-motion .nl-floor,
-.no-motion .nl-tick,
 .no-motion .nl-cabin__door {
   transition: none !important;
 }
@@ -9586,7 +9450,6 @@ button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .nl-cabin,
   .nl-floor,
-  .nl-tick,
   .nl-cabin__door {
     transition: none !important;
   }
@@ -9623,23 +9486,6 @@ button:focus-visible {
     radial-gradient(circle at 88% 0, #fff6a8 0 5px, transparent 6px) 0 27px / 100% 54px repeat-y,
     linear-gradient(90deg, #ff8cc0, #ffb3d3 50%, #ff8cc0);
   box-shadow: 0 14px 18px rgba(40, 10, 80, 0.3);
-}
-
-/* надписът на бутона следва ширината му — „+10 000“ се вижда изцяло */
-.nl-step {
-  container-type: inline-size;
-  padding: 0 6px;
-  min-width: 0;
-}
-
-.nl-step__t {
-  display: block;
-  white-space: nowrap;
-  font-size: min(max(28px, calc(var(--tap) * 0.46)), calc(150cqi / var(--blen, 4)));
-}
-
-.is-portrait .nl-step__t {
-  font-size: min(max(26px, calc(var(--tap) * 0.4)), calc(150cqi / var(--blen, 4)));
 }
 
 /* спирката на асансьора („Тук“ / „Пристигна!“) е вдясно — не се застъпва със „Старт“ */

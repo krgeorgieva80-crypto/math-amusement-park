@@ -12,7 +12,7 @@ import type { TaskOutcome } from '../../magic-tokens/PlayBoard'
 import { fmt } from '../build/logic'
 import { FitText } from '../FitText'
 import { TowerBackdrop } from '../TowerScene'
-import { HELP, MISSIONS, initialLiftState, liftHint, liftReducer, parseTyped, placeName, stepText, type LiftAction, type LiftTask } from './logic'
+import { HELP, MISSIONS, initialLiftState, liftHint, liftReducer, parseTyped, stepText, type LiftAction, type LiftTask } from './logic'
 
 interface Props {
   grade: Grade
@@ -35,10 +35,10 @@ const KEYS: { k: string; o3: number; o6: number }[] = [
   { k: 'back', o3: 11, o6: 5 },
 ]
 
-type Mark = { value: number; kind: 'start' | 'target' | 'here' | 'goal' }
+type Mark = { value: number; kind: 'start' | 'here' | 'goal' }
 
 /** Стъклената шахта с асансьора: числова скала само с нужните етажи и плавно движеща се кабина. */
-function LiftScene({ task, pos, solved, display, marks, ticks }: { task: LiftTask; pos: number | null; solved: boolean; display: string; marks: Mark[]; ticks: number[] }) {
+function LiftScene({ task, pos, solved, display, marks }: { task: LiftTask; pos: number | null; solved: boolean; display: string; marks: Mark[] }) {
   // обхватът на скалата: всички показвани стойности (+ отговорът, за да не се мести скалата при верния избор)
   const vals = [task.answer, ...(task.start !== null ? [task.start] : []), ...(pos !== null ? [pos] : []), ...marks.map((m) => m.value)]
   const lo0 = Math.min(...vals)
@@ -63,13 +63,10 @@ function LiftScene({ task, pos, solved, display, marks, ticks }: { task: LiftTas
         </svg>
       </div>
       <div className="nl-shaft" role="img" aria-label={`Асансьорът е на ${display}`}>
-        {ticks.map((v) => (
-          <span key={`t${v}`} className="nl-tick" style={{ bottom: `${pct(v)}%` }} />
-        ))}
         {marks.map((m) => (
           <div key={`${m.kind}-${m.value}`} className={`nl-floor nl-floor--${m.kind}`} style={{ bottom: `${pct(m.value)}%` }}>
             <span className="nl-floor__plate">
-              <small>{m.kind === 'start' ? 'Старт' : m.kind === 'target' ? 'Цел' : m.kind === 'goal' ? 'Пристигна!' : 'Тук'}</small>
+              <small>{m.kind === 'start' ? 'Старт' : m.kind === 'goal' ? 'Пристигна!' : 'Тук'}</small>
               <b>{fmt(m.value)}</b>
             </span>
             <span className="nl-floor__line" />
@@ -114,12 +111,6 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
     return after
   }
 
-  const step = (place: number, dir: 1 | -1) => {
-    if (solved) return
-    setHint(null)
-    const after = act({ type: 'step', place, dir })
-    play(after.message?.kind === 'info' ? 'locked' : dir > 0 ? 'pick' : 'remove')
-  }
   const choose = (v: number) => {
     if (solved) return
     setHint(null)
@@ -157,7 +148,7 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
     act({ type: 'next' })
   }
 
-  // физическа клавиатура: цифри / стрелки (управление), Enter — Провери / Следваща
+  // физическа клавиатура: цифри, Enter — Провери / Следваща
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null
@@ -166,10 +157,6 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
         if (/^[0-9]$/.test(e.key)) pressKey(e.key)
         else if (e.key === 'Backspace') pressKey('back')
         else if (e.key === 'Delete') pressKey('clear')
-      }
-      if (task.mode === 'drive' && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
-        e.preventDefault()
-        step(Math.min(...(task.buttons ?? [1])), e.key === 'ArrowUp' ? 1 : -1)
       }
       if (e.key === 'Enter') {
         e.preventDefault()
@@ -181,16 +168,11 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  // скалата: стартът и целта (при управление) / стартът и спирката на асансьора
+  // скалата: стартът и спирката на асансьора (целта не се показва предварително)
   const marks: Mark[] = []
   if (task.start !== null) marks.push({ value: task.start, kind: 'start' })
-  if (task.mode === 'drive') marks.push({ value: task.answer, kind: solved ? 'goal' : 'target' })
-  else if (st.pos !== null && st.pos !== task.start) marks.push({ value: st.pos, kind: solved ? 'goal' : 'here' })
+  if (st.pos !== null && st.pos !== task.start) marks.push({ value: st.pos, kind: solved ? 'goal' : 'here' })
   const uniq = marks.filter((m, i) => marks.findIndex((x) => x.value === m.value) === i || m.kind === 'goal')
-  // междинни етажи (без надписи) — само при малко стъпки по единици
-  const unit = Math.min(...(task.buttons ?? [1]))
-  const span = task.start === null ? 0 : Math.abs(task.answer - task.start) / unit
-  const ticks = task.mode === 'drive' && span <= 12 ? Array.from({ length: span + 1 }, (_, k) => Math.min(task.start!, task.answer) + k * unit) : []
   const display = st.pos === null ? 'Вход' : fmt(st.pos)
 
   let mood: MascotMood = 'happy'
@@ -215,7 +197,7 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
   } else
     bubble = (
       <Words
-        text={task.mode === 'drive' ? 'Натискай ▲ и ▼, за да движиш асансьора.' : task.mode === 'choose' ? 'Избери етаж — асансьорът ще те закара.' : 'Напиши номера на етажа и натисни „Провери“.'}
+        text={task.kind === 'find' ? 'Пресметни и напиши етажа. Асансьорът ще тръгне при верен отговор.' : task.mode === 'choose' ? 'Избери етаж — асансьорът ще те закара.' : 'Напиши номера на етажа и натисни „Провери“.'}
       />
     )
 
@@ -271,7 +253,15 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
               <span className="nl-mission__q">
                 <Words text={task.question} />
               </span>
-              {task.steps && task.steps.length > 1 && (
+              {task.kind === 'find' && task.steps && (
+                // придвижването (без целта): „▼ 2 единици“ / „▲ 2 стотици и 5 единици“
+                <span className="nl-route" aria-label="Придвижването">
+                  <span className={`nl-route__step ${task.steps[0].count > 0 ? 'is-up' : 'is-down'}`}>
+                    {task.steps[0].count > 0 ? '▲' : '▼'} {task.steps.map((x) => stepText(x).slice(2)).join(' и ')}
+                  </span>
+                </span>
+              )}
+              {task.kind === 'route' && task.steps && task.steps.length > 1 && (
                 <span className="nl-route" aria-label="Маршрутът">
                   {task.steps.map((s, i) => (
                     <span key={i} className={`nl-route__step ${s.count > 0 ? 'is-up' : 'is-down'}`}>
@@ -284,7 +274,7 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
                 <span className="nl-ends">
                   <span className="nl-ends__chip">Старт {fmt(task.start)}</span>
                   <span aria-hidden="true">→</span>
-                  <span className="nl-ends__chip is-goal">{task.mode === 'drive' ? `Цел ${fmt(task.answer)}` : 'Цел ?'}</span>
+                  <span className="nl-ends__chip is-goal">{solved ? `Цел ${fmt(task.answer)}` : 'Цел ?'}</span>
                 </span>
               )}
             </div>
@@ -299,33 +289,10 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
 
         <section className={`wp-stage nt-stage nl-stage ${st.message?.kind === 'wrong' ? 'is-shake' : ''}`} data-test-answer={import.meta.env.DEV ? task.answer : undefined} data-test-mode={import.meta.env.DEV ? task.mode : undefined}>
           <TowerBackdrop />
-          <LiftScene task={task} pos={st.pos} solved={solved} display={display} marks={uniq} ticks={ticks} />
+          <LiftScene task={task} pos={st.pos} solved={solved} display={display} marks={uniq} />
         </section>
 
         <section className="nt-side nt-secret-side nl-side">
-          {task.mode === 'drive' && (
-            <div className="nl-drive" role="group" aria-label="Управление на асансьора">
-              <div className="nl-now">
-                <small>Асансьорът е на</small>
-                <b>{display}</b>
-              </div>
-              {(task.buttons ?? [1]).map((p) => (
-                <div key={p} className="nl-drive__row">
-                  <button type="button" className="nl-step is-down" onClick={() => step(p, -1)} disabled={solved} data-step={-p} aria-label={`Надолу с 1 ${placeName(p)}`}>
-                    <span className="nl-step__t" style={{ '--blen': fmt(p).length + 3 } as CSSProperties}>
-                      ▼ −{fmt(p)}
-                    </span>
-                  </button>
-                  <span className="nl-drive__name">{placeName(p)}</span>
-                  <button type="button" className="nl-step is-up" onClick={() => step(p, 1)} disabled={solved} data-step={p} aria-label={`Нагоре с 1 ${placeName(p)}`}>
-                    <span className="nl-step__t" style={{ '--blen': fmt(p).length + 3 } as CSSProperties}>
-                      ▲ +{fmt(p)}
-                    </span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
           {task.mode === 'choose' && (
             <div className="nt-lanterns" role="radiogroup" aria-label="Избери етаж">
               {task.options!.map((v) => (
@@ -396,7 +363,16 @@ export function LiftBoard({ grade, difficulty, tasks, onFinish, onExit }: Props)
               <Words text={`Асансьорът пристигна на етаж ${fmt(task.answer)}!`} />
             </div>
             <StarRow stars={st.stars ?? 1} size={86} animate />
-            {task.steps && task.start !== null && (
+            {task.kind === 'find' && task.start !== null && (
+              <div className="success-card__text nt-sequence">
+                <span>{fmt(task.start)}</span>
+                <span>
+                  <span className="nt-sequence__arrow">{task.answer > task.start ? '↑' : '↓'}</span>
+                  {fmt(task.answer)}
+                </span>
+              </div>
+            )}
+            {task.kind === 'route' && task.steps && task.start !== null && (
               <div className="success-card__text nt-sequence">
                 <span>{fmt(task.start)}</span>
                 {task.steps.map((s, i) => (
