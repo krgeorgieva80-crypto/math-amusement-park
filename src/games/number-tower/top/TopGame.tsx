@@ -15,8 +15,13 @@ import { FOCUS_Y, MagicKey, TOWER_VB, TowerOutside, type HallState } from './Top
 import { HALLS, TASKS_PER_HALL, starsTop } from './logic/common'
 import { clearTop, loadTop, saveTop } from './logic/persist'
 import { atTop, canSkip, hallOf, newSession, posInHall, summary, topReducer, type TopSession } from './logic/session'
-import { generateStairs, type StairsKind } from './logic/stairs'
+import { generateStairs, type StairsKind, type StairsTask } from './logic/stairs'
 import { StairsBank, StairsScene, stairsResult, useStairsAnswer } from './StairsHall'
+import { BridgePlay } from './BridgeHall'
+import { SkyPlay } from './SkyHall'
+import { GoldenGate } from './GoldenGate'
+import { generateBridge } from './logic/bridge'
+import { generateSky } from './logic/sky'
 
 export const TOP_RESULT_MODE = 'Кулата: Върхът на кулата'
 
@@ -36,8 +41,11 @@ function Words({ text }: { text: string }) {
 
 const KIND_NAME: Record<StairsKind, string> = { order: 'Подреди стъпалата', fill: 'Липсващи стъпала', wrong: 'Сгрешено стъпало', continue: 'Продължи стълбата' }
 
-/** Задачите на приключението. (Етап Б, част 1: зала 1; залите 2 и 3 — в следващата част.) */
-const makeTasks = (grade: Grade, difficulty: Difficulty, tables: number[]) => generateStairs({ grade, difficulty, tables })
+/** Задачите на приключението: по 4 във всяка от трите зали (12). */
+const makeTasks = (grade: Grade, difficulty: Difficulty, tables: number[]) => {
+  const o = { grade, difficulty, tables }
+  return [...generateStairs(o), ...generateBridge(o), ...generateSky(o)]
+}
 
 interface Props {
   grade: Grade
@@ -159,6 +167,10 @@ function Adventure({ grade, difficulty, initial, onExit, onChooseLevel, onChoose
       <TopBar grade={grade} difficulty={difficulty} s={s} onExit={onExit} />
       {inHall && hall === 0 ? (
         <StairsPlay key={s.index} s={s} dispatch={dispatch} portrait={portrait} />
+      ) : inHall && hall === 1 ? (
+        <BridgePlay key={s.index} s={s} dispatch={dispatch} portrait={portrait} />
+      ) : inHall && hall === 2 ? (
+        <SkyPlay key={s.index} s={s} dispatch={dispatch} portrait={portrait} grade={grade} />
       ) : (
         <ClimbView s={s} portrait={portrait} onEnter={() => (play('drop'), dispatch({ type: 'enter' }))} onFinish={() => (play('fanfare'), dispatch({ type: 'finish' }))} />
       )}
@@ -191,6 +203,7 @@ function Adventure({ grade, difficulty, initial, onExit, onChooseLevel, onChoose
 
 /** Кулата отвън: „камерата“ показва текущата зала (или върха) и плавно се изкачва. */
 function ClimbView({ s, portrait, onEnter, onFinish }: { s: TopSession; portrait: boolean; onEnter: () => void; onFinish: () => void }) {
+  const [gate, setGate] = useState(false)
   const top = atTop(s)
   const built = Math.ceil(s.tasks.length / TASKS_PER_HALL) // колко зали има в това приключение
   const nextHall = Math.min(2, Math.floor(s.index / TASKS_PER_HALL))
@@ -203,7 +216,7 @@ function ClimbView({ s, portrait, onEnter, onFinish }: { s: TopSession; portrait
   let say: string
   if (top && !notBuilt) {
     mood = 'cheer'
-    say = 'Стигна върха! Трите ключа отварят съкровището.'
+    say = 'Стигна върха! Постави трите ключа в златната порта.'
   } else if (notBuilt) {
     mood = 'think'
     say = `Залата „${HALLS[built].name}“ още се строи. Очаквай я скоро!`
@@ -217,9 +230,9 @@ function ClimbView({ s, portrait, onEnter, onFinish }: { s: TopSession; portrait
         </div>
         <div className="nt-say">
           <div className="tb-instruction nt-instruction">
-            <b>{top ? (notBuilt ? 'Още малко…' : 'Съкровището!') : `Зала ${nextHall + 1} от 3`}</b>
+            <b>{top ? (notBuilt ? 'Още малко…' : 'Златната порта') : `Зала ${nextHall + 1} от 3`}</b>
             <span>
-              <Words text={top ? (notBuilt ? 'Залите 2 и 3 идват в следващата част.' : 'Отвори сандъка на върха.') : HALLS[nextHall].name} />
+              <Words text={top ? (notBuilt ? 'Залите 2 и 3 идват в следващата част.' : 'Трите ключа отключват златната порта на върха.') : HALLS[nextHall].name} />
             </span>
           </div>
           <div className="nt-bubble">
@@ -247,8 +260,8 @@ function ClimbView({ s, portrait, onEnter, onFinish }: { s: TopSession; portrait
         </div>
         <div className="nt-secret-actions tt-go">
           {top ? (
-            <GameButton color="green" size="lg" icon="next" onClick={onFinish}>
-              {notBuilt ? 'Към отчета' : 'Отвори съкровището'}
+            <GameButton color="green" size="lg" icon="next" onClick={() => (notBuilt ? onFinish() : setGate(true))}>
+              {notBuilt ? 'Към отчета' : 'Отключи портата'}
             </GameButton>
           ) : (
             <GameButton color="green" size="lg" icon="play" onClick={onEnter}>
@@ -257,6 +270,7 @@ function ClimbView({ s, portrait, onEnter, onFinish }: { s: TopSession; portrait
           )}
         </div>
       </section>
+      {gate && <GoldenGate keys={s.keys} onDone={onFinish} />}
     </div>
   )
 }
@@ -264,7 +278,7 @@ function ClimbView({ s, portrait, onEnter, onFinish }: { s: TopSession; portrait
 /** Зала 1: задача от стълбата. */
 function StairsPlay({ s, dispatch, portrait }: { s: TopSession; dispatch: (a: Parameters<typeof topReducer>[1]) => void; portrait: boolean }) {
   const { settings, play } = useApp()
-  const task = s.tasks[s.index]
+  const task = s.tasks[s.index] as StairsTask // зала 1
   const st = useStairsAnswer(task)
   const [msg, setMsg] = useState<null | { kind: 'wrong' | 'info' | 'hint'; text: string }>(null)
   const [shake, setShake] = useState(0)

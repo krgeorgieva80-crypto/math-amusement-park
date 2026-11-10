@@ -5,10 +5,12 @@
  */
 import type { Difficulty, Grade } from '../../../magic-tokens/logic'
 import { SKIP_AFTER, TASKS_PER_HALL, starsTop, type HallId } from './common'
+import type { BridgeTask } from './bridge'
+import type { SkyTask } from './sky'
 import type { StairsTask } from './stairs'
 
-/** Задача от някоя от залите (залите 2 и 3 се добавят на следващия етап). */
-export type TopTask = StairsTask
+/** Задача от някоя от трите зали. */
+export type TopTask = StairsTask | BridgeTask | SkyTask
 
 export interface TaskResult {
   stars: 0 | 1 | 2 | 3

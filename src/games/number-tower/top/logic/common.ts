@@ -8,7 +8,7 @@ export type HallId = 0 | 1 | 2
 export const HALLS: { id: HallId; name: string; short: string }[] = [
   { id: 0, name: 'Стълбата на числата', short: 'Стълбата' },
   { id: 1, name: 'Мостът на загадките', short: 'Мостът' },
-  { id: 2, name: 'Тайната на върха', short: 'Обсерваторията' },
+  { id: 2, name: 'Обсерваторията на числата', short: 'Обсерваторията' },
 ]
 export const TASKS_PER_HALL = 4
 

@@ -137,7 +137,7 @@ export function NumberTowerGame({ grade, onExit }: { grade: Grade; onExit: () =>
                 <span>3 зали · 12 задачи · 3 ключа</span>
                 <span>1. Стълбата на числата</span>
                 <span>2. Мостът на загадките</span>
-                <span>3. Тайната на върха</span>
+                <span>3. Обсерваторията на числата</span>
                 <span>{TOP_HELP_TEXT[d]}</span>
               </>
             ) : mode === 'lift' ? (

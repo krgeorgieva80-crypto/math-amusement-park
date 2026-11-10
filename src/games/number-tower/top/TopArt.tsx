@@ -97,7 +97,7 @@ const HALL_COLORS: [string, string][] = [
   ['#2ed1c4', '#a8f5ee'],
   ['#9b5de5', '#d2b6ff'],
 ]
-const HALL_NAMES = ['Стълбата на числата', 'Мостът на загадките', 'Тайната на върха']
+const HALL_NAMES = ['Стълбата на числата', 'Мостът на загадките', 'Обсерваторията на числата']
 
 /** Цялата кула отвън: градина и порта, три зали, златен връх. */
 export function TowerOutside({ states, topLit }: { states: [HallState, HallState, HallState]; topLit: boolean }) {
