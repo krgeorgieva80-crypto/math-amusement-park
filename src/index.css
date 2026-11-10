@@ -10845,3 +10845,24 @@ button:focus-visible {
   width: 44px;
   height: 22px;
 }
+
+/* заглавията на колоните в „Вълшебните жетони“ се побират („Десетохиляди“); при тясна колона без иконката */
+.place-mat__head {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.place-mat__head > span {
+  white-space: nowrap;
+  font-size: min(19px, calc((100cqi - 62px) * 1.72 / var(--hlen, 8)));
+}
+
+@container (max-width: 175px) {
+  .place-mat__head > :not(span) {
+    display: none;
+  }
+
+  .place-mat__head > span {
+    font-size: min(19px, calc((100cqi - 20px) * 1.72 / var(--hlen, 8)));
+  }
+}

@@ -70,8 +70,6 @@ const NAMES: Record<number, [string, string]> = {
 
 /** „3 десетици“, „1 стотица“ (без знак). */
 export const placeWords = (place: number, count: number) => `${Math.abs(count)} ${NAMES[place][Math.abs(count) === 1 ? 0 : 1]}`
-/** Името на разреда в множествено число („десетици“). */
-export const placeName = (place: number) => NAMES[place][1]
 /** Действие от маршрута: „▲ 3 десетици“ / „▼ 1 стотица“. */
 export const stepText = (s: LiftStep) => `${s.count > 0 ? '▲' : '▼'} ${placeWords(s.place, s.count)}`
 const stepPhrase = (s: LiftStep) => `${s.count > 0 ? 'нагоре' : 'надолу'} с ${placeWords(s.place, s.count)}`

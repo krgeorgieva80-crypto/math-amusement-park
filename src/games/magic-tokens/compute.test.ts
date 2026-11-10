@@ -132,7 +132,7 @@ describe('въвеждане на отговора', () => {
 describe('подсказки при пресмятане', () => {
   it('без жетони — първата стъпка, но не целия резултат', () => {
     expect(computeHint(add(48, 27), null, 0)).toBe('Събери единиците: 8 + 7 = 15. Запиши 5, пренеси 1.')
-    expect(computeHint(sub(52, 18), null, 0)).toBe('Започни от единици: 2 − 8 не може. Заеми 1 от следващия разряд: 12 − 8 = 4.')
+    expect(computeHint(sub(52, 18), null, 0)).toBe('Започни от единиците: 2 − 8 не може. Заеми 1 от следващия разред: 12 − 8 = 4.')
     for (const [task, expected] of CASES) {
       if (expected >= 10) expect(computeHint(task, null, 0)).not.toContain(String(expected))
     }
@@ -141,7 +141,7 @@ describe('подсказки при пресмятане', () => {
   it('с жетони — насочва към дъската', () => {
     expect(computeHint(add(48, 27), countsOf(75), 0)).toBe('Преброй десетиците и единиците.')
     expect(computeHint(add(48, 27), countsOf(75), 1)).toBe('Имаш 7 десетици и 5 единици.')
-    expect(computeHint(sub(52, 18), countsOf(34), 0)).toBe('Погледни жетоните на дъската. Колко има във всеки разряд?')
+    expect(computeHint(sub(52, 18), countsOf(34), 0)).toBe('Погледни жетоните на дъската. Колко има във всеки разред?')
   })
 })
 

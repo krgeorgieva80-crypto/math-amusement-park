@@ -248,14 +248,14 @@ export function TokenBoard({ grade, difficulty, mode, tasks, workMode = 'tokensA
       if (from === 'supply') {
         const build = buildRow(task)
         if (tRow !== build) return
-        if (tPlace !== null && tPlace !== d.place) return info(`Това е жетон за ${PLACE_NAMES[d.place].many}. Сложи го в колона „${PLACE_NAMES[d.place].header}“.`)
+        if (tPlace !== null && tPlace !== d.place) return info(`Това е жетон за ${PLACE_NAMES[d.place].the}. Сложи го в колоната „${PLACE_NAMES[d.place].header}“.`)
         return tap('supply', d.place)
       }
       // влачене към съседна колона в същия ред → размяна
       if (tRow === from && tPlace !== null && tPlace !== d.place) {
         if (tPlace === higherPlace(d.place)) return exchange(from, d.place, 'up')
         if (tPlace === lowerPlace(d.place)) return exchange(from, d.place, 'down')
-        return info('Размяната става между съседни разряди.')
+        return info('Размяната става между съседни разреди.')
       }
       if (state.kind === 'add' && (from === 'a' || from === 'b') && tRow === 'result') return tap(from, d.place)
       if ((state.kind === 'subtract' || state.kind === 'missingSubtrahend') && from === 'board' && tRow === 'removed') return tap('board', d.place)

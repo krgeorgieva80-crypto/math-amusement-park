@@ -11,12 +11,16 @@ export type Counts = Record<Place, number>
 /** Най-голямото число, което може да се представи стандартно (5 разряда). */
 export const MAX_VALUE = 99999
 
-export const PLACE_NAMES: Record<Place, { one: string; many: string; short: string; header: string }> = {
-  10000: { one: 'десетица хиляди', many: 'десетици хиляди', short: 'ДХ', header: 'Десетици хиляди' },
-  1000: { one: 'хиляда', many: 'хиляди', short: 'Х', header: 'Хиляди' },
-  100: { one: 'стотица', many: 'стотици', short: 'С', header: 'Стотици' },
-  10: { one: 'десетица', many: 'десетици', short: 'Д', header: 'Десетици' },
-  1: { one: 'единица', many: 'единици', short: 'Е', header: 'Единици' },
+/**
+ * one / many — количество („1 десетица хиляди“, „3 десетици хиляди“);
+ * name / the — наименование на разреда („десетохиляди“, „десетохилядите“); header — заглавие на колоната.
+ */
+export const PLACE_NAMES: Record<Place, { one: string; many: string; short: string; header: string; name: string; the: string }> = {
+  10000: { one: 'десетица хиляди', many: 'десетици хиляди', short: 'ДХ', header: 'Десетохиляди', name: 'десетохиляди', the: 'десетохилядите' },
+  1000: { one: 'хиляда', many: 'хиляди', short: 'Х', header: 'Хиляди', name: 'хиляди', the: 'хилядите' },
+  100: { one: 'стотица', many: 'стотици', short: 'С', header: 'Стотици', name: 'стотици', the: 'стотиците' },
+  10: { one: 'десетица', many: 'десетици', short: 'Д', header: 'Десетици', name: 'десетици', the: 'десетиците' },
+  1: { one: 'единица', many: 'единици', short: 'Е', header: 'Единици', name: 'единици', the: 'единиците' },
 }
 
 export function emptyCounts(): Counts {

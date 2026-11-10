@@ -36,14 +36,14 @@ export const MODE_LABELS: Record<ModeId, string> = {
 }
 
 export const MODE_DESCRIPTIONS: Record<ModeId, string> = {
-  compose: 'Подреди жетоните по разряди',
+  compose: 'Подреди жетоните по разреди',
   add: 'Обедини групите и разменяй',
   subtract: 'Махни жетони и разменяй',
   challenge: 'Липсващи числа, сравняване и още',
 }
 
 export const COMPOSE_TOPIC_LABELS: Record<ComposeTopic, string> = {
-  place: 'Разряден състав',
+  place: 'Разреден състав',
   regroup: 'Различни представяния',
   free: 'С различни жетони',
 }
@@ -207,7 +207,7 @@ export function taskInstruction(task: TokenTask): string {
   switch (task.kind) {
     case 'compose':
       if (task.topic === 'regroup' && task.fixed) return `Използвай точно ${fixedText(task.fixed, task.places)}.`
-      return 'Сложи всеки жетон в неговия разряд.'
+      return 'Сложи всеки жетон в неговия разред.'
     case 'otherWay':
       return 'Състави числото по друг начин — с размяна. Всеки различен начин е верен.'
     case 'add':
@@ -560,7 +560,7 @@ export function checkTask(task: TokenTask, state: BoardState, details = true): T
     case 'compose': {
       if (state.kind !== 'compose') break
       const v = valueOf(state.built)
-      if (v === 0) return incomplete('Сложи жетони в разрядите.')
+      if (v === 0) return incomplete('Сложи жетони в разредите.')
       if (v !== task.target) return wrong(valueMessage(v, task.target, details))
       if (task.topic === 'place') {
         const over = overfullPlace(state.built, task.places)
@@ -575,7 +575,7 @@ export function checkTask(task: TokenTask, state: BoardState, details = true): T
     case 'otherWay': {
       if (state.kind !== 'otherWay') break
       const v = valueOf(state.built)
-      if (v === 0) return incomplete('Сложи жетони в разрядите.')
+      if (v === 0) return incomplete('Сложи жетони в разредите.')
       if (v !== task.target) return wrong(valueMessage(v, task.target, details))
       if (equalCounts(state.built, countsOf(task.target))) return wrong('Това е обичайният начин. Размени един жетон за 10 по-малки и опитай пак.')
       return ok()
@@ -720,10 +720,10 @@ export function hintFor(task: TokenTask, state: BoardState): TokenHint {
       for (const row of ['b', 'a'] as const) {
         const group = state[row]
         const p = task.places.find((q) => group[q] > 0)
-        if (p) return { message: `Премести ${PLACE_NAMES[p].many}те в сбора.`, row, place: p }
+        if (p) return { message: `Премести ${PLACE_NAMES[p].the} в сбора.`, row, place: p }
       }
       const over = overfullPlace(state.result, task.places)
-      if (over) return { message: `Преброй ${PLACE_NAMES[over].many}те: ${state.result[over]}. Размени 10 ${PLACE_NAMES[over].many} за 1 ${PLACE_NAMES[(over * 10) as Place].one}.`, row: 'result', place: over }
+      if (over) return { message: `Преброй ${PLACE_NAMES[over].the}: ${state.result[over]}. Размени 10 ${PLACE_NAMES[over].many} за 1 ${PLACE_NAMES[(over * 10) as Place].one}.`, row: 'result', place: over }
       return { message: 'Готово! Провери решението.' }
     }
     case 'subtract': {
@@ -748,7 +748,7 @@ export function hintFor(task: TokenTask, state: BoardState): TokenHint {
     }
     case 'findError': {
       const withRegroup = task.items.findIndex((e) => (e.op === '+' ? carryCount(e.a, e.b) : borrowCount(e.a, e.b)) > 0)
-      return withRegroup >= 0 ? { message: 'Провери внимателно примерите с преминаване през десетицата.' } : { message: 'Пресметни всеки пример по разряди.' }
+      return withRegroup >= 0 ? { message: 'Провери внимателно примерите с преминаване през десетицата.' } : { message: 'Пресметни всеки пример по разреди.' }
     }
   }
   return { message: 'Опитай стъпка по стъпка.' }

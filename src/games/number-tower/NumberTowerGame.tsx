@@ -308,7 +308,7 @@ const NUMBERS_TEXT: Record<Difficulty, string> = {
 }
 const HELP_TEXT: Record<Difficulty, string> = {
   explorer: 'Подсказка: сравни две числа',
-  researcher: 'Една подсказка за разрядите',
+  researcher: 'Една подсказка за разредите',
   master: 'Без подсказки',
 }
 

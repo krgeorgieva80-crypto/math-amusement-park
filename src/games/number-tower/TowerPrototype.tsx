@@ -218,11 +218,11 @@ export function TowerPrototype() {
         label="Върхът на кулата · етап 3 от 3"
         title="Колко стотици има в 3 482?"
         instruction="Последното изпитание! Реши и върхът ще светне."
-        bubble="Подреди → закономерност → разряди."
+        bubble="Подреди → закономерност → разреди."
         stage={
           <div className="nt-top-stage">
             <div className="ch-path nt-path">
-              {['Подреди', 'Закономерност', 'Разряди'].map((n, i) => (
+              {['Подреди', 'Закономерност', 'Разреди'].map((n, i) => (
                 <span key={n} className={`ch-lantern ${i === 2 ? 'is-on' : 'is-done'}`}>
                   <svg viewBox="0 0 40 52" aria-hidden="true">
                     <path d="M8 12 H32 L28 44 H12 Z" fill="currentColor" stroke="#3b2a5a" strokeWidth="4" />

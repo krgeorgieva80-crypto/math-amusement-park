@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { TokenCoin } from '../../components/art/TokenCoin'
 import { formatNumber } from './logic'
@@ -127,7 +128,7 @@ export function PlaceMat({ places, rows, counts, bind, dragOver, onExchange, onK
       {places.map((p) => (
         <div key={p} className={`place-mat__head place-mat__head--${p}`}>
           <TokenCoin value={p} size={34} />
-          <span>{p === 10000 && places.length >= 5 ? 'Дес. хиляди' : PLACE_NAMES[p].header}</span>
+          <span style={{ '--hlen': PLACE_NAMES[p].header.length } as CSSProperties}>{PLACE_NAMES[p].header}</span>
         </div>
       ))}
       {rows.map((row) => {

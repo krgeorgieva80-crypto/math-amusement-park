@@ -163,19 +163,20 @@ export function computeHint(task: ArithTask, board: Counts | null, attempt: numb
   }
   if (board) {
     return attempt === 0
-      ? 'Погледни жетоните на дъската. Колко има във всеки разряд?'
+      ? 'Погледни жетоните на дъската. Колко има във всеки разред?'
       : `На дъската има ${digitsWord(board, task.places)}. Какво число е това?`
   }
   const steps = columnSteps(task.kind === 'add' ? '+' : '-', task.a, task.b)
   const s = steps[0]
-  const unit = PLACE_NAMES[s.place].many
+  // наименованието на разреда, членувано („единиците“, „десетохилядите“)
+  const unit = PLACE_NAMES[s.place].the
   if (task.kind === 'add') {
     const sum = s.top + s.bottom
-    return sum >= 10 ? `Събери ${unit}те: ${s.top} + ${s.bottom} = ${sum}. Запиши ${s.digit}, пренеси 1.` : `Събери ${unit}те: ${s.top} + ${s.bottom} = ${sum}.`
+    return sum >= 10 ? `Събери ${unit}: ${s.top} + ${s.bottom} = ${sum}. Запиши ${s.digit}, пренеси 1.` : `Събери ${unit}: ${s.top} + ${s.bottom} = ${sum}.`
   }
   return s.carryOut
-    ? `Започни от ${unit}: ${s.top} − ${s.bottom} не може. Заеми 1 от следващия разряд: ${s.top + 10} − ${s.bottom} = ${s.digit}.`
-    : `Започни от ${unit}: ${s.top} − ${s.bottom} = ${s.digit}. После извади следващия разряд.`
+    ? `Започни от ${unit}: ${s.top} − ${s.bottom} не може. Заеми 1 от следващия разред: ${s.top + 10} − ${s.bottom} = ${s.digit}.`
+    : `Започни от ${unit}: ${s.top} − ${s.bottom} = ${s.digit}. После извади следващия разред.`
 }
 
 // ───────────────────────── Какво се вижда на екрана ─────────────────────────
