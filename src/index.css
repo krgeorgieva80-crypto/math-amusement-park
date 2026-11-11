@@ -8066,13 +8066,11 @@ button:focus-visible {
   min-width: max(150px, calc(var(--tap) * 2.4));
 }
 
-/* по-тясна сцена (16:10, 4:3) — мери се логическата ширина на сцената, не прозорецът:
-   еднаква сцена дава еднаква подредба (960×600 = 1280×800, 1366×768 = 1920×1080) */
-@container stage (max-width: 1450px) {
-  .nt-grid {
-    grid-template-columns: 270px minmax(0, 1fr) 250px;
-    gap: 12px 14px;
-  }
+/* По-тесни странични колони — повече място за сцената. Широките колони са само за просторно игрално поле
+   (голям монитор, интерактивен дисплей): изборът е по реалния размер на полето, не по ширината на прозореца. */
+.is-landscape:not(.ui-roomy) .nt-grid {
+  grid-template-columns: 270px minmax(0, 1fr) 250px;
+  gap: 12px 14px;
 }
 
 /* ═════════════ „Кулата на числата“ — игра 1 „Построй кулата“ ═════════════ */
@@ -8605,11 +8603,15 @@ button:focus-visible {
 
 
 /* по-тесен таблет хоризонтално: повече място за сцената с кулата */
-/* най-тясната хоризонтална сцена (4:3, ширина ~1200) */
+/* най-тясната хоризонтална сцена (4:3, ширина ~1200), малко игрално поле и телефон: кулата остава едра */
 @container stage (max-width: 1250px) {
   .is-landscape .nt-build-play .nt-grid {
     grid-template-columns: 236px minmax(0, 1fr) 216px;
   }
+}
+
+.is-landscape:is(.ui-compact, .ui-phone) .nt-build-play .nt-grid {
+  grid-template-columns: 236px minmax(0, 1fr) 216px;
 }
 
 /* размерът на кулата в играта се задава точно (от наличното място) — без разтягане от CSS */
@@ -8697,22 +8699,8 @@ button:focus-visible {
   grid-template-columns: 300px minmax(0, 1fr) 400px;
 }
 
-@container stage (max-width: 1450px) {
-  .is-landscape .nt-secret-play .nt-grid {
-    grid-template-columns: 250px minmax(0, 1fr) 340px;
-  }
-}
-
-/* компактно игрално поле (малък реален размер): по-широка колона със заданието за сметка на празното място около сцената
-   (телефонът в хоризонтално положение има собствена подредба — max-height: 520px) */
-@media (min-height: 521px) {
-  .ui-compact.is-landscape .nt-build-play .nt-grid {
-    grid-template-columns: 310px minmax(0, 1fr) 250px;
-  }
-
-  .ui-compact.is-landscape .nt-secret-play .nt-grid {
-    grid-template-columns: 310px minmax(0, 1fr) 340px;
-  }
+.is-landscape:not(.ui-roomy) .nt-secret-play .nt-grid {
+  grid-template-columns: 250px minmax(0, 1fr) 340px;
 }
 
 .nt-secret-play .nt-task {
@@ -9196,7 +9184,7 @@ button:focus-visible {
 
 /* телефон хоризонтално: по-широка дясна колона — клавишите остават големи за пръст */
 @media (orientation: landscape) and (max-height: 520px) {
-  .is-landscape .nt-secret-play .nt-grid {
+  .stage.is-landscape .nt-secret-play .nt-grid {
     grid-template-columns: 240px minmax(0, 1fr) 560px;
   }
 }
