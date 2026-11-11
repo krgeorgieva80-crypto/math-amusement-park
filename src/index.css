@@ -76,6 +76,39 @@ button:focus-visible {
   overflow: hidden;
   overflow: clip;
   background: #b5ecff;
+  /* контейнер за адаптивните колони: заявките @container stage мерят ЛОГИЧЕСКАТА ширина на сцената, а не прозореца */
+  container: stage / inline-size;
+}
+
+/* ───────────── Типографска система ─────────────
+ * Сцената се мащабира като цяло (--s = реален px / логически px). Минимумите по-долу са в РЕАЛНИ пиксели
+ * и се превръщат в логически чрез деление на --s; компонентите ползват max(проектен размер, минимум).
+ *   основен текст ≥ 18 px · условия на задачите ≥ 20 px · второстепенни надписи ≥ 16 px · зони за докосване ≥ 44 px
+ * Просторен екран (голям монитор, интерактивен дисплей): по-високи минимуми и множител --k за заглавия, условия и бутони. */
+.stage {
+  --s: 1;
+  --k: 1;
+  --min-body: calc(18px / var(--s));
+  --min-cond: calc(20px / var(--s));
+  --min-sec: calc(16px / var(--s));
+  --min-tap: calc(44px / var(--s));
+}
+
+/* телефон: по-ниски минимуми за текста, за да не излизат лентите извън тесния екран; зоните за докосване в игрите
+   се задават от собствения механизъм на телефонните подредби (--tap), а горната лента ще се пренареди отделно (етап 4) */
+.stage.ui-phone {
+  --min-body: calc(14px / var(--s));
+  --min-cond: calc(15px / var(--s));
+  --min-sec: calc(12px / var(--s));
+  --min-tap: 0px;
+}
+
+.stage.ui-roomy {
+  --k: 1.1;
+  --min-body: calc(22px / var(--s));
+  --min-cond: calc(24px / var(--s));
+  --min-sec: calc(18px / var(--s));
+  --min-tap: calc(56px / var(--s));
 }
 
 .screen-enter {
@@ -142,7 +175,7 @@ button:focus-visible {
   justify-content: center;
   gap: 0.45em;
   width: 100%;
-  min-height: 72px;
+  min-height: max(72px, var(--min-tap));
   padding: 0 34px;
   border-radius: inherit;
   border: 4px solid var(--ink);
@@ -150,7 +183,7 @@ button:focus-visible {
   color: var(--text);
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 30px;
+  font-size: max(calc(30px * var(--k)), var(--min-body));
   letter-spacing: 0.01em;
   transition: transform 0.12s ease;
   box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.08);
@@ -183,13 +216,13 @@ button:focus-visible {
 }
 
 .game-btn--sm .game-btn__face {
-  min-height: 56px;
-  font-size: 22px;
+  min-height: max(56px, var(--min-tap));
+  font-size: max(22px, var(--min-body));
   padding: 0 22px;
 }
 .game-btn--lg .game-btn__face {
-  min-height: 86px;
-  font-size: 32px;
+  min-height: max(86px, var(--min-tap));
+  font-size: max(calc(32px * var(--k)), var(--min-body));
   padding: 0 34px;
 }
 .game-btn--xl .game-btn__face {
@@ -199,8 +232,8 @@ button:focus-visible {
 }
 
 .game-btn--icon-only .game-btn__face {
-  width: 76px;
-  min-height: 76px;
+  width: max(76px, var(--min-tap));
+  min-height: max(76px, var(--min-tap));
   padding: 0;
 }
 
@@ -298,7 +331,7 @@ button:focus-visible {
   box-shadow: 0 6px 0 rgba(59, 42, 90, 0.35);
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 32px;
+  font-size: max(32px, var(--min-body));
 }
 
 .star-counter svg {
@@ -320,7 +353,7 @@ button:focus-visible {
   box-shadow: 0 6px 0 var(--purple-d);
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 26px;
+  font-size: max(26px, var(--min-sec));
 }
 
 .grade-badge:not(:disabled):active {
@@ -535,7 +568,7 @@ button:focus-visible {
   background: #fff;
   border: 4px solid var(--ink);
   box-shadow: 0 8px 0 rgba(59, 42, 90, 0.25);
-  font-size: 26px;
+  font-size: max(26px, var(--min-body));
   line-height: 1.3;
   animation: pop-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4);
   transform-origin: left center;
@@ -1631,7 +1664,7 @@ button:focus-visible {
   position: relative;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 30px;
+  font-size: max(calc(30px * var(--k)), var(--min-body));
   color: #fff;
   text-shadow: 0 3px 0 var(--ink);
 }
@@ -1673,7 +1706,7 @@ button:focus-visible {
   background: var(--yellow);
   border: 4px solid var(--ink);
   box-shadow: 0 6px 0 var(--yellow-d);
-  font-size: 25px;
+  font-size: max(calc(25px * var(--k)), var(--min-cond));
   line-height: 1.15;
   animation: pop-in 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
 }
@@ -1702,12 +1735,12 @@ button:focus-visible {
 
 .speech-bubble--game {
   flex: 1;
-  font-size: 23px;
+  font-size: max(23px, var(--min-body));
   padding: 14px 18px;
 }
 
 .speech-bubble--game .bubble-title {
-  font-size: 26px;
+  font-size: max(26px, var(--min-body));
 }
 
 .tray-area {
@@ -2200,6 +2233,13 @@ button:focus-visible {
   display: none;
 }
 
+/* телефон: по-големите зони за докосване се побират, като се намалят празните разстояния в лентата (не надписите) */
+.ui-phone .top-bar {
+  gap: 8px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
 /* Прогрес */
 .progress {
   display: flex;
@@ -2215,7 +2255,7 @@ button:focus-visible {
 .progress__label {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 22px;
+  font-size: max(22px, var(--min-sec));
 }
 
 .progress__dots {
@@ -2268,6 +2308,8 @@ button:focus-visible {
   align-items: center;
   gap: 12px;
   width: 680px;
+  max-width: calc(100cqw - 80px);
+  container-type: inline-size;
   padding: 56px 40px 40px;
   border-radius: 48px;
   background: linear-gradient(180deg, #fffaf0, #ffeec2);
@@ -2305,10 +2347,14 @@ button:focus-visible {
 }
 
 .success-card__title {
+  max-width: 100%;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 110px;
+  /* дългите заглавия (--chars = най-дългата дума) се побират в картата; кратките остават 110 px */
+  font-size: min(110px, calc(100cqi * 1.35 / var(--chars, 6)));
   line-height: 1;
+  text-align: center;
+  text-wrap: balance;
   color: var(--pink);
   -webkit-text-stroke: 14px var(--ink);
   paint-order: stroke fill;
@@ -2325,7 +2371,7 @@ button:focus-visible {
 .success-card__praise {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 34px;
+  font-size: max(34px, var(--min-body));
   color: var(--purple);
 }
 
@@ -2335,7 +2381,7 @@ button:focus-visible {
   border-radius: 20px;
   background: #fff;
   border: 4px solid var(--ink);
-  font-size: 28px;
+  font-size: max(28px, var(--min-body));
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -2394,7 +2440,7 @@ button:focus-visible {
 }
 
 .summary-card__level {
-  font-size: 28px;
+  font-size: max(28px, var(--min-body));
   color: var(--purple-d);
 }
 
@@ -2407,7 +2453,7 @@ button:focus-visible {
 
 .summary-stat {
   --c: var(--yellow);
-  width: 210px;
+  width: max(210px, calc(var(--min-sec) * 9.5));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2441,7 +2487,9 @@ button:focus-visible {
 }
 
 .summary-stat__label {
-  font-size: 21px;
+  font-size: max(21px, var(--min-sec));
+  text-align: center;
+  line-height: 1.15;
 }
 
 .summary-card__buttons {
@@ -3273,7 +3321,7 @@ button:focus-visible {
   background: var(--yellow);
   border: 4px solid var(--ink);
   box-shadow: 0 6px 0 var(--yellow-d);
-  font-size: 22px;
+  font-size: max(calc(22px * var(--k)), var(--min-cond));
   line-height: 1.2;
 }
 
@@ -8018,8 +8066,9 @@ button:focus-visible {
   min-width: max(150px, calc(var(--tap) * 2.4));
 }
 
-/* по-тесен хоризонтален екран (4:3) */
-@media (max-width: 1450px) {
+/* по-тясна сцена (16:10, 4:3) — мери се логическата ширина на сцената, не прозорецът:
+   еднаква сцена дава еднаква подредба (960×600 = 1280×800, 1366×768 = 1920×1080) */
+@container stage (max-width: 1450px) {
   .nt-grid {
     grid-template-columns: 270px minmax(0, 1fr) 250px;
     gap: 12px 14px;
@@ -8291,7 +8340,7 @@ button:focus-visible {
 }
 
 /* по-тесен хоризонтален екран: етикетът на нивото е по-кратък, за да се побере звукът */
-@media (max-width: 1300px) {
+@container stage (max-width: 1500px) {
   .nt-play .nt-chip-pre {
     display: none;
   }
@@ -8556,7 +8605,8 @@ button:focus-visible {
 
 
 /* по-тесен таблет хоризонтално: повече място за сцената с кулата */
-@media (max-width: 1150px) {
+/* най-тясната хоризонтална сцена (4:3, ширина ~1200) */
+@container stage (max-width: 1250px) {
   .is-landscape .nt-build-play .nt-grid {
     grid-template-columns: 236px minmax(0, 1fr) 216px;
   }
@@ -8647,9 +8697,21 @@ button:focus-visible {
   grid-template-columns: 300px minmax(0, 1fr) 400px;
 }
 
-@media (max-width: 1450px) {
+@container stage (max-width: 1450px) {
   .is-landscape .nt-secret-play .nt-grid {
     grid-template-columns: 250px minmax(0, 1fr) 340px;
+  }
+}
+
+/* компактно игрално поле (малък реален размер): по-широка колона със заданието за сметка на празното място около сцената
+   (телефонът в хоризонтално положение има собствена подредба — max-height: 520px) */
+@media (min-height: 521px) {
+  .ui-compact.is-landscape .nt-build-play .nt-grid {
+    grid-template-columns: 310px minmax(0, 1fr) 250px;
+  }
+
+  .ui-compact.is-landscape .nt-secret-play .nt-grid {
+    grid-template-columns: 310px minmax(0, 1fr) 340px;
   }
 }
 

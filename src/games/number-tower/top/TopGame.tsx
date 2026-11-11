@@ -179,7 +179,9 @@ function Adventure({ grade, difficulty, initial, onExit, onChooseLevel, onChoose
           <Confetti seed={s.keys * 7} />
           <div className="success-card">
             <div className="success-card__burst" aria-hidden="true" />
-            <div className="success-card__title">Магически ключ!</div>
+            <div className="success-card__title" style={{ '--chars': 9 } as CSSProperties}>
+              Магически ключ!
+            </div>
             <div className="tt-key-big">
               <MagicKey size={210} />
             </div>
@@ -478,7 +480,9 @@ function ResumePrompt({ session, grade, onResume, onRestart, onExit }: { session
       <div className="success-overlay tt-resume">
         <div className="success-card">
           <Mascot mood="wave" size={130} className="success-card__mascot" />
-          <div className="success-card__title">Продължаваме ли?</div>
+          <div className="success-card__title" style={{ '--chars': 12 } as CSSProperties}>
+            Продължаваме ли?
+          </div>
           <div className="success-card__praise">
             <Words text={`Имаш недовършено приключение: „${HALLS[h].name}“, задача ${Math.min(session.index, session.tasks.length - 1) + 1} от ${session.tasks.length}.`} />
           </div>
