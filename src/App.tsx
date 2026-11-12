@@ -14,10 +14,15 @@ import { NumberTowerGame } from './games/number-tower/NumberTowerGame'
 import { TeacherScreen } from './screens/TeacherScreen'
 import type { AttractionId } from './attractions/registry'
 import { loadPlayerGrade, savePlayerGrade } from './core/storage'
+import { parkFromUrl, type ParkId } from './core/audiences'
+import { ParkChooser } from './screens/ParkChooser'
+import { KindergartenPark } from './kindergarten/KindergartenPark'
+import './styles/parks.css'
 
 export type ScreenName = 'home' | 'about' | 'teacher' | 'grade' | 'map' | 'passport' | { game: AttractionId }
 
-function Router() {
+/** Училищният парк („Математически увеселителен парк“) — непроменен; onSwitchPark води към началния избор. */
+function Router({ onSwitchPark }: { onSwitchPark: () => void }) {
   const { settings } = useApp()
   const [screen, setScreen] = useState<ScreenName>('home')
   const [returnTo, setReturnTo] = useState<ScreenName>('home')
@@ -54,11 +59,7 @@ function Router() {
     switch (screen) {
       case 'home':
         content = (
-          <HomeScreen
-            onPlay={() => setScreen(settings.studentCanChoose ? 'grade' : 'map')}
-            onAbout={() => openOverlay('about')}
-            onTeacher={() => openOverlay('teacher')}
-          />
+          <HomeScreen onPlay={() => setScreen(settings.studentCanChoose ? 'grade' : 'map')} onAbout={() => openOverlay('about')} onTeacher={() => openOverlay('teacher')} onSwitchPark={onSwitchPark} />
         )
         break
       case 'grade':
@@ -96,11 +97,7 @@ function Router() {
         content = <AboutScreen onBack={() => setScreen(returnTo)} />
         break
       case 'teacher':
-        content = (
-          <TeacherScreen
-            onBack={() => setScreen(returnTo)}
-          />
-        )
+        content = <TeacherScreen onBack={() => setScreen(returnTo)} />
         break
     }
   }
@@ -115,11 +112,23 @@ function Router() {
   )
 }
 
+/** Начален избор: приказният парк за детската градина или увеселителният парк за началното училище. */
+function Root() {
+  const [park, setPark] = useState<ParkId | null>(parkFromUrl)
+  if (park === 'school') return <Router onSwitchPark={() => setPark(null)} />
+  if (park === 'kindergarten') return <KindergartenPark onExit={() => setPark(null)} />
+  return (
+    <div key="chooser" className="screen-enter">
+      <ParkChooser onChoose={setPark} />
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <AppProvider>
       <Stage>
-        <Router />
+        <Root />
       </Stage>
     </AppProvider>
   )

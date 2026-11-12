@@ -1,0 +1,176 @@
+/* ═════════════ Начален избор между двата парка ═════════════ */
+
+.home__top-left {
+  position: absolute;
+  z-index: 20;
+  top: 24px;
+  left: 28px;
+}
+
+.park-chooser {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  --kg-s: 1;
+}
+
+.park-chooser .kg-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.park-chooser__top-right {
+  position: absolute;
+  z-index: 5;
+  top: 24px;
+  right: 28px;
+}
+
+.park-chooser__head {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 140px;
+}
+
+.park-chooser__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(52px, calc(24px / var(--kg-s)));
+  line-height: 1.1;
+  color: #fff;
+  -webkit-text-stroke: 10px #4a3560;
+  paint-order: stroke fill;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.park-chooser__cards {
+  position: absolute;
+  left: 60px;
+  right: 60px;
+  top: 210px;
+  bottom: 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: stretch;
+}
+
+.park-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px 28px 30px;
+  border-radius: 48px;
+  border: 6px solid #4a3560;
+  background: linear-gradient(180deg, #fffaf2, #fff0dc);
+  box-shadow: 0 14px 0 var(--card-d, #f0a8c4), 0 28px 40px rgba(74, 53, 96, 0.3);
+  transition: transform 0.15s ease;
+  min-height: 0;
+  touch-action: manipulation;
+}
+
+.park-card--kindergarten {
+  --card-d: #f39bc0;
+  background: linear-gradient(180deg, #fff6fb, #ffe4f0);
+}
+
+.park-card--school {
+  --card-d: #8fc8f0;
+  background: linear-gradient(180deg, #f6fbff, #e1f2ff);
+}
+
+.park-card:hover {
+  transform: translateY(-4px);
+}
+
+.park-card:active {
+  transform: translateY(6px);
+}
+
+.park-card:focus-visible {
+  outline: 8px solid #ffd25e;
+  outline-offset: 6px;
+}
+
+.park-card__art {
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.park-card__svg {
+  width: 100%;
+  height: 100%;
+  max-height: 420px;
+}
+
+.park-card__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(42px, calc(22px / var(--kg-s)));
+  line-height: 1.1;
+  text-align: center;
+  color: #4a3560;
+  text-wrap: balance;
+}
+
+.park-card__audience {
+  font-size: max(28px, calc(18px / var(--kg-s)));
+  font-weight: 800;
+  color: #7a5c9a;
+  text-align: center;
+}
+
+.park-card__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 12px 40px;
+  min-height: max(76px, calc(56px / var(--kg-s)));
+  border-radius: 999px;
+  border: 5px solid #4a3560;
+  background: linear-gradient(180deg, #b5f5a8, #6bd66b);
+  box-shadow: 0 7px 0 #2f8f3c;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(34px, calc(20px / var(--kg-s)));
+  color: #103d16;
+}
+
+/* вертикален екран: картите една под друга */
+.park-chooser.is-portrait .park-chooser__head {
+  flex-direction: column;
+  gap: 4px;
+  top: 30px;
+  padding: 0 110px;
+}
+
+.park-chooser.is-portrait .park-chooser__cards {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr 1fr;
+  top: 300px;
+  left: 40px;
+  right: 40px;
+  bottom: 50px;
+  gap: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .park-card {
+    transition: none;
+  }
+}

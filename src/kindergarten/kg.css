@@ -1,0 +1,1352 @@
+/* ═════════════ „Приказен математически парк“ — детска градина ═════════════
+ * --kg-s   — мащаб на сцената (реален px / логически px)
+ * --kg-tap — зона за докосване: поне 64 реални px за малките деца
+ * Текстът е поне 18–24 реални px: font-size: max(проектен размер, calc(N px / var(--kg-s))). */
+
+.kg-root {
+  position: absolute;
+  inset: 0;
+  --kg-ink: #4a3560;
+  --kg-s: 1;
+  --kg-tap: 120px;
+  --kg-plate-fruit: max(84px, calc(56px / var(--kg-s)));
+  /* височина на горната лента: бутоните в нея са поне 48 реални px */
+  --kg-top-h: max(110px, calc(62px / var(--kg-s)));
+  color: var(--kg-ink);
+}
+
+/* всички бутони в приказния парк и на началния екран: поне 48 реални px и четим надпис */
+:is(.kg-root, .park-chooser) .game-btn__face {
+  min-height: max(72px, calc(48px / var(--kg-s)));
+  font-size: max(30px, calc(18px / var(--kg-s)));
+}
+
+:is(.kg-root, .park-chooser) .game-btn--icon-only .game-btn__face {
+  width: max(76px, calc(50px / var(--kg-s)));
+  min-height: max(76px, calc(50px / var(--kg-s)));
+}
+
+.kg-screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.kg-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ───────────── горна лента ───────────── */
+.kg-top {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--kg-top-h);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px 0;
+}
+
+.kg-top__spacer {
+  flex: 1;
+}
+
+.kg-top__title {
+  margin: 0;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(38px, calc(20px / var(--kg-s)));
+  color: #fff;
+  -webkit-text-stroke: 8px var(--kg-ink);
+  paint-order: stroke fill;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kg-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: max(58px, calc(44px / var(--kg-s)));
+  padding: 4px 22px;
+  border-radius: 999px;
+  border: 4px solid var(--kg-ink);
+  background: #fff;
+  box-shadow: 0 6px 0 rgba(74, 53, 96, 0.3);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: max(26px, calc(18px / var(--kg-s)));
+  white-space: nowrap;
+}
+
+button.kg-chip:active {
+  transform: translateY(3px);
+}
+
+.kg-heading {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(56px, calc(28px / var(--kg-s)));
+  color: #fff;
+  -webkit-text-stroke: 10px var(--kg-ink);
+  paint-order: stroke fill;
+}
+
+/* ───────────── избор на група ───────────── */
+.kg-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: calc(var(--kg-top-h) + 4px) 50px 50px;
+}
+
+.kg-groups > .kg-scene {
+  position: absolute;
+}
+
+.kg-groups__grid {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 34px;
+}
+
+.kg-group-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  justify-items: center;
+  align-items: end;
+  gap: 6px;
+  padding: 18px 14px 24px;
+  border-radius: 44px;
+  border: 6px solid var(--kg-ink);
+  background: linear-gradient(180deg, #fffaf4, var(--card));
+  box-shadow: 0 12px 0 rgba(74, 53, 96, 0.35);
+  min-height: 0;
+  transition: transform 0.15s ease;
+}
+
+.kg-group-card:hover {
+  transform: translateY(-4px);
+}
+
+.kg-group-card:active {
+  transform: translateY(6px);
+}
+
+.kg-group-card.is-current {
+  outline: 8px solid #ffd25e;
+  outline-offset: 4px;
+}
+
+.kg-group-card__num {
+  display: grid;
+  place-items: center;
+  width: max(84px, calc(60px / var(--kg-s)));
+  height: max(84px, calc(60px / var(--kg-s)));
+  border-radius: 50%;
+  border: 5px solid var(--kg-ink);
+  background: #fff;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(52px, calc(32px / var(--kg-s)));
+  align-self: start;
+}
+
+.kg-group-card__art {
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.kg-group-card__art {
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+}
+
+.kg-group-card__art svg {
+  height: calc(100% * var(--gs, 1));
+  max-width: 100%;
+  width: auto;
+}
+
+.kg-group-card__name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(38px, calc(22px / var(--kg-s)));
+  line-height: 1.1;
+  text-align: center;
+}
+
+.kg-group-card__ages {
+  font-weight: 800;
+  font-size: max(30px, calc(20px / var(--kg-s)));
+  color: #6a4f86;
+}
+
+.kg-root.is-portrait .kg-groups {
+  padding-left: 36px;
+  padding-right: 36px;
+}
+
+.kg-root.is-portrait .kg-groups__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 30px;
+}
+
+/* ───────────── карта ───────────── */
+.kg-spot {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  transition: transform 0.15s ease;
+}
+
+.kg-spot:hover {
+  transform: translate(-50%, calc(-50% - 4px));
+}
+
+.kg-spot:active {
+  transform: translate(-50%, calc(-50% + 4px));
+}
+
+.kg-spot:focus-visible {
+  outline: 8px solid #ffd25e;
+  outline-offset: 4px;
+  border-radius: 30px;
+}
+
+.kg-spot__art {
+  overflow: visible;
+  filter: drop-shadow(0 10px 8px rgba(74, 53, 96, 0.2));
+}
+
+.kg-spot__sign {
+  margin-top: -14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 22px 12px;
+  border-radius: 26px;
+  border: 5px solid;
+  background: #fffdf8;
+  box-shadow: 0 7px 0 rgba(74, 53, 96, 0.3);
+  max-width: 100%;
+}
+
+.kg-spot__name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(28px, calc(18px / var(--kg-s)));
+  line-height: 1.1;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.kg-spot__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 16px;
+  border-radius: 999px;
+  background: #ece6f5;
+  font-weight: 800;
+  font-size: max(22px, calc(16px / var(--kg-s)));
+  color: #6a4f86;
+}
+
+.kg-spot__state.is-ready {
+  background: linear-gradient(180deg, #b5f5a8, #6bd66b);
+  border: 3px solid var(--kg-ink);
+  color: #103d16;
+}
+
+.kg-spot.is-soon .kg-spot__art {
+  filter: saturate(0.7) drop-shadow(0 10px 8px rgba(74, 53, 96, 0.15));
+}
+
+.kg-spot__ribbon {
+  position: absolute;
+  z-index: 3;
+  top: 6px;
+  padding: 6px 18px;
+  border-radius: 14px;
+  border: 4px solid var(--kg-ink);
+  background: #ffd25e;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(24px, calc(16px / var(--kg-s)));
+  animation: kg-bob 1.6s ease-in-out infinite;
+}
+
+.kg-spot.is-lesson .kg-spot__sign {
+  box-shadow: 0 0 0 8px #ffd25e, 0 7px 0 rgba(74, 53, 96, 0.3);
+}
+
+.kg-lesson-go {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--kg-tap);
+  padding: 8px 34px;
+  border-radius: 999px;
+  border: 5px solid var(--kg-ink);
+  background: linear-gradient(180deg, #fff3a0, #ffd25e);
+  box-shadow: 0 8px 0 #e89a00;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(32px, calc(20px / var(--kg-s)));
+}
+
+/* ───────────── атракция ───────────── */
+.kg-attraction__body {
+  position: absolute;
+  top: calc(var(--kg-top-h) + 10px);
+  bottom: 40px;
+  left: 50px;
+  right: 50px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 40px;
+  align-items: center;
+}
+
+.kg-attraction__hero {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kg-attraction__art {
+  width: 100%;
+  height: 100%;
+  max-height: 640px;
+  overflow: visible;
+  filter: drop-shadow(0 16px 12px rgba(74, 53, 96, 0.22));
+}
+
+.kg-attraction__info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.kg-attraction__name {
+  align-self: flex-start;
+  margin: 0;
+  padding: 10px 28px;
+  border-radius: 28px;
+  border: 6px solid;
+  background: #fffdf8;
+  box-shadow: 0 8px 0 rgba(74, 53, 96, 0.3);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(52px, calc(26px / var(--kg-s)));
+  line-height: 1.1;
+}
+
+.kg-attraction__intro {
+  margin: 0;
+  padding: 16px 24px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 4px solid var(--kg-ink);
+  font-size: max(32px, calc(22px / var(--kg-s)));
+  line-height: 1.3;
+}
+
+.kg-attraction__core {
+  margin: 0;
+  align-self: flex-start;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: #ece6f5;
+  font-weight: 800;
+  font-size: max(24px, calc(18px / var(--kg-s)));
+  color: #6a4f86;
+}
+
+.kg-games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.kg-game-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 8px;
+  min-width: min(100%, 560px);
+  padding: 16px 28px 18px 16px;
+  border-radius: 34px;
+  border: 6px solid var(--kg-ink);
+  background: linear-gradient(180deg, #fffaf2, #ffe9c9);
+  box-shadow: 0 10px 0 #e9b56a;
+  text-align: left;
+}
+
+.kg-game-card.is-ready {
+  transition: transform 0.15s ease;
+}
+
+.kg-game-card.is-ready:active {
+  transform: translateY(6px);
+}
+
+.kg-game-card__art,
+.kg-game-card__lock {
+  grid-row: span 2;
+}
+
+.kg-game-card__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(38px, calc(22px / var(--kg-s)));
+  line-height: 1.1;
+}
+
+.kg-game-card__go {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--kg-tap);
+  padding: 6px 30px;
+  border-radius: 999px;
+  border: 5px solid var(--kg-ink);
+  background: linear-gradient(180deg, #b5f5a8, #6bd66b);
+  box-shadow: 0 7px 0 #2f8f3c;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(34px, calc(22px / var(--kg-s)));
+  color: #103d16;
+}
+
+.kg-game-card.is-planned {
+  background: rgba(255, 255, 255, 0.75);
+  border-style: dashed;
+  box-shadow: none;
+  color: #7a6a8f;
+}
+
+.kg-game-card__lock {
+  display: grid;
+  place-items: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #ece6f5;
+  color: #8a78a8;
+}
+
+.kg-game-card__soon {
+  font-weight: 800;
+  font-size: max(26px, calc(18px / var(--kg-s)));
+}
+
+.kg-root.is-portrait .kg-attraction__body {
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  left: 36px;
+  right: 36px;
+  gap: 24px;
+}
+
+/* ───────────── учителски панел ───────────── */
+.kg-teacher__body {
+  position: absolute;
+  top: calc(var(--kg-top-h) + 6px);
+  bottom: 24px;
+  left: 36px;
+  right: 36px;
+  overflow-y: auto;
+  display: grid;
+  grid-auto-rows: max-content;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 24px;
+  align-content: start;
+  padding: 4px 8px 24px;
+}
+
+.kg-tcard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kg-tcard--report {
+  grid-column: 1 / -1;
+}
+
+.kg-tcard .teacher-toggles {
+  grid-template-columns: 1fr;
+}
+
+.kg-tcard .teacher-toggles .toggle {
+  grid-column: auto;
+  font-size: max(21px, calc(16px / var(--kg-s)));
+  min-height: max(66px, calc(48px / var(--kg-s)));
+}
+
+.kg-tcard__row,
+.kg-tcard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.kg-segmented {
+  flex-wrap: wrap;
+}
+
+.kg-segmented .segmented__opt {
+  min-height: max(56px, calc(44px / var(--kg-s)));
+  font-size: max(22px, calc(16px / var(--kg-s)));
+}
+
+.kg-activity {
+  padding: 16px 20px;
+  border-radius: 24px;
+  border: 4px solid var(--kg-ink);
+  background: #fffdf8;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kg-activity.is-planned {
+  border-style: dashed;
+}
+
+.kg-activity__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: max(30px, calc(18px / var(--kg-s)));
+}
+
+.kg-badge {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #ece6f5;
+  font-size: max(20px, calc(15px / var(--kg-s)));
+  font-weight: 800;
+}
+
+.kg-badge.is-ready {
+  background: #b5f5a8;
+}
+
+.kg-activity__spec {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px 16px;
+  font-size: max(21px, calc(16px / var(--kg-s)));
+  line-height: 1.3;
+}
+
+.kg-activity__spec dt {
+  font-weight: 900;
+  color: #6a4f86;
+}
+
+.kg-activity__spec dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.kg-activity__spec dd.is-pending {
+  justify-self: start;
+  padding: 2px 12px;
+  border-radius: 10px;
+  background: #fff1b8;
+  border: 3px dashed #c99a00;
+  font-weight: 900;
+}
+
+.kg-report td,
+.kg-report th {
+  font-size: max(21px, calc(16px / var(--kg-s)));
+}
+
+.kg-root.is-portrait .kg-teacher__body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.kg-root.is-portrait .kg-activity__spec {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* учителският панел — четим и на телефон */
+.kg-teacher :is(.setting-row__label, .teacher-note, .results-empty, .toggle__state) {
+  font-size: max(21px, calc(16px / var(--kg-s)));
+}
+
+.kg-teacher .game-btn__face {
+  white-space: normal;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.kg-teacher .teacher-card__title {
+  font-size: max(40px, calc(20px / var(--kg-s)));
+}
+
+.kg-teacher .kg-activity__head,
+.kg-teacher .kg-chip,
+.kg-teacher .kg-badge,
+.kg-teacher .kg-activity__spec {
+  font-size: max(22px, calc(16px / var(--kg-s)));
+}
+
+.kg-teacher .teacher-card {
+  min-width: 0;
+}
+
+/* ───────────── „Нахрани трите мечета“ ───────────── */
+.kg-feed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'task task task'
+    'bears bears bears'
+    '. basket actions';
+  column-gap: 20px;
+  row-gap: 10px;
+  padding: calc(var(--kg-top-h) + 2px) 28px 18px;
+}
+
+.kg-feed > .kg-scene,
+.kg-feed > .kg-top {
+  grid-area: auto;
+}
+
+/* задачата */
+.kg-task {
+  grid-area: task;
+  position: relative;
+  z-index: 3;
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  max-width: 100%;
+  padding: 10px 26px 10px 14px;
+  border-radius: 34px;
+  border: 5px solid var(--kg-ink);
+  background: rgba(255, 253, 248, 0.96);
+  box-shadow: 0 8px 0 rgba(74, 53, 96, 0.25);
+}
+
+.kg-task__picture {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex: none;
+}
+
+.kg-task__pair {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.kg-task__arrow {
+  align-self: center;
+  color: #6a4f86;
+}
+
+.kg-task__fruits {
+  display: inline-flex;
+  align-items: flex-end;
+}
+
+.kg-task__fruits.is-many {
+  flex-wrap: wrap;
+  width: 150px;
+  margin: -6px 0;
+}
+
+.kg-task__fruits.is-many svg {
+  margin: -4px -6px;
+}
+
+.kg-task__words {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.kg-task__text {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: max(36px, calc(24px / var(--kg-s)));
+  line-height: 1.15;
+}
+
+.kg-task__say {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 16px 2px 2px;
+  border-radius: 999px;
+  background: #fff3c4;
+  animation: kg-pop 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.kg-task__say.is-praise {
+  background: #d9f8d0;
+}
+
+.kg-task__say-text {
+  font-weight: 800;
+  font-size: max(28px, calc(20px / var(--kg-s)));
+  line-height: 1.2;
+}
+
+.kg-task__step {
+  display: flex;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+.kg-task__step i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--kg-ink);
+  background: #eee6f7;
+}
+
+.kg-task__step i.is-now {
+  background: #ffd25e;
+}
+
+.kg-task__step i.is-done {
+  background: #ff7a9a;
+}
+
+/* мечетата */
+.kg-bears {
+  grid-area: bears;
+  position: relative;
+  z-index: 2;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 0.9fr;
+  gap: 24px;
+  align-items: stretch;
+  padding: 0 4%;
+}
+
+.kg-bear-col {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 40px;
+  transition: background 0.2s ease;
+}
+
+.kg-bear-col.is-hover {
+  background: rgba(255, 246, 168, 0.55);
+}
+
+.kg-bear-btn {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  border-radius: 30px;
+  touch-action: manipulation;
+}
+
+.kg-bear-btn svg {
+  height: calc(100% * var(--bs));
+  width: auto;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.kg-bear-btn:focus-visible {
+  outline: 6px solid #ffd25e;
+  outline-offset: 4px;
+}
+
+.kg-bear-col.is-hint .kg-bear-btn svg,
+.kg-feed.is-selecting .kg-bear-btn svg,
+.kg-feed.is-dragging .kg-bear-btn svg {
+  animation: kg-bob 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 14px #fff3a0) drop-shadow(0 0 6px #ffd25e);
+}
+
+.kg-bear .bulb,
+.kg-bear__eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.kg-bear.is-idle .kg-bear__eyes,
+.kg-bear.is-hungry .kg-bear__eyes {
+  animation: kg-blink 4.5s infinite;
+}
+
+.kg-bear.is-happy .kg-bear__head {
+  animation: kg-wiggle 0.9s ease-in-out 2;
+  transform-origin: 150px 150px;
+  transform-box: view-box;
+}
+
+.kg-bear__chew {
+  animation: kg-chew 0.3s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* чинийка */
+.kg-plate-area {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  width: 100%;
+  height: calc(var(--kg-plate-fruit) * 1.45);
+  margin-top: calc(var(--kg-plate-fruit) * -0.75);
+  pointer-events: none;
+}
+
+.kg-on-plate {
+  pointer-events: auto;
+}
+
+.kg-plate-area__plate {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: 0;
+  width: 92%;
+  height: 52%;
+}
+
+.kg-plate-area__items {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 18%;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 0 4px;
+}
+
+.kg-on-plate,
+.kg-ghost {
+  width: var(--kg-plate-fruit);
+  height: var(--kg-plate-fruit);
+  margin: 0 -10px -18px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.kg-on-plate svg,
+.kg-ghost svg {
+  width: 100%;
+  height: 100%;
+}
+
+.kg-on-plate {
+  animation: kg-drop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  touch-action: manipulation;
+}
+
+.kg-on-plate.is-extra {
+  animation: kg-wiggle 0.6s ease-in-out 3;
+}
+
+.kg-ghost {
+  opacity: 0.32;
+  filter: grayscale(0.6);
+  border-radius: 50%;
+  outline: 4px dashed #a78bd6;
+  outline-offset: -10px;
+  animation: kg-ghost 1.4s ease-in-out infinite;
+}
+
+.kg-bear-col.is-fed .kg-on-plate {
+  animation: kg-eaten 0.9s ease-in forwards;
+}
+
+/* кошничка */
+.kg-basket {
+  grid-area: basket;
+  position: relative;
+  z-index: 3;
+  align-self: end;
+  display: flex;
+  justify-content: center;
+  padding: 0 50px calc(var(--kg-tap) * 0.42);
+  min-width: calc(var(--kg-tap) * 3.6 + 120px);
+  --fruit: calc(var(--kg-tap) * 1.2);
+}
+
+.kg-basket__back {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--fruit) * 0.25);
+  width: 100%;
+  height: calc(var(--fruit) * 0.9);
+}
+
+.kg-basket__front {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: calc(var(--kg-tap) * 0.78);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.kg-basket__fruits {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.kg-fruit {
+  width: var(--fruit, var(--kg-tap));
+  height: var(--fruit, var(--kg-tap));
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  transition: transform 0.15s ease;
+  position: relative;
+  z-index: 3;
+}
+
+.kg-fruit svg {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.kg-fruit:hover {
+  transform: translateY(-6px);
+}
+
+.kg-fruit.is-selected {
+  transform: translateY(-20px) scale(1.08);
+  filter: drop-shadow(0 0 10px #fff3a0) drop-shadow(0 0 4px #ffd25e);
+}
+
+.kg-fruit:focus-visible {
+  outline: 6px solid #ffd25e;
+  outline-offset: -2px;
+}
+
+.kg-drag {
+  position: absolute;
+  z-index: 50;
+  width: var(--kg-tap);
+  height: var(--kg-tap);
+  transform: translate(-50%, -60%) scale(1.1);
+  pointer-events: none;
+  filter: drop-shadow(0 12px 10px rgba(74, 53, 96, 0.3));
+}
+
+.kg-drag svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* бутони „Готово“ / „Напред“ */
+.kg-actions {
+  grid-area: actions;
+  position: relative;
+  z-index: 3;
+  align-self: end;
+  justify-self: center;
+  padding-bottom: 6px;
+}
+
+.kg-round-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  touch-action: manipulation;
+}
+
+.kg-round-btn__face {
+  display: grid;
+  place-items: center;
+  width: max(150px, calc(var(--kg-tap) * 1.2));
+  height: max(150px, calc(var(--kg-tap) * 1.2));
+  border-radius: 50%;
+  border: 6px solid var(--kg-ink);
+  box-shadow: 0 10px 0 var(--d), inset 0 -8px 0 rgba(0, 0, 0, 0.08);
+  background: linear-gradient(180deg, var(--l), var(--c));
+  color: var(--t);
+  transition: transform 0.12s ease;
+}
+
+.kg-round-btn:active .kg-round-btn__face {
+  transform: translateY(8px);
+  box-shadow: 0 2px 0 var(--d);
+}
+
+.kg-round-btn--check {
+  --c: #6bd66b;
+  --l: #c4f8b8;
+  --d: #2f8f3c;
+  --t: #103d16;
+}
+
+.kg-round-btn--next {
+  --c: #9b5de5;
+  --l: #d6bcff;
+  --d: #5e2fb0;
+  --t: #fff;
+  animation: kg-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.kg-round-btn__label {
+  padding: 2px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 3px solid var(--kg-ink);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(30px, calc(20px / var(--kg-s)));
+}
+
+.kg-round-btn:focus-visible .kg-round-btn__face {
+  outline: 6px solid #ffd25e;
+  outline-offset: 4px;
+}
+
+/* сърчица при успех */
+.kg-hearts {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.kg-heart {
+  width: 64px;
+  height: 58px;
+}
+
+.kg-heart--float {
+  position: absolute;
+  bottom: 30%;
+  animation: kg-float 2.2s ease-out forwards;
+}
+
+/* край на играта */
+.kg-done {
+  position: absolute;
+  inset: var(--kg-top-h) 30px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 3;
+}
+
+.kg-done__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: max(84px, calc(36px / var(--kg-s)));
+  color: #ff7aa8;
+  -webkit-text-stroke: 12px var(--kg-ink);
+  paint-order: stroke fill;
+  text-align: center;
+  animation: kg-pop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.5);
+}
+
+.kg-done__bears {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  min-height: 0;
+}
+
+.kg-done__text {
+  margin: 0;
+  padding: 10px 26px;
+  border-radius: 24px;
+  background: rgba(255, 253, 248, 0.95);
+  border: 4px solid var(--kg-ink);
+  font-weight: 800;
+  font-size: max(32px, calc(22px / var(--kg-s)));
+  text-align: center;
+}
+
+.kg-done__hearts {
+  display: flex;
+  gap: 10px;
+}
+
+.kg-done__hearts .kg-heart {
+  animation: kg-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.5) backwards;
+}
+
+.kg-done__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px 24px;
+}
+
+/* вертикален екран (телефон, таблет вертикално) */
+.kg-root.is-portrait .kg-feed {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'task'
+    'bears'
+    'basket'
+    'actions';
+  padding: calc(var(--kg-top-h) + 2px) 20px 24px;
+  row-gap: 16px;
+}
+
+.kg-root.is-portrait .kg-task {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 20px 14px;
+}
+
+.kg-root.is-portrait .kg-task__step {
+  align-self: center;
+  margin-top: 0;
+}
+
+.kg-root.is-portrait .kg-bears {
+  padding: 0;
+  gap: 10px;
+}
+
+.kg-root.is-portrait .kg-basket {
+  min-width: 0;
+  padding: 26px 30px 34px;
+}
+
+.kg-root.is-portrait .kg-basket__fruits {
+  flex-wrap: wrap;
+}
+
+.kg-root.is-portrait .kg-done__bears {
+  width: 100%;
+  justify-content: center;
+}
+
+.kg-root.is-portrait .kg-done__bears svg {
+  max-width: 31%;
+  height: auto;
+}
+
+/* тесен вертикален екран: заглавието на парка не се побира в лентата — групата и бутоните остават */
+.kg-root.is-portrait .kg-top__title {
+  display: none;
+}
+
+/* ───────────── анимации ───────────── */
+@keyframes kg-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes kg-blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+  97% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes kg-wiggle {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes kg-chew {
+  from {
+    transform: scaleY(0.6);
+  }
+  to {
+    transform: scaleY(1.1);
+  }
+}
+
+@keyframes kg-drop {
+  from {
+    transform: translateY(-60px) scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes kg-eaten {
+  60% {
+    transform: translateY(-40%) scale(0.7);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-90%) scale(0.1);
+    opacity: 0;
+  }
+}
+
+@keyframes kg-ghost {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes kg-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes kg-float {
+  from {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-420px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.kg-butterfly {
+  animation: kg-bob 2.4s ease-in-out infinite;
+}
+
+.kg-pendulum {
+  transform-box: view-box;
+  transform-origin: 120px 182px;
+  animation: kg-swing 2s ease-in-out infinite alternate;
+}
+
+@keyframes kg-swing {
+  from {
+    transform: rotate(-10deg);
+  }
+  to {
+    transform: rotate(10deg);
+  }
+}
+
+/* намалено движение: системната настройка или „Анимации: изкл.“ */
+@media (prefers-reduced-motion: reduce) {
+  .kg-root *,
+  .kg-root *::before,
+  .kg-root *::after,
+  .park-chooser * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.no-motion .kg-root *,
+.no-motion .kg-root *::before,
+.no-motion .kg-root *::after,
+.no-motion .park-chooser * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.kg-listen {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+  margin-left: 12px;
+  width: max(64px, calc(48px / var(--kg-s)));
+  height: max(64px, calc(48px / var(--kg-s)));
+  border-radius: 50%;
+  border: 4px solid var(--kg-ink);
+  background: linear-gradient(180deg, #a8fff4, #2ed1c4);
+  color: #053c38;
+}

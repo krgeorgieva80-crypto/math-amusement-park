@@ -10,14 +10,11 @@ interface Props {
   onPlay: () => void
   onAbout: () => void
   onTeacher: () => void
+  /** Връщане към началния избор между двата парка (детска градина / начално училище). */
+  onSwitchPark?: () => void
 }
 
-const GUIDE_TIPS = [
-  'Здравей! Аз съм Звездичка. Ела в парка!',
-  'Натисни „Играй“ и избери своя клас.',
-  'Всеки атракцион е игра с числа.',
-  'За всяка вярна задача печелиш звезди!',
-]
+const GUIDE_TIPS = ['Здравей! Аз съм Звездичка. Ела в парка!', 'Натисни „Играй“ и избери своя клас.', 'Всеки атракцион е игра с числа.', 'За всяка вярна задача печелиш звезди!']
 
 /** Пътека в перспектива: тясна в далечината, широка отпред. */
 function PerspectivePath({ cx, top, bottom, wTop, wBottom }: { cx: number; top: number; bottom: number; wTop: number; wBottom: number }) {
@@ -37,7 +34,9 @@ function PerspectivePath({ cx, top, bottom, wTop, wBottom }: { cx: number; top: 
       {[-1, 1].map((side) =>
         Array.from({ length: 12 }, (_, i) => {
           const t = Math.pow((i + 0.5) / 12, 1.3)
-          return <ellipse key={`${side}-${i}`} cx={cx + side * (half(t) + 4)} cy={yAt(t)} rx={4 + 9 * t} ry={2.5 + 5 * t} fill="url(#pp-stone)" stroke="#3b2a5a" strokeWidth={1 + t} strokeOpacity="0.6" />
+          return (
+            <ellipse key={`${side}-${i}`} cx={cx + side * (half(t) + 4)} cy={yAt(t)} rx={4 + 9 * t} ry={2.5 + 5 * t} fill="url(#pp-stone)" stroke="#3b2a5a" strokeWidth={1 + t} strokeOpacity="0.6" />
+          )
         }),
       )}
     </g>
@@ -45,7 +44,7 @@ function PerspectivePath({ cx, top, bottom, wTop, wBottom }: { cx: number; top: 
 }
 
 /** Панорамна сцена на парка с голямо заглавие. */
-export function HomeScreen({ onPlay, onAbout, onTeacher }: Props) {
+export function HomeScreen({ onPlay, onAbout, onTeacher, onSwitchPark }: Props) {
   const { width: w, height: h, portrait } = useStage()
   const horizon = portrait ? h * 0.64 : h * 0.6
   const cx = w / 2
@@ -120,6 +119,12 @@ export function HomeScreen({ onPlay, onAbout, onTeacher }: Props) {
         <Bunting x1={-20} x2={cx} y={0} sag={34} count={10} />
         <Bunting x1={cx} x2={w + 20} y={0} sag={34} count={10} />
       </svg>
+
+      {onSwitchPark && (
+        <div className="home__top-left">
+          <GameButton color="yellow" size="md" icon="back" onClick={onSwitchPark} aria-label="Начален избор на парк" title="Начален избор на парк" />
+        </div>
+      )}
 
       <div className="home__top-right">
         <SoundControl />
