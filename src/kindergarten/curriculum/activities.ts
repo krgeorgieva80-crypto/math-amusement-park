@@ -40,7 +40,7 @@ export const ACTIVITIES: ActivitySpec[] = [
     taskCount: { min: 3, max: 5, default: 5 },
     visualSupport: ['ghost-slots', 'highlight-target', 'counting-dots'],
     instructions: ['Дай на голямото мече една ябълка.', 'Дай на всяко мече по една ягода.', 'Дай на малкото мече три круши.'],
-    successCriterion: 'Посоченото мече (или всяко мече) получава точно поисканото количество; при „много“ — повече от три.',
+    successCriterion: 'Посоченото мече (или всяко мече) получава точно поисканото количество; при „много“ — две или повече, без да е нужно кошничката да се изпразни.',
     status: 'ready',
   }),
   act({

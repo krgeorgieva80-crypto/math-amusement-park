@@ -7,7 +7,7 @@
 
 export type BearId = 'big' | 'mid' | 'small'
 export type FruitId = 'apple' | 'pear' | 'strawberry'
-/** one/two/three — точно толкова; each — по едно на всяко мече; many — „много“ (повече от три). */
+/** one/two/three — точно толкова; each — по едно на всяко мече; many — „много“ (две или повече, без да се изпразва кошничката). */
 export type TaskKind = 'one' | 'two' | 'three' | 'each' | 'many'
 
 export const BEARS: BearId[] = ['big', 'mid', 'small']
@@ -18,8 +18,11 @@ const FRUIT_ONE: Record<FruitId, string> = { apple: 'ябълка', pear: 'кр�
 const FRUIT_MANY: Record<FruitId, string> = { apple: 'ябълки', pear: 'круши', strawberry: 'ягоди' }
 const NUM: Record<1 | 2 | 3, string> = { 1: 'една', 2: 'две', 3: 'три' }
 
-/** „Много“ = повече от три. */
-export const MANY_MIN = 4
+/**
+ * „Много“ = две или повече (до всички налични в кошничката). За първа група противопоставянето е „едно — много“,
+ * затова всяко количество над едно е верен отговор и не се изисква кошничката да се изпразни.
+ */
+export const MANY_MIN = 2
 
 export interface FeedTask {
   kind: TaskKind
@@ -86,7 +89,8 @@ export const FIXED_PHRASES: { id: string; text: string }[] = [
   { id: 'feed.hint.more', text: 'Още малко! Виж празните места в чинийката.' },
   { id: 'feed.hint.less', text: 'Ох, това е много! Върни едно лакомство в кошничката.' },
   { id: 'feed.hint.each', text: 'Всяко мече чака по едно лакомство.' },
-  { id: 'feed.hint.many', text: 'Мечето иска много! Дай му още.' },
+  { id: 'feed.hint.many', text: 'Мечето иска много плодчета. Дай му!' },
+  { id: 'feed.hint.many.one', text: 'Добави още плодчета, за да станат много.' },
   { id: 'feed.praise.1', text: 'Браво!' },
   { id: 'feed.praise.2', text: 'Чудесно! Мечето е доволно.' },
   { id: 'feed.praise.3', text: 'Много добре!' },
@@ -113,7 +117,8 @@ export function allFeedPhrases(): { id: string; text: string }[] {
 
 // ───────────── състояние на играта ─────────────
 
-export type Hint = 'bear' | 'more' | 'less' | 'each' | 'many'
+/** many — още няма нито едно; manyOne — има само едно, трябват още, за да станат „много“. */
+export type Hint = 'bear' | 'more' | 'less' | 'each' | 'many' | 'manyOne'
 
 export interface FeedState {
   tasks: FeedTask[]
@@ -149,7 +154,7 @@ export function isCorrect(t: FeedTask, plates: Record<BearId, number>): boolean 
 export function hintFor(t: FeedTask, plates: Record<BearId, number>): Hint {
   if (t.kind === 'each') return 'each'
   if (BEARS.some((b) => b !== t.bear && plates[b] > 0)) return 'bear'
-  if (t.kind === 'many') return 'many'
+  if (t.kind === 'many') return plates[t.bear!] === 1 ? 'manyOne' : 'many'
   return plates[t.bear!] < t.need ? 'more' : 'less'
 }
 

@@ -22,7 +22,7 @@ const ACTIVITY_ID = 'feed-bears'
 const BEAR_SCALE: Record<BearId, number> = { big: 1, mid: 0.84, small: 0.68 }
 const PRAISE = ['feed.praise.1', 'feed.praise.2', 'feed.praise.3', 'feed.praise.4']
 const phraseText = (id: string) => FIXED_PHRASES.find((p) => p.id === id)?.text ?? ''
-const HINT_PHRASE: Record<Hint, string> = { bear: 'feed.hint.bear', more: 'feed.hint.more', less: 'feed.hint.less', each: 'feed.hint.each', many: 'feed.hint.many' }
+const HINT_PHRASE: Record<Hint, string> = { bear: 'feed.hint.bear', more: 'feed.hint.more', less: 'feed.hint.less', each: 'feed.hint.each', many: 'feed.hint.many', manyOne: 'feed.hint.many.one' }
 
 interface Drag {
   pointerId: number
@@ -153,7 +153,10 @@ function FeedRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   }
   const ghosts = (b: BearId) => {
     if (!s.hint || !targets.includes(b)) return 0
-    return t.kind === 'each' ? 1 : t.need
+    if (t.kind === 'each') return 1
+    // „много“: няколко празни места, а не точно две — за да не внушава определено число
+    if (t.kind === 'many') return Math.max(s.plates[b] + 1, 3)
+    return t.need
   }
 
   if (s.phase === 'done') {
