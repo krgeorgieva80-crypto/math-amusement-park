@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Icon } from '../../components/ui/Icon'
 import { useStage } from '../../core/Stage'
 import { Bear } from '../art/Bears'
+import { Giant } from '../art/GiantsArt'
 import { KG_ATTRACTION_ART } from '../art/KgAttractions'
 import { ChooserScene } from '../art/KgScenery'
 import { ACTIVITIES } from '../curriculum/activities'
@@ -71,7 +72,7 @@ export function AttractionScreen({
                   }}
                 >
                   <span className="kg-game-card__art" aria-hidden="true">
-                    <Bear id="mid" mood="hungry" size={130} />
+                    {g.id === 'giant-boots' ? <Giant mood="hopeful" size={104} /> : <Bear id="mid" mood="hungry" size={130} />}
                   </span>
                   <span className="kg-game-card__title">{g.title}</span>
                   <span className="kg-game-card__go">

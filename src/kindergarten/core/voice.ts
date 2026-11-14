@@ -110,6 +110,29 @@ export class VoicePlayer {
     return true
   }
 
+  /**
+   * Няколко фрази една след друга (само записаните). Каналът остава един:
+   * нова фраза или stop() прекъсват цялата поредица.
+   */
+  sayAll(ids: string[]): boolean {
+    const list = ids.filter((id) => this.has(id))
+    if (!this.enabled || !list.length) {
+      this.stop()
+      return false
+    }
+    const [first, ...rest] = list
+    const ok = this.say(first)
+    if (ok && rest.length && this.audio) {
+      const end = this.audio.onended
+      this.audio.onended = () => {
+        end?.()
+        if (this.current === null) this.sayAll(rest)
+      }
+      this.audio.onerror = this.audio.onended
+    }
+    return ok
+  }
+
   stop(): void {
     if (this.audio) {
       this.audio.pause()

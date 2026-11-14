@@ -49,9 +49,12 @@ describe('Приказен парк — образователна структ�
     }
   })
 
-  it('активна е само пилотната игра „Нахрани трите мечета“ за първа група', () => {
+  it('активни са само реализираните и проверени игри за първа група', () => {
     const ready = ACTIVITIES.filter((a) => a.status === 'ready')
-    expect(ready.map((a) => [a.id, a.group, a.core])).toEqual([['feed-bears', 1, 'quantity']])
-    expect(ready[0].taskCount).toEqual({ min: 3, max: 5, default: 5 })
+    expect(ready.map((a) => [a.id, a.group, a.core])).toEqual([
+      ['feed-bears', 1, 'quantity'],
+      ['giant-boots', 1, 'measurement'],
+    ])
+    for (const a of ready) expect(a.taskCount).toEqual({ min: 3, max: 5, default: 5 })
   })
 })

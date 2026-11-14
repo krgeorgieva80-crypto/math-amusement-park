@@ -3,6 +3,7 @@
  */
 import { KG_ATTRACTIONS } from '../curriculum/structure'
 import { allFeedPhrases } from '../games/feed-bears/logic'
+import { BOOTS_PHRASES } from '../games/giant-boots/logic'
 import type { Phrase } from './voice'
 
 export const GENERAL_PHRASES: Phrase[] = [
@@ -12,5 +13,5 @@ export const GENERAL_PHRASES: Phrase[] = [
 ]
 
 export function allPhrases(): Phrase[] {
-  return [...GENERAL_PHRASES, ...allFeedPhrases()]
+  return [...GENERAL_PHRASES, ...allFeedPhrases(), ...BOOTS_PHRASES]
 }

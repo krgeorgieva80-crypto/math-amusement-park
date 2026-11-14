@@ -17,6 +17,8 @@ interface KgContextValue {
   play: (name: SoundName) => void
   /** Гласова инструкция; връща false, ако няма запис. */
   say: (id: string) => boolean
+  /** Няколко фрази една след друга (един канал). */
+  sayAll: (ids: string[]) => boolean
   hasVoice: (id: string) => boolean
   speaking: string | null
   recordedPhrases: number
@@ -81,6 +83,7 @@ export function KgProvider({ children }: { children: ReactNode }) {
         if (settings.soundOn) sound.play(name)
       },
       say: (id) => voice.say(id),
+      sayAll: (ids) => voice.sayAll(ids),
       hasVoice: (id) => settings.voiceOn && recorded > 0 && voice.has(id),
       speaking,
       recordedPhrases: recorded,

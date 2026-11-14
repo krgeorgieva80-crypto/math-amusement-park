@@ -71,6 +71,25 @@ describe('Гласови инструкции (само записи)', () => {
     expect(states).toEqual(['a', null])
   })
 
+  it('поредица от фрази: една след друга, само записаните, прекъсва се от нова фраза', () => {
+    const log: string[] = []
+    let audio: AudioLike | null = null
+    const v = new VoicePlayer('/a/', () => (audio = fakeAudio(log)()))
+    v.setManifest({ files: { a: 'a.mp3', b: 'b.mp3', c: 'c.mp3' } })
+    expect(v.sayAll(['a', 'missing', 'b'])).toBe(true)
+    expect(v.playing).toBe('a')
+    audio!.onended?.()
+    expect(v.playing).toBe('b')
+    expect(log.filter((l) => l.startsWith('play'))).toEqual(['play /a/a.mp3', 'play /a/b.mp3'])
+    // нова фраза прекъсва поредицата
+    v.sayAll(['a', 'b'])
+    v.say('c')
+    audio!.onended?.()
+    expect(log.filter((l) => l.startsWith('play')).slice(-2)).toEqual(['play /a/a.mp3', 'play /a/c.mp3'])
+    expect(v.playing).toBeNull()
+    expect(v.sayAll(['missing'])).toBe(false)
+  })
+
   it('липсващ манифест не е грешка', async () => {
     const v = new VoicePlayer('/a/', fakeAudio([]))
     await v.load(async () => null)

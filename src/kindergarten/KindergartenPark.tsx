@@ -11,6 +11,7 @@ import { GroupScreen } from './screens/GroupScreen'
 import { KgMap } from './screens/KgMap'
 import { KgTeacherScreen } from './screens/KgTeacherScreen'
 import { FeedBearsGame } from './games/feed-bears/FeedBearsGame'
+import { GiantBootsGame } from './games/giant-boots/GiantBootsGame'
 import { activityById } from './curriculum/activities'
 import './kg.css'
 
@@ -39,7 +40,7 @@ function KgRouter({ onExit }: { onExit: () => void }) {
   if (typeof screen === 'object' && 'play' in screen) {
     const a = activityById(screen.play)
     const back = () => setScreen(a ? { attraction: a.attraction } : 'map')
-    content = <FeedBearsGame onExit={back} onMap={() => setScreen('map')} />
+    content = screen.play === 'giant-boots' ? <GiantBootsGame onExit={back} onMap={() => setScreen('map')} /> : <FeedBearsGame onExit={back} onMap={() => setScreen('map')} />
   } else if (typeof screen === 'object') {
     content = <AttractionScreen id={screen.attraction} onBack={() => setScreen('map')} onPlay={(id) => setScreen({ play: id })} onTeacher={openTeacher} onGroup={() => setScreen('group')} />
   } else if (screen === 'group') {
