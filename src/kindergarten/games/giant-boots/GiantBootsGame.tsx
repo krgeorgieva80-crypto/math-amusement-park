@@ -11,9 +11,12 @@ import { Confetti } from '../../../components/ui/Effects'
 import { GameButton } from '../../../components/ui/GameButton'
 import { Icon } from '../../../components/ui/Icon'
 import { useStage } from '../../../core/Stage'
-import { Dwarf, Giant, HeroMat, ITEM_NAME, ItemArt, type HeroMood } from '../../art/GiantsArt'
+import { ITEM_NAME } from '../../art/GiantsArt'
+import { ArtProvider, useArt } from '../../art/sprites/Sprite'
+import { useApp } from '../../../core/AppContext'
+import { ART_GAME, type HeroState } from './art'
+import { BootsBackground, HeroSprite, ItemSprite, MatSprite, ShelfSprite, SuccessBurst } from './BootsSprites'
 import { GiantsTowerArt } from '../../art/KgAttractions'
-import { GladeScene } from '../../art/KgScenery'
 import { activityById } from '../../curriculum/activities'
 import { useKg } from '../../KgContext'
 import { KgTopBar } from '../../screens/KgTopBar'
@@ -36,11 +39,17 @@ interface Drag {
 
 export function GiantBootsGame({ onExit, onMap }: { onExit: () => void; onMap: () => void }) {
   const [round, setRound] = useState(0)
-  return <BootsRound key={round} seed={round} onExit={onExit} onMap={onMap} onRestart={() => setRound((r) => r + 1)} />
+  return (
+    <ArtProvider game={ART_GAME}>
+      <BootsRound key={round} seed={round} onExit={onExit} onMap={onMap} onRestart={() => setRound((r) => r + 1)} />
+    </ArtProvider>
+  )
 }
 
 function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: () => void; onMap: () => void; onRestart: () => void }) {
-  const { width: w, height: h, portrait, toStage } = useStage()
+  const { width: w, height: h, portrait, toStage, scale, ref: stageRef } = useStage()
+  const app = useApp()
+  const art = useArt()
   const { group, settings, play, say, sayAll, hasVoice, saveResult } = useKg()
   const activity = activityById(ACTIVITY_ID)!
   const count = settings.taskCounts[ACTIVITY_ID] ?? activity.taskCount.default
@@ -51,6 +60,9 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
   const [message, setMessage] = useState<string | null>(null)
   const [shake, setShake] = useState<{ item: string; n: number } | null>(null)
   const [praise, setPraise] = useState(PRAISE[0])
+  // предметът „полита“ от рафта към героя (само при разрешено движение; не забавя играта)
+  const [fly, setFly] = useState<{ key: number; item: Item; from: DOMRect; to: DOMRect; base: DOMRect } | null>(null)
+  const motion = app.settings.animationsOn && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
   const started = useRef(0)
   const saved = useRef(false)
   const t = s.tasks[s.index]
@@ -87,6 +99,12 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
     setSelected(null)
     if (next.placed[itemId]) {
       play('drop')
+      if (motion) {
+        const from = document.querySelector(`[data-item="${itemId}"]`)?.getBoundingClientRect()
+        const to = document.querySelector(`[data-hero="${hero}"] .kg-boots__mat-items`)?.getBoundingClientRect()
+        const base = stageRef.current?.getBoundingClientRect()
+        if (from && to && base) setFly({ key: Date.now(), item, from, to, base })
+      }
       setMessage(null)
       if (next.phase === 'success') {
         const p = PRAISE[(s.index + s.wrong) % PRAISE.length]
@@ -151,7 +169,7 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
     } else select(d.item)
   }
 
-  const mood = (hero: HeroId): HeroMood => {
+  const heroState = (hero: HeroId): Exclude<HeroState, 'blink'> => {
     if (s.phase !== 'play') return 'happy'
     if (s.hint?.hero === hero || hover === hero || selected || drag?.moved) return 'hopeful'
     return 'idle'
@@ -163,14 +181,18 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
   if (s.phase === 'done') {
     return (
       <div className="screen kg-screen kg-boots is-done">
-        <GladeScene w={w} h={h} horizon={h * (portrait ? 0.3 : 0.42)} />
+        <BootsBackground w={w} h={h} portrait={portrait} />
         <Confetti seed={seed + 21} />
         <KgTopBar onBack={onExit} backLabel="Към атракцията" />
         <div className="kg-done">
           <h1 className="kg-done__title">{groupMode ? 'Браво, деца!' : 'Чудесно!'}</h1>
           <div className="kg-done__bears kg-boots__finale" aria-hidden="true">
-            <Giant mood="happy" size={portrait ? 280 : 260} />
-            <Dwarf mood="happy" size={portrait ? 150 : 140} />
+            <span className="kg-boots__finale-hero kg-boots__finale-hero--giant">
+              <HeroSprite hero="giant" state="boots" motion={false} />
+            </span>
+            <span className="kg-boots__finale-hero kg-boots__finale-hero--dwarf">
+              <HeroSprite hero="dwarf" state="boots" motion={false} />
+            </span>
           </div>
           <p className="kg-done__text">{bootsText(groupMode ? 'boots.end.group' : 'boots.end')}</p>
           <div className="kg-done__buttons">
@@ -198,10 +220,13 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
       data-phase={s.phase}
       style={{ '--ratio': t.ratio } as CSSProperties}
     >
-      <GladeScene w={w} h={h} horizon={h * (portrait ? 0.3 : 0.42)} />
-      <svg className="kg-boots__tower" viewBox="0 0 240 240" aria-hidden="true">
-        <GiantsTowerArt size={240} />
-      </svg>
+      <BootsBackground w={w} h={h} portrait={portrait} />
+      {/* кулата е част от рисувания фон; отделно се показва само при заместващата векторна поляна */}
+      {!art.has('bg-wide') && !art.has('bg-tall') && (
+        <svg className="kg-boots__tower" viewBox="0 0 240 240" aria-hidden="true">
+          <GiantsTowerArt size={240} />
+        </svg>
+      )}
       <KgTopBar
         onBack={onExit}
         backLabel="Към атракцията"
@@ -212,12 +237,20 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
       <div className="kg-task kg-boots__task" aria-live="polite">
         <div className="kg-task__picture" aria-hidden="true">
           <span className="kg-task__pair">
-            <Giant mood="idle" size={62} />
-            <ItemArt kind="boot" color="blue" size={58} />
+            <span className="kg-mini kg-mini--giant">
+              <HeroSprite hero="giant" state="idle" motion={false} />
+            </span>
+            <span className="kg-mini kg-mini--big">
+              <ItemSprite kind="boot" color="blue" />
+            </span>
           </span>
           <span className="kg-task__pair">
-            <Dwarf mood="idle" size={44} />
-            <ItemArt kind="boot" color="blue" size={28} />
+            <span className="kg-mini kg-mini--dwarf">
+              <HeroSprite hero="dwarf" state="idle" motion={false} />
+            </span>
+            <span className="kg-mini kg-mini--small">
+              <ItemSprite kind="boot" color="blue" />
+            </span>
           </span>
         </div>
         <div className="kg-task__words">
@@ -252,16 +285,21 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
 
       {/* героите с постелките */}
       {HEROES.map((hero) => (
-        <div key={hero} className={`kg-boots__hero kg-boots__hero--${hero} ${hover === hero ? 'is-hover' : ''} ${s.hint?.hero === hero ? 'is-hint' : ''}`} data-hero={hero}>
+        <div
+          key={hero}
+          className={`kg-boots__hero kg-boots__hero--${hero} ${hover === hero ? 'is-hover' : ''} ${s.hint?.hero === hero ? 'is-hint' : ''} ${s.phase === 'success' ? 'is-cheer' : ''}`}
+          data-hero={hero}
+          data-state={heroState(hero)}
+        >
           <button type="button" className="kg-boots__hero-btn" aria-label={`Дай на ${HERO_LABEL[hero]}`} onClick={() => tapHero(hero)} disabled={s.phase !== 'play'}>
-            {hero === 'giant' ? <Giant mood={mood(hero)} size={300} /> : <Dwarf mood={mood(hero)} size={200} />}
+            <HeroSprite hero={hero} state={heroState(hero)} motion={motion} />
           </button>
           <div className="kg-boots__mat">
-            <HeroMat hero={hero} className="kg-boots__mat-bg" />
+            <MatSprite hero={hero} />
             <div className="kg-boots__mat-items">
               {placedOn(hero).map((i) => (
-                <span key={i.id} className={`kg-boots__placed is-${i.size}`} data-placed-item={i.id}>
-                  <ItemArt kind={i.kind} color={i.color} size={100} />
+                <span key={i.id} className={`kg-boots__placed is-${i.size} ${motion && fly?.item.id === i.id ? 'is-arriving' : ''}`} data-placed-item={i.id}>
+                  <ItemSprite kind={i.kind} color={i.color} />
                 </span>
               ))}
             </div>
@@ -298,17 +336,12 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
                     }}
                     disabled={s.phase !== 'play'}
                   >
-                    <ItemArt kind={i.kind} color={i.color} size={100} />
+                    <ItemSprite kind={i.kind} color={i.color} />
                   </button>
                 ),
               )}
             </div>
-            <svg className="kg-boots__bench-art" viewBox="0 0 600 60" preserveAspectRatio="none" aria-hidden="true">
-              <rect x="4" y="4" width="592" height="26" rx="12" fill="#c98a5a" stroke="#4a2f3a" strokeWidth="4" />
-              <path d="M20 12 H 580" stroke="#e7b07c" strokeWidth="5" strokeLinecap="round" />
-              <rect x="40" y="28" width="22" height="30" rx="5" fill="#a76b3d" stroke="#4a2f3a" strokeWidth="4" />
-              <rect x="538" y="28" width="22" height="30" rx="5" fill="#a76b3d" stroke="#4a2f3a" strokeWidth="4" />
-            </svg>
+            <ShelfSprite rows={1} />
           </div>
         ))}
         {s.phase === 'success' && (
@@ -325,24 +358,43 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
 
       {draggedItem && (
         <div className={`kg-boots__drag is-${draggedItem.size}`} style={{ left: drag!.x, top: drag!.y }} aria-hidden="true">
-          <ItemArt kind={draggedItem.kind} color={draggedItem.color} size={100} />
+          <ItemSprite kind={draggedItem.kind} color={draggedItem.color} />
         </div>
       )}
 
-      {s.phase === 'success' && (
-        <div className="kg-hearts" aria-hidden="true">
-          {Array.from({ length: 7 }, (_, i) => (
-            <svg key={i} viewBox="0 0 40 36" className="kg-heart kg-heart--float" style={{ left: `${10 + i * 12}%`, animationDelay: `${i * 0.12}s` }}>
-              <path
-                d="M20 34 C 8 24 2 18 2 11 C 2 5 7 2 11.5 2 C 15 2 18 4 20 7 C 22 4 25 2 28.5 2 C 33 2 38 5 38 11 C 38 18 32 24 20 34 Z"
-                fill={['#ff7a9a', '#ffb3c7', '#ffd25e'][i % 3]}
-                stroke="#4a2f2a"
-                strokeWidth="2.5"
-              />
-            </svg>
-          ))}
-        </div>
-      )}
+      {s.phase === 'success' && <SuccessBurst />}
+
+      {fly && <Flight key={fly.key} item={fly.item} from={fly.from} to={fly.to} base={fly.base} scale={scale} onDone={() => setFly(null)} />}
+    </div>
+  )
+}
+
+/** Предметът плавно прелита от рафта до постелката на героя (0,4 с); не блокира играта. */
+function Flight({ item, from, to, base, scale, onDone }: { item: Item; from: DOMRect; to: DOMRect; base: DOMRect; scale: number; onDone: () => void }) {
+  const el = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!el.current) return onDone()
+    const dx = (to.left + to.width / 2 - (from.left + from.width / 2)) / scale
+    const dy = (to.top + to.height * 0.7 - (from.top + from.height * 0.8)) / scale
+    const a = el.current.animate(
+      [
+        { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+        { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 60}px) scale(0.9)`, opacity: 1, offset: 0.5 },
+        { transform: `translate(${dx}px, ${dy}px) scale(0.6)`, opacity: 0 },
+      ],
+      { duration: 420, easing: 'ease-in-out', fill: 'forwards' },
+    )
+    a.onfinish = onDone
+    return () => a.cancel()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div
+      ref={el}
+      className={`kg-boots__fly is-${item.size}`}
+      aria-hidden="true"
+      style={{ left: (from.left - base.left) / scale, top: (from.top - base.top) / scale, width: from.width / scale, height: from.height / scale }}
+    >
+      <ItemSprite kind={item.kind} color={item.color} />
     </div>
   )
 }

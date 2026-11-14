@@ -1646,3 +1646,171 @@ button.kg-chip:active {
   top: 26%;
   width: 26%;
 }
+
+/* ───────────── „Големи и малки ботуши“: художествени слоеве (растерни изображения със заместители) ───────────── */
+.kg-sprite {
+  display: block;
+  object-fit: contain;
+  object-position: 50% 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+img.kg-boots__bg {
+  object-fit: cover;
+  object-position: 50% 70%;
+}
+
+/* герои: изображението запълва мястото по височина, както векторната рисунка */
+.kg-boots__hero--giant .kg-boots__hero-btn .kg-sprite {
+  height: 100%;
+  width: 100%;
+}
+
+.kg-boots__hero--dwarf .kg-boots__hero-btn .kg-sprite {
+  height: 62%;
+  width: 100%;
+}
+
+.kg-boots__hero.is-hint .kg-boots__hero-btn .kg-sprite,
+.kg-boots.is-selecting .kg-boots__hero-btn .kg-sprite,
+.kg-boots.is-dragging .kg-boots__hero-btn .kg-sprite {
+  filter: drop-shadow(0 0 14px #fff3a0) drop-shadow(0 0 6px #ffd25e);
+}
+
+/* при успех — героите леко подскачат (един път) */
+.kg-boots__hero.is-cheer .kg-boots__hero-btn > * {
+  animation: kg-hop 0.7s ease-out 1;
+  transform-origin: 50% 100%;
+}
+
+@keyframes kg-hop {
+  30% {
+    transform: translateY(-14px) scale(1.02, 0.98);
+  }
+  60% {
+    transform: translateY(0) scale(0.99, 1.01);
+  }
+}
+
+/* предмети: едно и също изображение, мащабирано според големината */
+.kg-boots__item .kg-sprite,
+.kg-boots__drag .kg-sprite,
+.kg-boots__placed .kg-sprite,
+.kg-boots__fly .kg-sprite {
+  width: 100%;
+  height: 100%;
+}
+
+.kg-boots__item.is-small .kg-sprite,
+.kg-boots__drag.is-small .kg-sprite,
+.kg-boots__fly.is-small .kg-sprite {
+  width: calc(100% * var(--ratio));
+  height: calc(100% * var(--ratio));
+}
+
+/* избраният предмет се откроява: мек ореол */
+.kg-boots__item.is-selected {
+  background: radial-gradient(circle at 50% 60%, rgba(255, 246, 168, 0.95), rgba(255, 228, 120, 0.55) 60%, rgba(255, 228, 120, 0) 72%);
+  box-shadow: 0 0 0 5px #ffd25e, 0 0 26px 6px rgba(255, 214, 90, 0.7);
+}
+
+/* прелитане към героя */
+.kg-boots__fly {
+  position: absolute;
+  z-index: 60;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 6px;
+  will-change: transform;
+}
+
+.kg-boots__fly svg {
+  width: 100%;
+  height: 100%;
+}
+
+.kg-boots__fly.is-small svg {
+  width: calc(100% * var(--ratio));
+  height: calc(100% * var(--ratio));
+}
+
+.kg-boots__placed.is-arriving {
+  animation: kg-arrive 0.5s ease-out;
+}
+
+@keyframes kg-arrive {
+  0%,
+  70% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.kg-boots__mat-img {
+  object-fit: fill;
+}
+
+.kg-boots__shelf-img {
+  object-fit: fill;
+}
+
+/* малките картинки в задачата */
+.kg-mini {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.kg-mini > * {
+  width: 100%;
+  height: 100%;
+}
+
+.kg-mini--giant {
+  width: 48px;
+  height: 66px;
+}
+
+.kg-mini--dwarf {
+  width: 34px;
+  height: 46px;
+}
+
+.kg-mini--big {
+  width: 56px;
+  height: 56px;
+}
+
+.kg-mini--small {
+  width: 28px;
+  height: 28px;
+}
+
+/* финален екран */
+.kg-boots__finale-hero {
+  display: flex;
+  align-items: flex-end;
+}
+
+.kg-boots__finale-hero > * {
+  width: 100%;
+  height: 100%;
+}
+
+.kg-boots__finale-hero--giant {
+  width: 220px;
+  height: 300px;
+}
+
+.kg-boots__finale-hero--dwarf {
+  width: 130px;
+  height: 190px;
+}
