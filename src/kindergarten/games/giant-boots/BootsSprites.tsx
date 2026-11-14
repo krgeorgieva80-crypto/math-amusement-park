@@ -18,6 +18,15 @@ export function BootsBackground({ w, h, portrait }: { w: number; h: number; port
   return <img src={url} alt="" aria-hidden="true" draggable={false} className="kg-scene kg-boots__bg" data-sprite={name} />
 }
 
+/** Ред на заместване на състоянията на героя: „обут“ → „щастлив“ → „спокоен“; „очаква“ и „мигане“ → „спокоен“. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function heroFallbackChain(st: HeroState): HeroState[] {
+  if (st === 'boots') return ['boots', 'happy', 'idle']
+  if (st === 'happy') return ['happy', 'idle']
+  if (st === 'idle') return ['idle']
+  return [st, 'idle']
+}
+
 const prefersReduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 /** Герой със състояния; меко мигане от време на време (само ако има изображение за мигане и движението не е намалено). */
@@ -41,8 +50,12 @@ export function HeroSprite({ hero, state, motion = true }: { hero: HeroId; state
     return () => clearTimeout(t)
   }, [canBlink])
   const shown: HeroState = blink && canBlink ? 'blink' : state
-  // при липсващо „обут“ изображение — щастливото
-  const name = art.has(heroSprite(hero, shown)) ? heroSprite(hero, shown) : heroSprite(hero, shown === 'boots' ? 'happy' : shown)
+  // Ако състоянието още няма изображение, но героят има други рисувани пози — най-близката от тях,
+  // за да не се сменя стилът на героя по време на игра (рисунка ↔ векторна графика).
+  const name =
+    heroFallbackChain(shown)
+      .map((st) => heroSprite(hero, st))
+      .find((n) => art.has(n)) ?? heroSprite(hero, shown)
   const mood: HeroMood = state === 'boots' ? 'happy' : (state as HeroMood)
   const fallback = hero === 'giant' ? <Giant mood={mood} size={300} /> : <Dwarf mood={mood} size={200} />
   return <Sprite name={name} fallback={fallback} className={`kg-hero-img kg-hero-img--${hero} is-${state}`} />
