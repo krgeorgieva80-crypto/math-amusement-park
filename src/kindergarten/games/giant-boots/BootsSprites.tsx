@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { Dwarf, Giant, HeroMat, ItemArt, type HeroMood } from '../../art/GiantsArt'
 import { GladeScene } from '../../art/KgScenery'
 import { Sprite, useArt } from '../../art/sprites/Sprite'
-import { heroSprite, itemSprite, type HeroState } from './art'
+import { BLINK_MATCHES, heroSprite, itemSprite, type HeroState } from './art'
 import type { ColorId, HeroId, ItemKind } from './logic'
 
 /** Декоративен фон: широк или вертикален кадър. */
@@ -29,10 +29,15 @@ export function heroFallbackChain(st: HeroState): HeroState[] {
 
 const prefersReduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-/** Герой със състояния; меко мигане от време на време (само ако има изображение за мигане и движението не е намалено). */
+/**
+ * Герой със състояния. Смяната на позите е плавно преливане (около 0,2 с), без подскачане.
+ * Мигане: само в спокойно състояние и само ако изображението за мигане е отбелязано като съвпадащо
+ * със спокойната поза (BLINK_MATCHES в art.ts) — иначе краткото превключване би „мръднало“ целия герой.
+ */
 export function HeroSprite({ hero, state, motion = true }: { hero: HeroId; state: Exclude<HeroState, 'blink'>; motion?: boolean }) {
   const art = useArt()
-  const canBlink = motion && (state === 'idle' || state === 'hopeful') && art.has(heroSprite(hero, 'blink')) && !prefersReduced()
+  const reduced = !motion || prefersReduced()
+  const canBlink = !reduced && state === 'idle' && BLINK_MATCHES[hero] && art.has(heroSprite(hero, 'blink'))
   const [blink, setBlink] = useState(false)
   useEffect(() => {
     if (!canBlink) return
@@ -56,9 +61,23 @@ export function HeroSprite({ hero, state, motion = true }: { hero: HeroId; state
     heroFallbackChain(shown)
       .map((st) => heroSprite(hero, st))
       .find((n) => art.has(n)) ?? heroSprite(hero, shown)
+  const url = art.url(name)
+  // предишната поза остава под новата, докато новата се появи (преливане)
+  const [layers, setLayers] = useState<{ cur: string | null; prev: string | null }>({ cur: url, prev: null })
+  if (layers.cur !== url) setLayers({ cur: url, prev: reduced || blink || layers.cur === null ? null : layers.cur })
+  useEffect(() => {
+    if (!layers.prev) return
+    const t = setTimeout(() => setLayers((l) => ({ ...l, prev: null })), 260)
+    return () => clearTimeout(t)
+  }, [layers.prev])
   const mood: HeroMood = state === 'boots' ? 'happy' : (state as HeroMood)
-  const fallback = hero === 'giant' ? <Giant mood={mood} size={300} /> : <Dwarf mood={mood} size={200} />
-  return <Sprite name={name} fallback={fallback} className={`kg-hero-img kg-hero-img--${hero} is-${state}`} />
+  if (!url) return hero === 'giant' ? <Giant mood={mood} size={300} /> : <Dwarf mood={mood} size={200} />
+  return (
+    <span className={`kg-sprite kg-hero-stack kg-hero-img--${hero} is-${state}`} aria-hidden="true">
+      {layers.prev && <img src={layers.prev} alt="" draggable={false} className="kg-hero-layer is-out" />}
+      <img key={url} src={url} alt="" draggable={false} decoding="async" className={`kg-hero-layer ${layers.prev ? 'is-in' : ''}`} data-sprite={name} />
+    </span>
+  )
 }
 
 /** Предмет: едно и също изображение за голям и малък (мащабът се задава от CSS). */

@@ -258,23 +258,21 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
             {s.index === 0 && Object.keys(s.placed).length === 0 && <>{bootsText('boots.intro')} </>}
             {bootsText(leadId)}
           </p>
-          {(message || s.phase === 'success' || selected) && (
-            <div className={`kg-task__say ${s.phase === 'success' ? 'is-praise' : ''}`} role="status">
-              <Mascot mood={s.phase === 'success' ? 'cheer' : 'encourage'} size={76} />
-              <span className="kg-task__say-text">
-                {s.phase === 'success' ? (
-                  <>
-                    <b>{bootsText(praise)}</b>
-                    {groupMode && <> {bootsText('boots.next.child')}</>}
-                  </>
-                ) : selected ? (
-                  bootsText('boots.select')
-                ) : (
-                  message
-                )}
-              </span>
-            </div>
-          )}
+          <div className={`kg-task__say ${s.phase === 'success' ? 'is-praise' : ''} ${message || s.phase === 'success' || selected ? '' : 'is-empty'}`} role="status">
+            <Mascot mood={s.phase === 'success' ? 'cheer' : 'encourage'} size={76} />
+            <span className="kg-task__say-text">
+              {s.phase === 'success' ? (
+                <>
+                  <b>{bootsText(praise)}</b>
+                  {groupMode && <> {bootsText('boots.next.child')}</>}
+                </>
+              ) : selected ? (
+                bootsText('boots.select')
+              ) : (
+                message
+              )}
+            </span>
+          </div>
         </div>
         <span className="kg-task__step" aria-label={`Задача ${s.index + 1} от ${s.tasks.length}`}>
           {s.tasks.map((_, i) => (

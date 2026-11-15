@@ -10,6 +10,13 @@ export type HeroState = 'idle' | 'hopeful' | 'happy' | 'blink' | 'boots'
 export const HERO_STATES: HeroState[] = ['idle', 'hopeful', 'happy', 'blink', 'boots']
 export const ITEM_KINDS: ItemKind[] = ['boot', 'winter-boot', 'hat', 'mitten']
 
+/**
+ * Изображението за мигане се използва само ако съвпада със спокойната поза (същата фигура, само затворени очи).
+ * Великан: получената поза „мигане“ е с леко различно тяло и глава (изместване ≈ 12 px), затова е изключено,
+ * докато не дойде съвпадащ вариант.
+ */
+export const BLINK_MATCHES: Record<HeroId, boolean> = { giant: false, dwarf: false }
+
 export const heroSprite = (hero: HeroId, st: HeroState) => `${hero}-${st}`
 export const itemSprite = (kind: ItemKind, color: ColorId) => `${kind}-${color}`
 
