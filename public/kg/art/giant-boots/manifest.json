@@ -1,5 +1,11 @@
 {
   "files": {
+    "boot-blue": "boot-blue.webp",
+    "boot-green": "boot-green.webp",
+    "boot-orange": "boot-orange.webp",
+    "boot-purple": "boot-purple.webp",
+    "boot-red": "boot-red.webp",
+    "boot-yellow": "boot-yellow.webp",
     "dwarf-blink": "dwarf-blink.webp",
     "dwarf-boots": "dwarf-boots.webp",
     "dwarf-happy": "dwarf-happy.webp",

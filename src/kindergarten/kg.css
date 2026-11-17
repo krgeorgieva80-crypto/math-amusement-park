@@ -1888,3 +1888,13 @@ img.kg-boots__bg {
   width: 190px;
   height: 270px;
 }
+
+/* клетката на рафта е поне ≈ 140 реални px, за да е и малкият предмет поне ≈ 50 px на телефон и таблет;
+   ограничена е от наличното място (на нисък хоризонтален телефон не може да е по-голяма) */
+.kg-root.is-landscape .kg-boots {
+  --cell: max(150px, calc(var(--kg-tap) * 1.45), min(calc(140px / var(--kg-s)), 215px));
+}
+
+.kg-root.is-portrait .kg-boots {
+  --cell: max(150px, calc(var(--kg-tap) * 1.45), min(calc(140px / var(--kg-s)), 380px));
+}
