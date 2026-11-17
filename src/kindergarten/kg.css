@@ -1898,3 +1898,73 @@ img.kg-boots__bg {
 .kg-root.is-portrait .kg-boots {
   --cell: max(150px, calc(var(--kg-tap) * 1.45), min(calc(140px / var(--kg-s)), 380px));
 }
+
+/* нисък хоризонтален телефон: рафтът е в един ред, а клетката се приспособява към разликата в големината на задачата,
+   така че малкият предмет да е поне ≈ 50 реални px (видимата част е ≈ 86% от клетката без вътрешните 12 px × отношението) */
+.kg-root.is-landscape .kg-boots.is-one-row {
+  --cell: max(150px, calc(var(--kg-tap) * 1.45), min(calc(52px / (0.86 * var(--ratio) * var(--kg-s)) + 12px), 360px));
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 0.72fr);
+  column-gap: 10px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.kg-boots.is-one-row .kg-boots__items {
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.kg-boots.is-one-row .kg-boots__bench-art {
+  width: 100%;
+  max-width: none;
+}
+
+/* героите в по-тесни колони: по-малко разширение, за да не излизат вдигнатите ръце */
+.kg-boots.is-one-row .kg-boots__hero--giant .kg-boots__hero-btn .kg-sprite {
+  width: 118%;
+  margin: 0 -12% 0 -6%;
+}
+
+.kg-boots.is-one-row .kg-boots__mat {
+  height: calc(var(--cell) * 0.6);
+  margin-top: calc(var(--cell) * -0.24);
+}
+
+/* на постелките предметите и постелката са с обичайния размер (не растат с клетката на рафта) */
+.kg-boots.is-one-row {
+  --mat-cell: min(var(--cell), 215px);
+}
+
+.kg-boots.is-one-row .kg-boots__mat {
+  height: calc(var(--mat-cell) * 0.6);
+  margin-top: calc(var(--mat-cell) * -0.24);
+}
+
+.kg-boots.is-one-row .kg-boots__placed.is-big {
+  width: calc(var(--mat-cell) * 0.5);
+  height: calc(var(--mat-cell) * 0.5);
+}
+
+.kg-boots.is-one-row .kg-boots__placed.is-small {
+  width: calc(var(--mat-cell) * 0.5 * var(--ratio));
+  height: calc(var(--mat-cell) * 0.5 * var(--ratio));
+}
+
+/* на тясна постелка поставените предмети остават в един ред върху нея (свиват се), за да не закриват героя */
+.kg-boots.is-one-row .kg-boots__mat-items {
+  flex-wrap: nowrap;
+  left: 2%;
+  right: 2%;
+}
+
+.kg-boots.is-one-row .kg-boots__placed {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0 -4px -10px;
+}
+
+.kg-boots.is-one-row .kg-boots__placed .kg-sprite,
+.kg-boots.is-one-row .kg-boots__placed svg {
+  object-fit: contain;
+  object-position: 50% 100%;
+}

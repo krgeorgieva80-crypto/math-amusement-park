@@ -48,6 +48,8 @@ export function GiantBootsGame({ onExit, onMap }: { onExit: () => void; onMap: (
 
 function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: () => void; onMap: () => void; onRestart: () => void }) {
   const { width: w, height: h, portrait, toStage, scale, ref: stageRef } = useStage()
+  // нисък хоризонтален телефон: всички предмети на един ред (по-едри малки предмети); само подредба
+  const oneRow = !portrait && scale < 0.55
   const app = useApp()
   const art = useArt()
   const { group, settings, play, say, sayAll, hasVoice, saveResult } = useKg()
@@ -214,7 +216,7 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
   const itemLabel = (i: Item) => ITEM_NAME[i.kind][0][0].toUpperCase() + ITEM_NAME[i.kind][0].slice(1)
   return (
     <div
-      className={`screen kg-screen kg-boots ${drag?.moved ? 'is-dragging' : ''} ${selected ? 'is-selecting' : ''}`}
+      className={`screen kg-screen kg-boots ${oneRow ? 'is-one-row' : ''} ${drag?.moved ? 'is-dragging' : ''} ${selected ? 'is-selecting' : ''}`}
       data-task={JSON.stringify({ lead: t.lead, ratio: t.ratio, items: t.items })}
       data-placed={JSON.stringify(s.placed)}
       data-phase={s.phase}
@@ -307,7 +309,7 @@ function BootsRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: 
 
       {/* пейката с предметите */}
       <div className="kg-boots__bench">
-        {shelfRows(t.items).map((row, r) => (
+        {(oneRow ? [t.items] : shelfRows(t.items)).map((row, r) => (
           <div key={r} className="kg-boots__row">
             <div className="kg-boots__items">
               {row.map((i) =>
