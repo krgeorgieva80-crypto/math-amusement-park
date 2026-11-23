@@ -12,6 +12,7 @@ export function KgTopBar({
   onTeacher,
   title,
   extra,
+  center,
 }: {
   onBack: () => void
   backLabel: string
@@ -19,6 +20,8 @@ export function KgTopBar({
   onTeacher?: () => void
   title?: string
   extra?: ReactNode
+  /** По желание: съдържание в средата на лентата (вместо празното място), напр. кратко указание. */
+  center?: ReactNode
 }) {
   const { group } = useKg()
   const g = group ? groupById(group) : null
@@ -36,7 +39,7 @@ export function KgTopBar({
           </span>
         ))}
       {title && <h1 className="kg-top__title">{title}</h1>}
-      <span className="kg-top__spacer" />
+      {center ? <div className="kg-top__center">{center}</div> : <span className="kg-top__spacer" />}
       {extra}
       {onTeacher && <GameButton color="purple" size="md" icon="teacher" onClick={onTeacher} aria-label="За учителя" title="За учителя" />}
       <SoundControl />

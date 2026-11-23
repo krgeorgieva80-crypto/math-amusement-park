@@ -4,8 +4,9 @@
  * Всички цели са зони за докосване от поне 64 реални px и работят и с клавиатура (Tab, Enter).
  * Без таймер и без наказания: при грешка обектът леко трепва, а Звездичка дава кратка насочваща подсказка.
  */
-import { useEffect, useLayoutEffect, useReducer, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useReducer, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 import './bunny-maze.css'
+import { DemoArt, StepPicture } from './MazeGuide'
 import { Mascot } from '../../../components/art/Mascot'
 import { Confetti } from '../../../components/ui/Effects'
 import { GameButton } from '../../../components/ui/GameButton'
@@ -31,7 +32,6 @@ import {
   HillTree,
   MagicDoor,
   MazeDefs,
-  MissionIcon,
   Pond,
   Socket,
   Squirrel,
@@ -84,9 +84,36 @@ interface SceneProps {
   motion: boolean
 }
 
+/** Пространствените думи в указанието се оцветяват (помагат и на учителя, който чете на глас). */
+function emphasize(step: Step, text: string): ReactNode {
+  const re =
+    step.kind === 'fork'
+      ? /(горната|долната)/
+      : step.kind === 'hide'
+        ? /( в | на | под )/
+        : step.kind === 'chicks-in' || step.kind === 'chicks-out'
+          ? /(вътре|вън)/
+          : step.kind === 'stone'
+            ? /(близо|далече)/
+            : /(горе|долу)/
+  const cls = (w: string) => (/гор|на$|^на|вътре|близо/.test(w.trim()) ? 'is-a' : /^в$/.test(w.trim()) ? 'is-c' : 'is-b')
+  return text.split(re).map((part, i) =>
+    i % 2 ? (
+      <b key={i} className={`mz-kw ${cls(part)}`}>
+        {part}
+      </b>
+    ) : (
+      part
+    ),
+  )
+}
+
+/** Колко секунди без действие, преди възможните места да светнат меко (не е таймер на задачата). */
+const NUDGE_AFTER_MS = 9000
+
 function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: () => void; onMap: () => void; onRestart: () => void }) {
   const { width: w, height: h, portrait, scale } = useStage()
-  // нисък хоризонтален телефон: по-компактен панел със задачата (повече място за сцената)
+  // телефон хоризонтално: указанието е в горната лента, без групата — повече място за сцената
   const compact = !portrait && scale < 0.55
   const app = useApp()
   const { group, settings, play, say, sayAll, hasVoice, saveResult } = useKg()
@@ -94,13 +121,21 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   const [message, setMessage] = useState<string | null>(null)
   const [praise, setPraise] = useState(PRAISE[0])
   const [shake, setShake] = useState<{ target: string; n: number } | null>(null)
+  // пример преди първата стъпка на всяка мисия: номер на последната мисия, чийто пример е показан
+  const [demoSeen, setDemoSeen] = useState(-1)
+  const [taps, setTaps] = useState(0)
+  // насочването важи само за текущото „колебание“ (стъпка, част и брой докосвания)
+  const [nudgedKey, setNudgedKey] = useState('')
   const motion = app.settings.animationsOn && !(typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
   const groupMode = settings.workMode === 'group'
   const started = useRef(0)
   const saved = useRef(false)
   const mission = s.missions[s.m]
   const step = currentStep(s)
-  const voiceIds = [...(s.i === 0 ? [...(s.m === 0 ? ['maze.intro'] : []), `maze.intro.${mission.id}`] : []), ...stepPhrases(step)]
+  const demo = s.phase === 'play' && s.i === 0 && s.part === 0 && s.wrong === 0 && demoSeen < s.m
+  const nudgeKey = `${s.m}.${s.i}.${s.part}.${taps}`
+  const nudge = s.phase === 'play' && nudgedKey === nudgeKey
+  const demoIds = [...(s.m === 0 ? ['maze.intro'] : []), `maze.intro.${mission.id}`, `maze.demo.${mission.id}`]
 
   // мястото за сцената (логически px) — сцената се подрежда според него
   const region = useRef<HTMLDivElement>(null)
@@ -127,10 +162,21 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
     dispatch({ type: 'next' })
   }
 
-  // указанието на всяка стъпка (в началото на мисия — първо кратко въведение)
+  // глас (ако има записи): при пример — въведение и пример; иначе — указанието на стъпката
   useEffect(() => {
-    if (s.phase === 'play') sayAll(voiceIds)
-  }, [s.m, s.i, s.phase === 'play']) // eslint-disable-line react-hooks/exhaustive-deps
+    if (s.phase !== 'play') return
+    sayAll(demo ? demoIds : stepPhrases(step))
+  }, [s.m, s.i, s.phase === 'play', demo]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // меко насочване: ако детето се колебае, всички възможни места светват (без да издават отговора)
+  useEffect(() => {
+    if (s.phase !== 'play' || demo) return
+    const t = setTimeout(() => {
+      setNudgedKey(nudgeKey)
+      say('maze.nudge')
+    }, NUDGE_AFTER_MS)
+    return () => clearTimeout(t)
+  }, [nudgeKey, s.phase, demo]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // самостоятелна игра: след изпълнена стъпка — сама продължава (без да бърза); при групова — с „Напред“
   useEffect(() => {
@@ -157,9 +203,10 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   }, [s.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tap = (target: string) => {
-    if (s.phase !== 'play') return
+    if (s.phase !== 'play' || demo) return
     const next = mazeReducer(s, { type: 'tap', target, hintsOn: settings.hintsOn })
     if (next === s) return
+    setTaps((n) => n + 1)
     dispatch({ type: 'tap', target, hintsOn: settings.hintsOn })
     if (next.wrong > s.wrong) {
       play('hint')
@@ -181,13 +228,56 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
       if (step.kind === 'door' && next.part > s.part) say(stepPhrases(step)[next.part])
     }
   }
+  const startMission = () => {
+    play('click')
+    setDemoSeen(s.m)
+  }
 
   if (s.phase === 'done') return <Finale seed={seed} groupMode={groupMode} onRestart={() => (play('click'), onRestart())} onExit={onExit} onMap={onMap} w={w} h={h} portrait={portrait} />
 
   const sceneProps: SceneProps = { s, step, hint: s.hint?.target ?? null, shake, tap, motion }
   const Scene = { fork: ForkScene, hide: HideScene, chicks: ChicksScene, stones: StonesScene, door: DoorScene }[mission.id]
   const instr = stepText(step)
-  const sayVisible = !!message || s.phase === 'success' || (step.kind === 'door' && step.seq.length === 2 && s.part === 1)
+  // балончето на Звездичка в сцената: похвала, подсказка, насочване или „Сега второто!“
+  const bubble: { text: ReactNode; mood: 'cheer' | 'encourage'; kind: string } | null = demo
+    ? null
+    : s.phase === 'success'
+      ? {
+          text: (
+            <>
+              <b>{mazeText(praise)}</b>
+              {groupMode && <> {mazeText('maze.next.child')}</>}
+            </>
+          ),
+          mood: 'cheer',
+          kind: 'praise',
+        }
+      : message
+        ? { text: message, mood: 'encourage', kind: 'hint' }
+        : nudge
+          ? { text: mazeText('maze.nudge'), mood: 'encourage', kind: 'nudge' }
+          : step.kind === 'door' && step.seq.length === 2 && s.part === 1 && s.phase === 'play'
+            ? { text: mazeText('maze.select.next'), mood: 'encourage', kind: 'next' }
+            : null
+  const stars = (
+    <span className="kg-maze__stars" aria-label={`Мисия ${s.m + 1} от 5. Звездички: ${s.stars}`}>
+      {s.missions.map((m, i) => (
+        <svg key={m.id} viewBox="-44 -44 88 88" className={i < s.stars ? 'is-got' : i === s.m ? 'is-now' : ''} aria-hidden="true">
+          <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" />
+        </svg>
+      ))}
+    </span>
+  )
+  // на вертикален екран звездичките са в горната лента, а указанието заема цялата ширина под нея
+  const bar = (
+    <div className="kg-maze__bar" aria-live="polite" data-bar>
+      <span className="kg-maze__pic">
+        <StepPicture step={step} part={s.part} />
+      </span>
+      <p className="kg-maze__text">{emphasize(step, instr)}</p>
+      {!portrait && stars}
+    </div>
+  )
   return (
     <div
       className={`screen kg-screen kg-maze kg-maze--${mission.id} ${compact ? 'is-compact' : ''} ${motion ? '' : 'is-still'}`}
@@ -196,56 +286,44 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
       data-index={`${s.m}.${s.i}`}
       data-phase={s.phase}
       data-part={s.part}
+      data-demo-open={demo ? '1' : '0'}
     >
       <MazeBackdrop w={w} h={h} portrait={portrait} />
       <KgTopBar
         onBack={onExit}
         backLabel="Към атракцията"
-        extra={hasVoice(voiceIds[voiceIds.length - 1]) ? <GameButton color="turquoise" size="md" icon="sound" onClick={() => sayAll(stepPhrases(step).slice(s.part))} aria-label="Чуй отново" title="Чуй отново" silent className="kg-replay" /> : null}
+        center={portrait ? stars : bar}
+        extra={hasVoice(stepPhrases(step)[0]) ? <GameButton color="turquoise" size="md" icon="sound" onClick={() => sayAll(demo ? demoIds : stepPhrases(step).slice(s.part))} aria-label="Чуй отново" title="Чуй отново" silent className="kg-replay" /> : null}
       />
-
-      <div className="kg-task kg-maze__task" aria-live="polite">
-        <div className="kg-task__picture kg-maze__icon" aria-hidden="true">
-          <MissionIcon id={mission.id} />
-        </div>
-        <div className="kg-task__words">
-          <p className="kg-maze__mission">
-            Мисия {s.m + 1}: {MISSION_TITLE[mission.id]}
-          </p>
-          <p className="kg-task__text">{instr}</p>
-          <div className={`kg-task__say ${s.phase === 'success' ? 'is-praise' : ''} ${sayVisible ? '' : 'is-empty'}`} role="status">
-            <Mascot mood={s.phase === 'success' ? 'cheer' : 'encourage'} size={76} />
-            <span className="kg-task__say-text">
-              {s.phase === 'success' ? (
-                <>
-                  <b>{mazeText(praise)}</b>
-                  {groupMode && <> {mazeText('maze.next.child')}</>}
-                </>
-              ) : message ? (
-                message
-              ) : sayVisible ? (
-                mazeText('maze.select.next')
-              ) : (
-                ' '
-              )}
-            </span>
-          </div>
-        </div>
-        <span className="kg-maze__stars" aria-label={`Звездички: ${s.stars} от 5`}>
-          {s.missions.map((m, i) => (
-            <svg key={m.id} viewBox="-44 -44 88 88" className={i < s.stars ? 'is-got' : i === s.m ? 'is-now' : ''} aria-hidden="true">
-              <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" />
-            </svg>
-          ))}
-        </span>
-      </div>
+      {portrait && <div className="kg-maze__strip">{bar}</div>}
 
       <div className="kg-maze__region" ref={region}>
         {box.w > 0 && box.h > 0 && (
-          <svg className="kg-maze__scene" viewBox={`0 0 ${box.w} ${box.h}`} width={box.w} height={box.h} role="group" aria-label={MISSION_TITLE[mission.id]}>
+          <svg className={`kg-maze__scene ${nudge && !demo ? 'is-nudge' : ''}`} viewBox={`0 0 ${box.w} ${box.h}`} width={box.w} height={box.h} role="group" aria-label={MISSION_TITLE[mission.id]}>
             <MazeDefs />
             <Scene key={mission.id} {...sceneProps} box={box} />
           </svg>
+        )}
+        {bubble && <SceneBubble key={`${bubble.kind}-${s.m}-${s.i}-${s.wrong}`} region={region} box={box} mood={bubble.mood} kind={bubble.kind} text={bubble.text} />}
+        {demo && (
+          <div className="kg-maze__demo" data-demo={mission.id}>
+            <div className="kg-maze__demo-card" role="dialog" aria-label={`Мисия ${s.m + 1}: ${MISSION_TITLE[mission.id]}`}>
+              <p className="kg-maze__demo-title">
+                Мисия {s.m + 1}: {MISSION_TITLE[mission.id]}
+              </p>
+              <DemoArt mission={mission.id} />
+              <div className="kg-maze__demo-side">
+                <p className="kg-maze__demo-text">
+                  <Mascot mood="happy" size={70} />
+                  <span>
+                    {s.m === 0 && <span className="kg-maze__demo-story">{mazeText('maze.intro')} </span>}
+                    {mazeText(`maze.demo.${mission.id}`)}
+                  </span>
+                </p>
+                <DemoGo onGo={startMission} />
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -271,6 +349,59 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
           </button>
         </div>
       ) : null}
+    </div>
+  )
+}
+
+/** Бутонът „Да опитаме!“ под примера (получава фокуса за работа с клавиатура). */
+function DemoGo({ onGo }: { onGo: () => void }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    ref.current?.focus({ preventScroll: true })
+  }, [])
+  return (
+    <button ref={ref} type="button" className="kg-round-btn kg-round-btn--check kg-maze__go" onClick={onGo} data-demo-go="1">
+      <span className="kg-round-btn__face">
+        <Icon name="play" size={72} />
+      </span>
+      <span className="kg-round-btn__label">{mazeText('maze.demo.go')}</span>
+    </button>
+  )
+}
+
+/**
+ * Балончето на Звездичка в сцената. Не заема място над сцената: застава в ъгъла,
+ * който е най-далече от местата за докосване, и не пречи на докосването (pointer-events: none).
+ */
+function SceneBubble({ region, box, mood, kind, text }: { region: RefObject<HTMLDivElement | null>; box: { w: number; h: number }; mood: 'cheer' | 'encourage'; kind: string; text: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [corner, setCorner] = useState<'tl' | 'tr' | 'bl' | 'br'>('tl')
+  useLayoutEffect(() => {
+    const r = region.current?.getBoundingClientRect()
+    const b = ref.current?.getBoundingClientRect()
+    if (!r || !b) return
+    const zones = [...(region.current?.querySelectorAll('[data-zone] .mz-hit') ?? [])].map((z) => {
+      const q = z.getBoundingClientRect()
+      return { x: q.left + q.width / 2 - r.left, y: q.top + q.height / 2 - r.top, rad: q.width / 2 }
+    })
+    const cand = { tl: [b.width / 2, b.height / 2], tr: [r.width - b.width / 2, b.height / 2], bl: [b.width / 2, r.height - b.height / 2], br: [r.width - b.width / 2, r.height - b.height / 2] } as const
+    let best: keyof typeof cand = 'tl'
+    let bestScore = -Infinity
+    for (const k of Object.keys(cand) as (keyof typeof cand)[]) {
+      const [cx, cy] = cand[k]
+      // най-малкото разстояние от ръба на балончето до ръба на зона (по-голямо е по-добре)
+      const score = zones.length ? Math.min(...zones.map((z) => Math.hypot(Math.max(0, Math.abs(z.x - cx) - b.width / 2), Math.max(0, Math.abs(z.y - cy) - b.height / 2)) - z.rad)) : 0
+      if (score > bestScore + 1) {
+        bestScore = score
+        best = k
+      }
+    }
+    setCorner(best)
+  }, [box.w, box.h, kind]) // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div ref={ref} className={`kg-maze__bubble is-${corner} is-${kind}`} role="status" data-bubble={kind}>
+      <Mascot mood={mood} size={64} />
+      <span className="kg-maze__bubble-text">{text}</span>
     </div>
   )
 }
