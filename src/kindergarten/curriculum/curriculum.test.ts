@@ -54,7 +54,8 @@ describe('Приказен парк — образователна структ�
     expect(ready.map((a) => [a.id, a.group, a.core])).toEqual([
       ['feed-bears', 1, 'quantity'],
       ['giant-boots', 1, 'measurement'],
+      ['bunny-maze', 1, 'space'],
     ])
-    for (const a of ready) expect(a.taskCount).toEqual({ min: 3, max: 5, default: 5 })
+    for (const a of ready) expect(a.taskCount).toEqual(a.mechanic === 'quest' ? { min: 5, max: 5, default: 5 } : { min: 3, max: 5, default: 5 })
   })
 })
