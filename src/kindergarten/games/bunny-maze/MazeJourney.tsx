@@ -216,7 +216,7 @@ export function MazeJourney({
             </g>
           ),
         )}
-        <path d={full} fill="none" stroke="#4a3560" strokeWidth="58" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={full} className="mz-path-edge" fill="none" stroke="#4a3560" strokeWidth="58" strokeLinecap="round" strokeLinejoin="round" />
         <path d={full} fill="none" stroke="url(#mz-path)" strokeWidth="48" strokeLinecap="round" strokeLinejoin="round" />
         {walked && <path d={walked} fill="none" stroke="#ffd25e" strokeWidth="9" strokeDasharray="2 18" strokeLinecap="round" />}
         {part && <path ref={seg} d={part} fill="none" stroke="none" />}

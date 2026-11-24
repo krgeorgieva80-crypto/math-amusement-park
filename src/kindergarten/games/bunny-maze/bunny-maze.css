@@ -846,3 +846,58 @@
   stroke-width: 5;
   stroke-dasharray: 12 10;
 }
+
+/* ───────────── рисувани изображения (етап 4) ───────────── */
+
+.kg-maze__bg {
+  overflow: hidden;
+  background: #bfe6a8;
+}
+.kg-maze__bg-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+  transition: transform 1.4s ease-in-out;
+}
+.kg-maze__light {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.4s ease-in-out;
+}
+.kg-maze__light.is-on {
+  opacity: 1;
+}
+.kg-maze.is-still .kg-maze__bg-img,
+.kg-maze.is-still .kg-maze__light {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kg-maze__bg-img,
+  .kg-maze__light {
+    transition: none;
+  }
+}
+
+/* рисуваните предмети не приемат докосвания — само зоните на играта */
+.kg-sprite-svg {
+  pointer-events: none;
+}
+
+/* векторните части до рисуваните: без тъмен контур, за да са част от същата рисунка */
+.kg-maze.has-art .mz-path-edge {
+  stroke: #d8b06a;
+}
+.kg-maze.has-art .mz-stream-edge {
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 6;
+}
+.kg-maze.has-art .kg-maze__journey {
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, rgba(223, 246, 214, 0.62), rgba(185, 231, 173, 0.72));
+}

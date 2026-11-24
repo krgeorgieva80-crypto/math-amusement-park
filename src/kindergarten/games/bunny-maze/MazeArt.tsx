@@ -1,9 +1,14 @@
 /**
- * „Зайчето в лабиринта“ — оригинални SVG илюстрации (без растерни изображения).
+ * „Зайчето в лабиринта“ — оригинални SVG илюстрации.
  * Всеки елемент е нарисуван около точка (0, 0) — долу в средата — и се поставя с translate/scale.
+ * Където има одобрено рисувано изображение (manifest.json, вж. art.ts и ASSETS.md), то заема мястото на рисунката
+ * със същата котва; иначе остава векторната рисунка.
  * Стил: меки пастелни тонове, плътен тъмнолилав контур, обем с градиенти, както останалите приказни герои.
  */
 import type { ReactNode } from 'react'
+import { useArt } from '../../art/sprites/Sprite'
+import { SvgSprite } from '../../art/sprites/SvgSprite'
+import { artAspect } from './art'
 import type { Gift, Treasure } from './logic'
 
 const O = '#4a3560'
@@ -49,10 +54,31 @@ export function MazeDefs() {
   )
 }
 
+/** Рисувано изображение, стъпило на земята: долният ръб в средата е в (0, dy). h — височина в единиците на рисунката. */
+function Ground({ name, h, dy = 0, flip = false }: { name: string; h: number; dy?: number; flip?: boolean }) {
+  const w = h * artAspect(name)
+  return <SvgSprite name={name} x={-w / 2} y={dy - h} w={w} h={h} flip={flip} fallback={null} />
+}
+
 export type BunnyMood = 'idle' | 'happy' | 'look'
 
-/** Зайчето Скокльо: бяло, с розови уши и син шал. Височина ≈ 170, ширина ≈ 130. */
+/** Височина на рисуваното зайче (с ушите) в единиците на векторното. */
+const BUNNY_H = 218
+
+/** Зайчето Скокльо: бяло, с розови уши и син шал. Рисуваното гледа надясно; „гледа“ = спокойната поза. */
 export function Bunny({ mood = 'idle', flip = false }: { mood?: BunnyMood; flip?: boolean }) {
+  const name = mood === 'happy' ? 'bunny-happy' : 'bunny-idle'
+  if (useArt().has(name))
+    return (
+      <g className={`mz-bunny is-${mood} is-art`}>
+        <Ground name={name} h={BUNNY_H} dy={6} flip={flip} />
+      </g>
+    )
+  return <BunnyVector mood={mood} flip={flip} />
+}
+
+/** Векторното зайче (резервна рисунка). Височина ≈ 200, ширина ≈ 130. */
+function BunnyVector({ mood = 'idle', flip = false }: { mood?: BunnyMood; flip?: boolean }) {
   const happy = mood === 'happy'
   return (
     <g className={`mz-bunny is-${mood}`} transform={flip ? 'scale(-1 1)' : undefined}>
@@ -115,6 +141,21 @@ export function Bunny({ mood = 'idle', flip = false }: { mood?: BunnyMood; flip?
 
 /** Жив плет с цветчета: правоъгълник със заоблени краища (горен ляв ъгъл x, y). */
 export function Hedge({ x, y, w, h, flowers = true }: { x: number; y: number; w: number; h: number; flowers?: boolean }) {
+  const art = useArt()
+  if (art.has('hedge')) {
+    // няколко рисувани отрязъка един до друг (огледално през един) — с най-малко разтягане
+    const hh = h * 1.15
+    const a = artAspect('hedge')
+    const n = [1, 2, 3, 4, 5, 6].reduce((best, k) => (Math.abs(Math.log(w / k / (hh * a))) < Math.abs(Math.log(w / best / (hh * a))) ? k : best), 1)
+    const pw = w / n
+    return (
+      <g className="mz-hedge is-art">
+        {Array.from({ length: n }, (_, i) => (
+          <SvgSprite key={i} name="hedge" x={x + i * pw - pw * 0.06} y={y + h - hh + h * 0.12} w={pw * 1.12} h={hh} fit="none" flip={i % 2 === 1} fallback={null} />
+        ))}
+      </g>
+    )
+  }
   const r = Math.min(h / 2, 50)
   const n = Math.max(1, Math.round(w / 90))
   return (
@@ -134,6 +175,12 @@ export function Hedge({ x, y, w, h, flowers = true }: { x: number; y: number; w:
 
 /** Малък храст (кръгъл). */
 export function Bush({ s = 1 }: { s?: number }) {
+  if (useArt().has('bush'))
+    return (
+      <g transform={`scale(${s})`}>
+        <Ground name="bush" h={118} dy={8} />
+      </g>
+    )
   return (
     <g transform={`scale(${s})`}>
       <ellipse cx="0" cy="0" rx="62" ry="10" fill={O} opacity="0.14" />
@@ -163,6 +210,7 @@ export function Sun({ r = 60 }: { r?: number }) {
 
 /** Хълмче с дърво (край на горната пътечка). */
 export function HillTree() {
+  if (useArt().has('hill-tree')) return <Ground name="hill-tree" h={340} dy={36} />
   return (
     <g>
       <path d="M-150 30 C -120 -40 120 -40 150 30 Z" fill="#a9e0a6" stroke={O} strokeWidth="4" />
@@ -177,6 +225,7 @@ export function HillTree() {
 
 /** Езерце с патенце (край на долната пътечка). */
 export function Pond() {
+  if (useArt().has('pond')) return <Ground name="pond" h={186} dy={78} />
   return (
     <g>
       <ellipse cx="0" cy="0" rx="150" ry="58" fill="url(#mz-water)" stroke={O} strokeWidth="4" />
@@ -200,6 +249,8 @@ export function Pond() {
 
 /** Голяма гъба (височина ≈ 300). Шапчицата е от y=-300 до y=-170. */
 export function BigMushroom() {
+  // шапката на рисуваната гъба е на същата височина (≈ 300), за да стоят съкровищата „на“ и „под“ нея
+  if (useArt().has('mushroom')) return <Ground name="mushroom" h={330} dy={10} />
   return (
     <g>
       <ellipse cx="0" cy="0" rx="120" ry="16" fill={O} opacity="0.15" />
@@ -356,7 +407,7 @@ export function Fence({ rx, ry, part }: { rx: number; ry: number; part: 'back' |
 export function Stream({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx="40" fill="url(#mz-water)" stroke={O} strokeWidth="4" />
+      <rect x={x} y={y} width={w} height={h} rx="40" fill="url(#mz-water)" stroke={O} strokeWidth="4" className="mz-stream-edge" />
       {Array.from({ length: Math.max(2, Math.round((w * h) / 60000)) }, (_, i) => {
         const cx = x + ((i * 0.37 + 0.13) % 1) * w
         const cy = y + ((i * 0.61 + 0.2) % 1) * h
@@ -368,6 +419,15 @@ export function Stream({ x, y, w, h }: { x: number; y: number; w: number; h: num
 
 /** Камъче в поточето (ширина ≈ 170). */
 export function Stone({ lit = false }: { lit?: boolean }) {
+  if (useArt().has('stone'))
+    // рисуваното камъче е по-високо: върхът му е там, където стъпва зайчето; основата е във водата
+    return (
+      <g className="mz-stone is-art">
+        {lit && <ellipse cx="0" cy="10" rx="130" ry="80" fill="url(#mz-glow)" />}
+        <ellipse cx="0" cy="62" rx="96" ry="20" fill="#e9f8ff" opacity="0.55" />
+        <Ground name="stone" h={142} dy={76} />
+      </g>
+    )
   return (
     <g>
       {lit && <ellipse cx="0" cy="-10" rx="110" ry="50" fill="url(#mz-glow)" />}

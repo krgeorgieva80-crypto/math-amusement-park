@@ -16,6 +16,8 @@ import { useApp } from '../../../core/AppContext'
 import { useStage } from '../../../core/Stage'
 import { useKg } from '../../KgContext'
 import { KgTopBar } from '../../screens/KgTopBar'
+import { ArtProvider, useArt } from '../../art/sprites/Sprite'
+import { ART_GAME } from './art'
 import {
   Basket,
   BigMushroom,
@@ -110,7 +112,11 @@ export function BunnyMazeGame({ onExit, onMap }: { onExit: () => void; onMap: ()
     storeSaved(null)
     setRound((r) => r + 1)
   }
-  return <MazeRound key={round} seed={round} onExit={onExit} onMap={onMap} onRestart={restart} />
+  return (
+    <ArtProvider game={ART_GAME}>
+      <MazeRound key={round} seed={round} onExit={onExit} onMap={onMap} onRestart={restart} />
+    </ArtProvider>
+  )
 }
 
 interface SceneProps {
@@ -179,6 +185,7 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   const started = useRef(0)
   const saved = useRef(false)
   const mission = s.missions[s.m]
+  const hasArt = useArt().has('bg-garden')
   const step = currentStep(s)
   const demo = !journey && s.phase === 'play' && s.i === 0 && s.part === 0 && s.wrong === 0 && demoSeen < s.m
   const nudgeKey = `${s.m}.${s.i}.${s.part}.${taps}`
@@ -392,7 +399,7 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   }
   return (
     <div
-      className={`screen kg-screen kg-maze kg-maze--${mission.id} ${compact ? 'is-compact' : ''} ${motion ? '' : 'is-still'}`}
+      className={`screen kg-screen kg-maze kg-maze--${mission.id} ${compact ? 'is-compact' : ''} ${motion ? '' : 'is-still'} ${hasArt ? 'has-art' : ''}`}
       data-mission={mission.id}
       data-step={JSON.stringify(step)}
       data-index={`${s.m}.${s.i}`}
@@ -400,7 +407,7 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
       data-part={s.part}
       data-demo-open={demo ? '1' : '0'}
     >
-      <MazeBackdrop w={w} h={h} portrait={portrait} />
+      <MazeBackdrop w={w} h={h} portrait={portrait} light={s.m} />
       <KgTopBar
         onBack={onExit}
         backLabel="Към атракцията"
@@ -660,6 +667,8 @@ function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { bo
   const done = s.phase !== 'play'
   const pos = done ? FORK.ends[st.target] : FORK.start
   const variant = st.scene % 3
+  // рисуваният фон има свое слънце
+  const paintedSky = useArt().has('bg-garden')
   const J = FORK.join
   const trunk = `M${X(FORK.start.x - 80)} ${Y(FORK.start.y)} C ${X(200)} ${Y(FORK.start.y)} ${X(260)} ${Y(J.y)} ${X(J.x)} ${Y(J.y)}`
   const branch = (v: Vertical) => {
@@ -677,7 +686,7 @@ function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { bo
     <g>
       {/* първо всички контури, после пясъкът — така разклонът е без шевове */}
       {paths.map((d, i) => (
-        <path key={`o${i}`} d={d} fill="none" stroke="#4a3560" strokeWidth={112 * k} strokeLinecap="round" />
+        <path key={`o${i}`} d={d} className="mz-path-edge" fill="none" stroke="#4a3560" strokeWidth={112 * k} strokeLinecap="round" />
       ))}
       {paths.map((d, i) => (
         <path key={`f${i}`} d={d} fill="none" stroke="url(#mz-path)" strokeWidth={100 * k} strokeLinecap="round" />
@@ -690,9 +699,11 @@ function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { bo
       {hedge(-20, 170, 300, 100)}
       {hedge(-20, 560, 260, 100)}
       {/* горе — хълм със слънце; долу — езерце */}
-      <g transform={at([760, 700, 820][variant], [40, 60, 30][variant])}>
-        <Sun r={44} />
-      </g>
+      {!paintedSky && (
+        <g transform={at([760, 700, 820][variant], [40, 60, 30][variant])}>
+          <Sun r={44} />
+        </g>
+      )}
       <Zone id="up" label="Горната пътечка" cx={X(FORK.ends.up.x - 40)} cy={Y(FORK.ends.up.y - 30)} r={150 * k} hint={hint} shake={shake} tap={tap} disabled={done}>
         <path d={branchHit('up')} className="mz-branch-hit" strokeWidth={150 * k} />
         <g transform={at(FORK.ends.up.x + 90, FORK.ends.up.y + 20, 0.62)}>
@@ -940,8 +951,41 @@ function DoorScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: 
 
 // ───────────── фон и финал ─────────────
 
-/** Приказен фон: небе, далечен лабиринт от жив плет, поляна. */
-function MazeBackdrop({ w, h, portrait }: { w: number; h: number; portrait: boolean }) {
+/** Светлината по пътя: свежа сутрин → предобед → пладне → златист следобед → вълшебно злато → залез (финал). */
+const LIGHT: [string, string][] = [
+  ['rgba(185,222,255,0.22)', 'rgba(255,255,255,0)'],
+  ['rgba(255,250,215,0.12)', 'rgba(255,255,255,0)'],
+  ['rgba(255,238,175,0.18)', 'rgba(255,240,190,0.05)'],
+  ['rgba(255,205,125,0.24)', 'rgba(255,214,150,0.09)'],
+  ['rgba(255,178,120,0.30)', 'rgba(255,196,150,0.13)'],
+  ['rgba(255,150,170,0.32)', 'rgba(255,190,140,0.16)'],
+]
+/** Изрязването на квадратния фон за всяка мисия: леко изместване, сякаш градината се сменя, докато зайчето върви. */
+const PAN = [0.3, 0.42, 0.54, 0.66, 0.5, 0.5]
+/** Хоризонтът на рисувания фон (дял от височината му) и къде да е на екрана. */
+const BG_HORIZON = 0.275
+
+/** Приказен фон: рисуваната поляна (ако я има) + светлината на мисията; иначе — векторният фон. */
+function MazeBackdrop({ w, h, portrait, light }: { w: number; h: number; portrait: boolean; light: number }) {
+  const bg = useArt().url('bg-garden')
+  if (bg) {
+    const S = Math.max(w, h) * 1.06
+    const target = h * (portrait ? 0.25 : 0.32)
+    const y = Math.min(0, Math.max(h - S, target - BG_HORIZON * S))
+    const x = -(S - w) * PAN[Math.min(light, PAN.length - 1)]
+    return (
+      <div className="kg-scene kg-maze__bg" aria-hidden="true" data-light={light}>
+        <img src={bg} alt="" draggable={false} decoding="async" className="kg-maze__bg-img" data-sprite="bg-garden" style={{ width: S, height: S, transform: `translate(${x}px, ${y}px)` }} />
+        {LIGHT.map(([top, bottom], i) => (
+          <div key={i} className={`kg-maze__light ${i === light ? 'is-on' : ''}`} style={{ background: `linear-gradient(180deg, ${top}, ${bottom} 70%)` }} />
+        ))}
+      </div>
+    )
+  }
+  return <VectorBackdrop w={w} h={h} portrait={portrait} />
+}
+
+function VectorBackdrop({ w, h, portrait }: { w: number; h: number; portrait: boolean }) {
   const horizon = h * (portrait ? 0.26 : 0.36)
   const rows = [horizon - 40, horizon - 6]
   return (
@@ -979,9 +1023,10 @@ function MazeBackdrop({ w, h, portrait }: { w: number; h: number; portrait: bool
 
 function Finale({ seed, motion, groupMode, onRestart, onExit, onMap, w, h, portrait }: { seed: number; motion: boolean; groupMode: boolean; onRestart: () => void; onExit: () => void; onMap: () => void; w: number; h: number; portrait: boolean }) {
   const mood: BunnyMood = 'happy'
+  const hasArt = useArt().has('bg-garden')
   return (
-    <div className={`screen kg-screen kg-maze is-done ${motion ? '' : 'is-still'}`} data-phase="done">
-      <MazeBackdrop w={w} h={h} portrait={portrait} />
+    <div className={`screen kg-screen kg-maze is-done ${motion ? '' : 'is-still'} ${hasArt ? 'has-art' : ''}`} data-phase="done">
+      <MazeBackdrop w={w} h={h} portrait={portrait} light={5} />
       <Confetti seed={seed + 31} />
       <KgTopBar onBack={onExit} backLabel="Към атракцията" />
       <div className="kg-done">
