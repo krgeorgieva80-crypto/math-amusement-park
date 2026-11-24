@@ -145,11 +145,21 @@ export const MAZE_PHRASES: { id: string; text: string }[] = [
   { id: 'maze.praise.1', text: 'Браво!' },
   { id: 'maze.praise.2', text: 'Точно така!' },
   { id: 'maze.praise.3', text: 'Зайчето е много доволно!' },
+  // преходи между мисиите и завършена мисия
+  { id: 'maze.journey.start', text: 'Да тръгваме по приказната пътечка!' },
+  { id: 'maze.journey.next', text: 'Зайчето продължава по пътечката.' },
+  { id: 'maze.journey.home', text: 'Зайчето бърза към своя дом!' },
+  { id: 'maze.journey.resume', text: 'Продължаваме приключението!' },
+  { id: 'maze.done.fork', text: 'Зайчето намери пътя!' },
+  { id: 'maze.done.hide', text: 'Съкровищата са скрити!' },
+  { id: 'maze.done.chicks', text: 'Пиленцата са у дома!' },
+  { id: 'maze.done.stones', text: 'Зайчето прескочи поточето!' },
+  { id: 'maze.done.door', text: 'Вратата се отваря!' },
   { id: 'maze.star', text: 'Получаваш вълшебна звездичка!' },
   { id: 'maze.star.group', text: 'Получавате вълшебна звездичка!' },
   { id: 'maze.next.child', text: 'Сега е ред на следващото дете.' },
-  { id: 'maze.end', text: 'Ура! Зайчето стигна до Морковената градина. Получаваш Златното морковче!' },
-  { id: 'maze.end.group', text: 'Ура, деца! Зайчето стигна до Морковената градина. Получавате Златното морковче!' },
+  { id: 'maze.end', text: 'Ура! Зайчето си е у дома, в Морковената градина. Получаваш Златното морковче!' },
+  { id: 'maze.end.group', text: 'Ура, деца! Зайчето си е у дома, в Морковената градина. Получавате Златното морковче!' },
 ]
 
 export const mazeText = (id: string) => MAZE_PHRASES.find((p) => p.id === id)?.text ?? ''
@@ -291,6 +301,31 @@ export function mazeReducer(s: MazeState, a: MazeAction): MazeState {
       return s
     }
   }
+}
+
+// ───────────── запазен напредък ─────────────
+
+/**
+ * Проверява запазено (недовършено) приключение, преди да се продължи. Връща състоянието, готово за игра,
+ * или null, ако записът е непълен, повреден или приключението вече е завършено.
+ * Подсказката не се пази, а двустъпковото указание на вратата започва от първата част; звездичките остават.
+ */
+export function restoreGame(raw: unknown): MazeState | null {
+  if (!raw || typeof raw !== 'object') return null
+  const s = raw as Partial<MazeState>
+  const ids: MissionId[] = ['fork', 'hide', 'chicks', 'stones', 'door']
+  if (!Array.isArray(s.missions) || s.missions.length !== ids.length) return null
+  if (!s.missions.every((m, k) => m && m.id === ids[k] && Array.isArray(m.steps) && m.steps.length > 0)) return null
+  const int = (v: unknown, lo: number, hi: number) => typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi
+  if (!int(s.m, 0, ids.length - 1) || !int(s.i, 0, s.missions[s.m!].steps.length - 1)) return null
+  if (!int(s.stars, 0, ids.length) || !int(s.firstTry, 0, 99) || !int(s.hinted, 0, 99)) return null
+  if (s.phase !== 'play' && s.phase !== 'success' && s.phase !== 'mission') return null
+  // звездичките отговарят на завършените мисии
+  if (s.stars !== s.m! + (s.phase === 'mission' ? 1 : 0)) return null
+  const inside = Array.isArray(s.inside) ? CHICKS.filter((c) => s.inside!.includes(c)) : []
+  // грешките в текущата стъпка се пазят (за честен брой „от първия път“); подсказката — не
+  const wrong = int(s.wrong, 0, 99) ? s.wrong! : 0
+  return { ...(s as MazeState), inside, wrong, hint: null, part: s.phase === 'play' ? 0 : (s.part ?? 0) }
 }
 
 // ───────────── разположение в мисия 4 (в проектното поле 1000×700) ─────────────

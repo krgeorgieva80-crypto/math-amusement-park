@@ -383,7 +383,7 @@
   animation: mz-flicker 0.9s ease-in-out infinite alternate;
 }
 
-/* ───── завършена мисия / „Напред“ ───── */
+/* ───── завършена мисия / „Продължи“ ───── */
 .kg-maze__next {
   position: absolute;
   z-index: 8;
@@ -394,21 +394,20 @@
 .kg-maze__next.is-mission {
   inset: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: var(--kg-top-h) 24px 24px;
+  padding: calc(var(--kg-top-h) + 8px) 24px 24px;
   background: rgba(74, 53, 96, 0.28);
   animation: mz-appear 0.35s ease-out;
 }
 
 .kg-maze__reward {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 18px 40px 22px;
+  gap: 28px;
+  max-width: 100%;
+  max-height: 100%;
+  padding: 18px 40px 22px 24px;
   border-radius: 40px;
   border: 6px solid var(--kg-ink);
   background: #fffdf6;
@@ -417,10 +416,20 @@
   animation: kg-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.5);
 }
 
-.kg-maze__big-star {
-  width: max(170px, calc(90px / var(--kg-s)));
-  height: max(170px, calc(90px / var(--kg-s)));
-  animation: mz-spin-in 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+.kg-maze__joy {
+  flex: none;
+  width: max(360px, calc(190px / var(--kg-s)));
+  height: auto;
+  aspect-ratio: 360 / 330;
+  max-height: 100%;
+}
+
+.kg-maze__reward-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 
 .kg-maze__reward-title {
@@ -428,15 +437,143 @@
   font-family: var(--font-display);
   font-weight: 900;
   font-size: max(52px, calc(28px / var(--kg-s)));
+  line-height: 1.05;
   color: #ff7aa8;
   -webkit-text-stroke: 8px var(--kg-ink);
   paint-order: stroke fill;
 }
 
 .kg-maze__reward-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-weight: 800;
   font-size: max(32px, calc(20px / var(--kg-s)));
+  text-align: left;
+}
+
+.kg-maze__reward-text .mascot {
+  flex: none;
+}
+
+.kg-root.is-portrait .kg-maze__reward {
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 24px 22px;
+}
+
+.kg-root.is-portrait .kg-maze__joy {
+  width: min(100%, max(330px, calc(190px / var(--kg-s))));
+}
+
+/* радост: зайчето подскача два пъти, звездичката долита и се върти, цветята цъфтят */
+.mz-joy {
+  animation: mz-joy 0.9s ease-out 2;
+}
+
+.mz-joy.is-loop {
+  animation: mz-joy 1.1s ease-out 0.4s infinite;
+}
+
+.mz-joy-star {
+  animation: mz-star-fly 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.15s backwards;
+}
+
+.mz-rays {
+  transform-origin: 0 -130px;
+  animation: mz-spin 14s linear infinite;
+}
+
+.mz-bloom,
+.mz-grow {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: mz-grow 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.4) backwards;
+}
+
+/* ───── пътечката между мисиите ───── */
+.kg-maze__journey {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #dff6d6, #b9e7ad);
+  box-shadow: inset 0 0 0 5px rgba(74, 53, 96, 0.35);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: opacity 0.6s ease;
+}
+
+.kg-maze__journey > svg {
+  display: block;
+}
+
+.kg-maze__journey:focus-visible {
+  outline: 6px solid #ffd25e;
+  outline-offset: -6px;
+}
+
+.kg-maze__journey.is-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kg-maze__journey-restart {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+}
+
+.mz-node__num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 26px;
+  fill: var(--kg-ink);
+}
+
+.mz-node__ring {
+  fill: rgba(255, 210, 94, 0.35);
+  stroke: #ffb703;
+  stroke-width: 8;
+  stroke-dasharray: 16 12;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mz-pulse 1.4s ease-in-out infinite;
+}
+
+.mz-node__star.is-new > * {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mz-spin-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.3) backwards;
+}
+
+/* сцената се разкрива като кръг, който расте от мястото на зайчето */
+.kg-maze__scene.is-hidden {
+  visibility: hidden;
+}
+
+.kg-maze__scene.is-reveal {
+  position: relative;
+  z-index: 7;
+  animation: mz-iris 0.65s cubic-bezier(0.3, 0.1, 0.3, 1) both;
+}
+
+.kg-maze__bar.is-journey .kg-maze__goal {
+  color: #1864ab;
+}
+
+.kg-maze__pic.is-mascot {
+  width: max(64px, calc(40px / var(--kg-s)));
+  justify-content: center;
+}
+
+.kg-maze__stars .is-new {
+  filter: drop-shadow(0 0 6px #ffd25e) drop-shadow(0 0 2px #ffb703);
+  animation: kg-pop 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.6) 2;
 }
 
 /* ───── финал ───── */
@@ -450,6 +587,24 @@
 
 .mz-fin-star {
   animation: mz-appear 0.5s ease-out backwards;
+}
+
+.mz-fin-rise {
+  animation: mz-rise 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards;
+}
+
+.mz-fin-pop {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: kg-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.5) backwards;
+}
+
+.mz-fin-drop {
+  animation: mz-drop 0.8s cubic-bezier(0.3, 1.3, 0.5, 1) backwards;
+}
+
+.mz-home.is-lit circle[fill='#fff3a8'] {
+  filter: drop-shadow(0 0 10px #ffd25e);
 }
 
 /* ───── вертикален екран: указанието е на отделен ред под горната лента ───── */
@@ -567,6 +722,81 @@
   }
 }
 
+@keyframes mz-joy {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  15% {
+    transform: translateY(0) scale(1.08, 0.9);
+  }
+  45% {
+    transform: translateY(-60px) scale(0.95, 1.06);
+  }
+  75% {
+    transform: translateY(0) scale(1.06, 0.94);
+  }
+}
+
+@keyframes mz-star-fly {
+  from {
+    transform: translate(-160px, 120px) scale(0.2) rotate(-160deg);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes mz-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes mz-grow {
+  from {
+    transform: scale(0.1, 0);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes mz-rise {
+  from {
+    transform: translateY(60px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes mz-drop {
+  from {
+    transform: translateY(-260px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes mz-iris {
+  from {
+    clip-path: circle(0% at var(--rx, 50%) var(--ry, 50%));
+  }
+  to {
+    clip-path: circle(150% at var(--rx, 50%) var(--ry, 50%));
+  }
+}
+
 @keyframes mz-spin-in {
   from {
     transform: scale(0.2) rotate(-90deg);
@@ -588,6 +818,25 @@
   .kg-maze * {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* намалено движение: картата на пътечката само избледнява (без подскоци и без кръг) */
+.kg-maze.is-still .kg-maze__journey,
+.kg-root .kg-maze.is-still .kg-maze__journey {
+  transition: opacity 0.35s ease !important;
+}
+
+.kg-maze.is-still .kg-maze__scene.is-reveal {
+  z-index: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kg-maze .kg-maze__journey {
+    transition: opacity 0.35s ease !important;
+  }
+  .kg-maze .kg-maze__scene.is-reveal {
+    z-index: auto;
   }
 }
 

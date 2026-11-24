@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CHICKS, MAZE_PHRASES, MISSIONS, chicksInside, currentStep, makeAdventure, mazeReducer, mazeText, newGame, seeded, stepPhrases, stepText, stonesLayout, totalSteps, type MazeState, type Step } from './logic'
+import { CHICKS, MAZE_PHRASES, MISSIONS, chicksInside, currentStep, makeAdventure, mazeReducer, mazeText, newGame, restoreGame, seeded, stepPhrases, stepText, stonesLayout, totalSteps, type MazeState, type Step } from './logic'
 
 const H = true
 const tap = (s: MazeState, target: string, hintsOn = H) => mazeReducer(s, { type: 'tap', target, hintsOn })
@@ -173,5 +173,31 @@ describe('„Зайчето в лабиринта“ — приключение�
         if (j > 0) expect(l.bunny).toEqual(lay[j - 1].after)
       })
     }
+  })
+
+  it('запазен напредък: продължава от същата мисия със звездичките; повреден запис се отхвърля', () => {
+    let s = newGame(makeAdventure(seeded(7)))
+    // мисия 1 докрай → празнуване (звездичка) → мисия 2
+    while (s.phase !== 'mission') s = s.phase === 'play' ? tap(s, correct(s)) : next(s)
+    const atReward = JSON.parse(JSON.stringify(s))
+    const r1 = restoreGame(atReward)!
+    expect(r1.phase).toBe('mission')
+    expect(r1.stars).toBe(1)
+    expect(next(r1).m).toBe(1) // не повтаря мисия 1
+    s = next(s)
+    s = tap(s, ['in', 'on', 'under'].find((x) => x !== correct(s))!) // грешка
+    const r2 = restoreGame(JSON.parse(JSON.stringify(s)))!
+    expect([r2.m, r2.i, r2.phase, r2.stars, r2.wrong, r2.hint]).toEqual([1, 0, 'play', 1, 1, null])
+    // приключението се довършва от записа
+    let z = r2
+    for (let g = 0; g < 200 && z.phase !== 'done'; g++) z = z.phase === 'play' ? tap(z, correct(z)) : next(z)
+    expect(z.phase).toBe('done')
+    expect(z.stars).toBe(5)
+    // повредени или завършени записи
+    expect(restoreGame(null)).toBeNull()
+    expect(restoreGame({ ...atReward, stars: 3 })).toBeNull()
+    expect(restoreGame({ ...atReward, m: 9 })).toBeNull()
+    expect(restoreGame({ ...atReward, phase: 'done' })).toBeNull()
+    expect(restoreGame({ ...atReward, missions: atReward.missions.slice(1) })).toBeNull()
   })
 })

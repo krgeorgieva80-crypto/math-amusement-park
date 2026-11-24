@@ -7,6 +7,7 @@
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 import './bunny-maze.css'
 import { DemoArt, StepPicture } from './MazeGuide'
+import { MazeJourney, type JourneyKind } from './MazeJourney'
 import { Mascot } from '../../../components/art/Mascot'
 import { Confetti } from '../../../components/ui/Effects'
 import { GameButton } from '../../../components/ui/GameButton'
@@ -19,12 +20,14 @@ import {
   Basket,
   BigMushroom,
   Bunny,
+  BunnyHome,
   Bush,
   Cake,
   Carrot,
   Chick,
   Coop,
   Fence,
+  Flower,
   Frog,
   GiftArt,
   GoldenCarrotBadge,
@@ -50,6 +53,7 @@ import {
   mazeReducer,
   mazeText,
   newGame,
+  restoreGame,
   stepPhrases,
   stepText,
   stonesLayout,
@@ -68,9 +72,45 @@ const PRAISE = ['maze.praise.1', 'maze.praise.2', 'maze.praise.3']
 const DW = 1000
 const DH = 700
 
+/**
+ * Недовършеното приключение се пази за сесията (без лични данни): ако детето или учителят излезе
+ * по невнимание, при връщане зайчето продължава от същата мисия, без да губи звездичките.
+ */
+const SAVE_KEY = 'kg.maze.progress.v1'
+/** След толкова време без игра приключението започва отначало. */
+const SAVE_TTL_MS = 3 * 60 * 60 * 1000
+interface Saved {
+  group: number | string
+  s: MazeState
+  started: number
+  at: number
+}
+function loadSaved(group: number | string | null): Saved | null {
+  try {
+    const raw = JSON.parse(sessionStorage.getItem(SAVE_KEY) || 'null') as Saved | null
+    if (!raw || raw.group !== group || typeof raw.at !== 'number' || Date.now() - raw.at > SAVE_TTL_MS) return null
+    const s = restoreGame(raw.s)
+    return s ? { ...raw, s, started: typeof raw.started === 'number' ? raw.started : Date.now() } : null
+  } catch {
+    return null
+  }
+}
+function storeSaved(v: Saved | null) {
+  try {
+    if (v) sessionStorage.setItem(SAVE_KEY, JSON.stringify(v))
+    else sessionStorage.removeItem(SAVE_KEY)
+  } catch {
+    /* без сесийно хранилище играта просто започва отначало */
+  }
+}
+
 export function BunnyMazeGame({ onExit, onMap }: { onExit: () => void; onMap: () => void }) {
   const [round, setRound] = useState(0)
-  return <MazeRound key={round} seed={round} onExit={onExit} onMap={onMap} onRestart={() => setRound((r) => r + 1)} />
+  const restart = () => {
+    storeSaved(null)
+    setRound((r) => r + 1)
+  }
+  return <MazeRound key={round} seed={round} onExit={onExit} onMap={onMap} onRestart={restart} />
 }
 
 interface SceneProps {
@@ -117,7 +157,15 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   const compact = !portrait && scale < 0.55
   const app = useApp()
   const { group, settings, play, say, sayAll, hasVoice, saveResult } = useKg()
-  const [s, dispatch] = useReducer(mazeReducer, undefined, () => newGame(makeAdventure(Math.random)))
+  // продължено приключение (ако има) или ново
+  const [resumed] = useState(() => loadSaved(group))
+  const [s, dispatch] = useReducer(mazeReducer, undefined, () => resumed?.s ?? newGame(makeAdventure(Math.random)))
+  // преход по пътечката: при старт (входът → мисия 1), между мисиите, към дома и при продължаване
+  const [journey, setJourney] = useState<{ from: number; to: number; kind: JourneyKind } | null>(() =>
+    resumed ? { from: resumed.s.m + 1, to: resumed.s.m + 1, kind: 'resume' } : { from: 0, to: 1, kind: 'start' },
+  )
+  // разкриването на новата сцена: кръг, който расте от мястото на зайчето
+  const [reveal, setReveal] = useState<{ x: number; y: number } | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [praise, setPraise] = useState(PRAISE[0])
   const [shake, setShake] = useState<{ target: string; n: number } | null>(null)
@@ -132,9 +180,9 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   const saved = useRef(false)
   const mission = s.missions[s.m]
   const step = currentStep(s)
-  const demo = s.phase === 'play' && s.i === 0 && s.part === 0 && s.wrong === 0 && demoSeen < s.m
+  const demo = !journey && s.phase === 'play' && s.i === 0 && s.part === 0 && s.wrong === 0 && demoSeen < s.m
   const nudgeKey = `${s.m}.${s.i}.${s.part}.${taps}`
-  const nudge = s.phase === 'play' && nudgedKey === nudgeKey
+  const nudge = !journey && s.phase === 'play' && nudgedKey === nudgeKey
   const demoIds = [...(s.m === 0 ? ['maze.intro'] : []), `maze.intro.${mission.id}`, `maze.demo.${mission.id}`]
 
   // мястото за сцената (логически px) — сцената се подрежда според него
@@ -152,31 +200,59 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   }, [isDone])
 
   useEffect(() => {
-    started.current = Date.now()
-  }, [])
+    started.current = resumed?.started ?? Date.now()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // напредъкът се пази след всяка промяна; след финала — изчиства се
+  useEffect(() => {
+    if (s.phase === 'done' || !group) storeSaved(null)
+    else storeSaved({ group, s, started: started.current || Date.now(), at: Date.now() })
+  }, [s, group])
+
+  // „Продължи“ / „Напред“ — едно натискане е една крачка (двойно докосване не прескача празнуването)
+  const stepKey = `${s.m}.${s.i}.${s.phase}`
+  const advanced = useRef('')
   const advance = () => {
+    if (advanced.current === stepKey || journey) return
+    advanced.current = stepKey
     play('click')
     setMessage(null)
     setShake(null)
+    if (s.phase === 'mission') {
+      const last = s.m === s.missions.length - 1
+      // след петата мисия: зайчето тръгва към дома си, а финалът идва след прехода
+      setJourney({ from: s.m + 1, to: s.m + 2, kind: last ? 'home' : 'next' })
+      if (last) return
+    }
     dispatch({ type: 'next' })
+  }
+  const journeyDone = () => {
+    const kind = journey?.kind
+    setJourney(null)
+    setReveal(null)
+    if (kind === 'home') dispatch({ type: 'next' })
   }
 
   // глас (ако има записи): при пример — въведение и пример; иначе — указанието на стъпката
   useEffect(() => {
-    if (s.phase !== 'play') return
+    if (s.phase !== 'play' || journey) return
     sayAll(demo ? demoIds : stepPhrases(step))
-  }, [s.m, s.i, s.phase === 'play', demo]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [s.m, s.i, s.phase === 'play', demo, !journey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // на пътечката: кратко изречение (ако има запис)
+  useEffect(() => {
+    if (journey) say(`maze.journey.${journey.kind}`)
+  }, [journey?.kind, journey?.to]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // меко насочване: ако детето се колебае, всички възможни места светват (без да издават отговора)
   useEffect(() => {
-    if (s.phase !== 'play' || demo) return
+    if (s.phase !== 'play' || demo || journey) return
     const t = setTimeout(() => {
       setNudgedKey(nudgeKey)
       say('maze.nudge')
     }, NUDGE_AFTER_MS)
     return () => clearTimeout(t)
-  }, [nudgeKey, s.phase, demo]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nudgeKey, s.phase, demo, !journey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // самостоятелна игра: след изпълнена стъпка — сама продължава (без да бърза); при групова — с „Напред“
   useEffect(() => {
@@ -188,9 +264,9 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
 
   // звездичка за завършена мисия
   useEffect(() => {
-    if (s.phase !== 'mission') return
+    if (s.phase !== 'mission' || journey) return
     play('star')
-    say(groupMode ? 'maze.star.group' : 'maze.star')
+    sayAll([`maze.done.${mission.id}`, groupMode ? 'maze.star.group' : 'maze.star'])
   }, [s.phase, s.m]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // край — обобщен резултат без лични данни
@@ -203,7 +279,7 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   }, [s.phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tap = (target: string) => {
-    if (s.phase !== 'play' || demo) return
+    if (s.phase !== 'play' || demo || journey) return
     const next = mazeReducer(s, { type: 'tap', target, hintsOn: settings.hintsOn })
     if (next === s) return
     setTaps((n) => n + 1)
@@ -233,13 +309,13 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
     setDemoSeen(s.m)
   }
 
-  if (s.phase === 'done') return <Finale seed={seed} groupMode={groupMode} onRestart={() => (play('click'), onRestart())} onExit={onExit} onMap={onMap} w={w} h={h} portrait={portrait} />
+  if (s.phase === 'done') return <Finale seed={seed} motion={motion} groupMode={groupMode} onRestart={() => (play('click'), onRestart())} onExit={onExit} onMap={onMap} w={w} h={h} portrait={portrait} />
 
   const sceneProps: SceneProps = { s, step, hint: s.hint?.target ?? null, shake, tap, motion }
   const Scene = { fork: ForkScene, hide: HideScene, chicks: ChicksScene, stones: StonesScene, door: DoorScene }[mission.id]
   const instr = stepText(step)
   // балончето на Звездичка в сцената: похвала, подсказка, насочване или „Сега второто!“
-  const bubble: { text: ReactNode; mood: 'cheer' | 'encourage'; kind: string } | null = demo
+  const bubble: { text: ReactNode; mood: 'cheer' | 'encourage'; kind: string } | null = demo || journey
     ? null
     : s.phase === 'success'
       ? {
@@ -260,16 +336,44 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
             ? { text: mazeText('maze.select.next'), mood: 'encourage', kind: 'next' }
             : null
   const stars = (
-    <span className="kg-maze__stars" aria-label={`Мисия ${s.m + 1} от 5. Звездички: ${s.stars}`}>
+    <span className="kg-maze__stars" aria-label={`Мисия ${s.m + 1} от 5. Звездички: ${s.stars}`} data-stars={s.stars}>
       {s.missions.map((m, i) => (
-        <svg key={m.id} viewBox="-44 -44 88 88" className={i < s.stars ? 'is-got' : i === s.m ? 'is-now' : ''} aria-hidden="true">
+        <svg key={m.id} viewBox="-44 -44 88 88" className={i < s.stars ? `is-got ${i === s.stars - 1 && s.phase === 'mission' ? 'is-new' : ''}` : i === s.m ? 'is-now' : ''} aria-hidden="true">
           <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" />
         </svg>
       ))}
     </span>
   )
   // на вертикален екран звездичките са в горната лента, а указанието заема цялата ширина под нея
-  const bar = (
+  // по време на прехода лентата казва накъде върви зайчето (вместо указанието)
+  const nextIdx = journey ? Math.min(journey.to, 5) - 1 : 0
+  const bar = journey ? (
+    <div className="kg-maze__bar is-journey" aria-live="polite" data-bar>
+      <span className="kg-maze__pic is-mascot">
+        <Mascot mood="happy" size={60} />
+      </span>
+      <p className="kg-maze__text">
+        {journey.kind === 'home' ? (
+          mazeText('maze.journey.home')
+        ) : (
+          <>
+            {mazeText(`maze.journey.${journey.kind}`)} <span className="kg-maze__goal">Мисия {nextIdx + 1}: {MISSION_TITLE[s.missions[nextIdx].id]}</span>
+          </>
+        )}
+      </p>
+      {!portrait && stars}
+    </div>
+  ) : s.phase === 'mission' ? (
+    <div className="kg-maze__bar is-journey" aria-live="polite" data-bar>
+      <span className="kg-maze__pic is-mascot">
+        <Mascot mood="cheer" size={60} />
+      </span>
+      <p className="kg-maze__text">
+        Мисия {s.m + 1} от {s.missions.length} е изпълнена!
+      </p>
+      {!portrait && stars}
+    </div>
+  ) : (
     <div className="kg-maze__bar" aria-live="polite" data-bar>
       <span className="kg-maze__pic">
         <StepPicture step={step} part={s.part} />
@@ -278,6 +382,14 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
       {!portrait && stars}
     </div>
   )
+  const onReveal = (at: { x: number; y: number }) => {
+    if (journey?.kind === 'home') journeyDone()
+    else setReveal(at)
+  }
+  const restartFromMap = () => {
+    play('click')
+    onRestart()
+  }
   return (
     <div
       className={`screen kg-screen kg-maze kg-maze--${mission.id} ${compact ? 'is-compact' : ''} ${motion ? '' : 'is-still'}`}
@@ -299,10 +411,26 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
 
       <div className="kg-maze__region" ref={region}>
         {box.w > 0 && box.h > 0 && (
-          <svg className={`kg-maze__scene ${nudge && !demo ? 'is-nudge' : ''}`} viewBox={`0 0 ${box.w} ${box.h}`} width={box.w} height={box.h} role="group" aria-label={MISSION_TITLE[mission.id]}>
+          <svg
+            className={`kg-maze__scene ${nudge && !demo ? 'is-nudge' : ''} ${journey ? (reveal ? 'is-reveal' : 'is-hidden') : ''}`}
+            style={reveal ? ({ '--rx': `${reveal.x * 100}%`, '--ry': `${reveal.y * 100}%` } as CSSProperties) : undefined}
+            viewBox={`0 0 ${box.w} ${box.h}`} width={box.w} height={box.h} role="group" aria-label={MISSION_TITLE[mission.id]}>
             <MazeDefs />
             <Scene key={mission.id} {...sceneProps} box={box} />
           </svg>
+        )}
+        {journey && box.w > 0 && box.h > 0 && (
+          <MazeJourney
+            key={`${journey.kind}-${journey.to}`}
+            {...journey}
+            stars={s.stars}
+            box={box}
+            motion={motion}
+            onReveal={onReveal}
+            onDone={journeyDone}
+            onLand={() => play('drop')}
+            onRestart={journey.kind === 'resume' ? restartFromMap : undefined}
+          />
         )}
         {bubble && <SceneBubble key={`${bubble.kind}-${s.m}-${s.i}-${s.wrong}`} region={region} box={box} mood={bubble.mood} kind={bubble.kind} text={bubble.text} />}
         {demo && (
@@ -320,52 +448,79 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
                     {mazeText(`maze.demo.${mission.id}`)}
                   </span>
                 </p>
-                <DemoGo onGo={startMission} />
+                <BigGo onGo={startMission} icon="play" label={mazeText('maze.demo.go')} variant="check" data={{ 'data-demo-go': '1' }} className="kg-maze__go" />
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {(s.phase === 'success' && groupMode) || s.phase === 'mission' ? (
-        <div className={`kg-maze__next ${s.phase === 'mission' ? 'is-mission' : ''}`}>
-          {s.phase === 'mission' && (
-            <div className="kg-maze__reward" role="status">
-              <svg viewBox="-60 -60 120 120" className="kg-maze__big-star" aria-hidden="true">
-                <MazeDefs />
-                <g transform="scale(1.3)">
-                  <GiftArt id="star" />
-                </g>
-              </svg>
-              <p className="kg-maze__reward-title">{mission.id === 'door' ? 'Вратата се отваря!' : 'Мисията е изпълнена!'}</p>
-              <p className="kg-maze__reward-text">{mazeText(groupMode ? 'maze.star.group' : 'maze.star')}</p>
+      {s.phase === 'mission' && !journey ? (
+        <div className="kg-maze__next is-mission">
+          <div className="kg-maze__reward" role="status" data-reward={mission.id}>
+            <MissionJoy />
+            <div className="kg-maze__reward-side">
+              <p className="kg-maze__reward-title">{mazeText(`maze.done.${mission.id}`)}</p>
+              <p className="kg-maze__reward-text">
+                <Mascot mood="cheer" size={72} />
+                <span>{mazeText(groupMode ? 'maze.star.group' : 'maze.star')}</span>
+              </p>
+              <BigGo onGo={advance} icon="next" label="Продължи" variant="next" data={{ 'data-next': '1' }} />
             </div>
-          )}
-          <button type="button" className="kg-round-btn kg-round-btn--next" onClick={advance} data-next="1">
-            <span className="kg-round-btn__face">
-              <Icon name="next" size={84} />
-            </span>
-            <span className="kg-round-btn__label">Напред</span>
-          </button>
+          </div>
+        </div>
+      ) : s.phase === 'success' && groupMode && !journey ? (
+        <div className="kg-maze__next">
+          <BigGo onGo={advance} icon="next" label="Продължи" variant="next" data={{ 'data-next': '1' }} />
         </div>
       ) : null}
     </div>
   )
 }
 
-/** Бутонът „Да опитаме!“ под примера (получава фокуса за работа с клавиатура). */
-function DemoGo({ onGo }: { onGo: () => void }) {
+/** Голям кръгъл бутон („Да опитаме!“, „Продължи“); получава фокуса за работа с клавиатура. */
+function BigGo({ onGo, icon, label, variant, data, className = '' }: { onGo: () => void; icon: 'play' | 'next'; label: string; variant: 'check' | 'next'; data: Record<string, string>; className?: string }) {
   const ref = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     ref.current?.focus({ preventScroll: true })
   }, [])
   return (
-    <button ref={ref} type="button" className="kg-round-btn kg-round-btn--check kg-maze__go" onClick={onGo} data-demo-go="1">
+    <button ref={ref} type="button" className={`kg-round-btn kg-round-btn--${variant} ${className}`} onClick={onGo} {...data}>
       <span className="kg-round-btn__face">
-        <Icon name="play" size={72} />
+        <Icon name={icon} size={icon === 'play' ? 72 : 84} />
       </span>
-      <span className="kg-round-btn__label">{mazeText('maze.demo.go')}</span>
+      <span className="kg-round-btn__label">{label}</span>
     </button>
+  )
+}
+
+/** Радостта при завършена мисия: зайчето подскача, звездичката долита, наоколо цъфтят цветя. */
+function MissionJoy() {
+  return (
+    <svg className="kg-maze__joy" viewBox="-180 -300 360 330" aria-hidden="true">
+      <MazeDefs />
+      <g className="mz-rays">
+        {Array.from({ length: 12 }, (_, i) => (
+          <path key={i} d="M-14 -130 L 0 -290 L 14 -130 Z" fill={i % 2 ? '#fff3a8' : '#ffe0ef'} transform={`rotate(${i * 30} 0 -130)`} />
+        ))}
+      </g>
+      <ellipse cx="0" cy="8" rx="150" ry="20" fill="#a9e0a6" stroke="#4a3560" strokeWidth="5" />
+      {[-130, -84, 84, 130].map((x, i) => (
+        <g key={x} transform={`translate(${x} ${8 - (i % 2) * 6})`}>
+          <g className="mz-bloom" style={{ animationDelay: `${0.25 + i * 0.12}s` } as CSSProperties}>
+            <Flower color={['#ff7aa8', '#ffd25e', '#9b8cff', '#ff9f43'][i]} s={1.15} />
+          </g>
+        </g>
+      ))}
+      <g className="mz-joy">
+        <Bunny mood="happy" />
+      </g>
+      <g transform="translate(112 -222)">
+        <g className="mz-joy-star">
+          <GiftArt id="star" />
+        </g>
+      </g>
+    </svg>
   )
 }
 
@@ -822,44 +977,74 @@ function MazeBackdrop({ w, h, portrait }: { w: number; h: number; portrait: bool
   )
 }
 
-function Finale({ seed, groupMode, onRestart, onExit, onMap, w, h, portrait }: { seed: number; groupMode: boolean; onRestart: () => void; onExit: () => void; onMap: () => void; w: number; h: number; portrait: boolean }) {
+function Finale({ seed, motion, groupMode, onRestart, onExit, onMap, w, h, portrait }: { seed: number; motion: boolean; groupMode: boolean; onRestart: () => void; onExit: () => void; onMap: () => void; w: number; h: number; portrait: boolean }) {
   const mood: BunnyMood = 'happy'
   return (
-    <div className="screen kg-screen kg-maze is-done" data-phase="done">
+    <div className={`screen kg-screen kg-maze is-done ${motion ? '' : 'is-still'}`} data-phase="done">
       <MazeBackdrop w={w} h={h} portrait={portrait} />
       <Confetti seed={seed + 31} />
       <KgTopBar onBack={onExit} backLabel="Към атракцията" />
       <div className="kg-done">
-        <h1 className="kg-done__title">{groupMode ? 'Браво, деца!' : 'Ура!'}</h1>
-        <svg className="kg-maze__garden" viewBox="0 0 1200 560" aria-label="Морковената градина: празник със Златното морковче" role="img">
+        <h1 className="kg-done__title">{groupMode ? 'Браво, деца!' : 'Ура!'} Зайчето е у дома!</h1>
+        {/* градината оживява постепенно: домът, лехата с морковчета, цветята, приятелите, Златното морковче */}
+        <svg className="kg-maze__garden" viewBox="0 0 1200 560" aria-label="Домът на зайчето в Морковената градина: празник със Златното морковче" role="img" data-garden="1">
           <MazeDefs />
-          <ellipse cx="600" cy="520" rx="580" ry="70" fill="#a9e0a6" stroke="#4a3560" strokeWidth="5" />
-          {[120, 220, 980, 1080].map((x, i) => (
-            <g key={x} transform={`translate(${x} ${500 - (i % 2) * 12})`}>
-              <Carrot s={0.9} />
+          <ellipse cx="600" cy="520" rx="590" ry="66" fill="#a9e0a6" stroke="#4a3560" strokeWidth="5" />
+          <g transform="translate(205 515) scale(0.95)">
+            <g className="mz-fin-rise">
+              <BunnyHome lit />
+            </g>
+          </g>
+          <ellipse cx="960" cy="452" rx="210" ry="34" fill="#b98656" stroke="#4a3560" strokeWidth="5" />
+          {[790, 850, 910, 970, 1030, 1090, 1140].map((x, i) => (
+            <g key={x} transform={`translate(${x} ${470 - (i % 2) * 14})`}>
+              <g className="mz-grow" style={{ animationDelay: `${0.35 + i * 0.1}s` } as CSSProperties}>
+                <Carrot s={0.62} />
+              </g>
             </g>
           ))}
-          <g transform="translate(600 500)">
-            <Cake />
+          {[40, 395, 575, 735, 1170].map((x, i) => (
+            <g key={x} transform={`translate(${x} ${545 - (i % 2) * 8})`}>
+              <g className="mz-grow" style={{ animationDelay: `${0.9 + i * 0.12}s` } as CSSProperties}>
+                <Flower color={['#ff7aa8', '#ffd25e', '#9b8cff', '#ff9f43', '#5ec8f0'][i]} s={1.3} />
+              </g>
+            </g>
+          ))}
+          <g transform="translate(660 505)">
+            <g className="mz-fin-pop" style={{ animationDelay: '1.2s' } as CSSProperties}>
+              <Cake />
+            </g>
           </g>
-          <g transform="translate(380 520)">
-            <Bunny mood={mood} />
+          <g transform="translate(470 522) scale(0.62)">
+            <g className="mz-fin-pop" style={{ animationDelay: '1.4s' } as CSSProperties}>
+              <Chick happy />
+            </g>
           </g>
-          <g transform="translate(830 520) scale(0.85)">
-            <Squirrel />
+          <g transform="translate(860 530) scale(0.8)">
+            <g className="mz-fin-pop" style={{ animationDelay: '1.55s' } as CSSProperties}>
+              <Squirrel />
+            </g>
           </g>
-          <g transform="translate(250 520) scale(0.8)">
-            <Chick happy />
+          <g transform="translate(1035 538) scale(0.7)">
+            <g className="mz-fin-pop" style={{ animationDelay: '1.7s' } as CSSProperties}>
+              <Frog happy />
+            </g>
           </g>
-          <g transform="translate(960 520) scale(0.8)">
-            <Frog happy />
+          <g transform="translate(345 530)">
+            <g className="mz-joy is-loop">
+              <Bunny mood={mood} />
+            </g>
           </g>
-          <g transform="translate(600 160) scale(0.85)">
-            <GoldenCarrotBadge />
+          <g transform="translate(640 165) scale(0.8)">
+            <g className="mz-fin-drop" style={{ animationDelay: '1.9s' } as CSSProperties}>
+              <GoldenCarrotBadge />
+            </g>
           </g>
           {Array.from({ length: 5 }, (_, i) => (
-            <g key={i} className="mz-fin-star" style={{ animationDelay: `${0.2 + i * 0.15}s` } as CSSProperties} transform={`translate(${380 + i * 110} ${i % 2 ? 330 : 300}) scale(0.55)`}>
-              <GiftArt id="star" />
+            <g key={i} transform={`translate(${430 + i * 105} ${i % 2 ? 322 : 296}) scale(0.5)`}>
+              <g className="mz-fin-star" style={{ animationDelay: `${2.2 + i * 0.12}s` } as CSSProperties}>
+                <GiftArt id="star" />
+              </g>
             </g>
           ))}
         </svg>

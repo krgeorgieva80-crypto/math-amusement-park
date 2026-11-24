@@ -580,3 +580,47 @@ export function BunnyCard({ size = 120 }: { size?: number }) {
     </svg>
   )
 }
+
+/** Домът на зайчето: хълмче с кръгла вратичка, прозорче и морковена табелка. Началото е на земята, в средата. */
+export function BunnyHome({ lit = false }: { lit?: boolean }) {
+  return (
+    <g className={`mz-home ${lit ? 'is-lit' : ''}`}>
+      <ellipse cx="0" cy="0" rx="170" ry="16" fill={O} opacity="0.16" />
+      <path d="M-160 0 C -160 -150 -80 -210 0 -210 C 80 -210 160 -150 160 0 Z" fill="#8fd37f" stroke={O} strokeWidth="6" strokeLinejoin="round" />
+      <path d="M-120 -120 C -96 -170 -50 -190 -10 -192" fill="none" stroke="#c4f0b6" strokeWidth="12" strokeLinecap="round" />
+      {/* вратичка */}
+      <path d="M-56 0 V -70 A 56 56 0 0 1 56 -70 V 0 Z" fill="#c9803f" stroke={O} strokeWidth="6" strokeLinejoin="round" />
+      <path d="M-20 0 V -100 M 20 0 V -100" stroke="#a8652c" strokeWidth="5" />
+      <circle cx="32" cy="-48" r="7" fill="#ffd25e" stroke={O} strokeWidth="3" />
+      {/* прозорче */}
+      <circle cx="-104" cy="-92" r="26" fill={lit ? '#fff3a8' : '#bfe8ff'} stroke={O} strokeWidth="5" />
+      <path d="M-104 -118 V -66 M -130 -92 H -78" stroke={O} strokeWidth="4" />
+      <circle cx="104" cy="-92" r="26" fill={lit ? '#fff3a8' : '#bfe8ff'} stroke={O} strokeWidth="5" />
+      <path d="M104 -118 V -66 M 78 -92 H 130" stroke={O} strokeWidth="4" />
+      {/* комин-морковче */}
+      <g transform="translate(70 -176) rotate(14) scale(0.7)">
+        <Carrot />
+      </g>
+      {/* цветенца пред вратата */}
+      {[-140, -84, 84, 140].map((x, i) => (
+        <g key={x} transform={`translate(${x} -4)`}>
+          <Flower color={['#ff7aa8', '#ffd25e', '#9b8cff', '#ff9f43'][i]} />
+        </g>
+      ))}
+    </g>
+  )
+}
+
+/** Цветенце (за градината и пътечката); началото е в основата на стъблото. */
+export function Flower({ color = '#ff7aa8', s = 1 }: { color?: string; s?: number }) {
+  return (
+    <g transform={`scale(${s})`}>
+      <path d="M0 0 V -30" stroke="#3f9b4a" strokeWidth="5" strokeLinecap="round" />
+      <path d="M0 -12 C 10 -22 18 -20 20 -14 C 12 -10 6 -10 0 -12 Z" fill="#7ed957" stroke={O} strokeWidth="2.5" />
+      {[0, 72, 144, 216, 288].map((a) => (
+        <ellipse key={a} cx="0" cy="-44" rx="8" ry="12" fill={color} stroke={O} strokeWidth="3" transform={`rotate(${a} 0 -34)`} />
+      ))}
+      <circle cx="0" cy="-34" r="7" fill="#fff3a8" stroke={O} strokeWidth="3" />
+    </g>
+  )
+}
