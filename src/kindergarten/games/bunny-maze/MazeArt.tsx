@@ -5,7 +5,7 @@
  * със същата котва; иначе остава векторната рисунка.
  * Стил: меки пастелни тонове, плътен тъмнолилав контур, обем с градиенти, както останалите приказни герои.
  */
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { useArt } from '../../art/sprites/Sprite'
 import { SvgSprite } from '../../art/sprites/SvgSprite'
 import { artAspect } from './art'
@@ -272,7 +272,31 @@ export function BigMushroom() {
 }
 
 /** Плетена кошничка (височина ≈ 170); отворът е горе, около y=-120. */
+const BASKET_H = 250
+/** Отворът на рисуваната кошничка: предният ръб на плетката (в пиксели на файла 523 × 560). */
+const BASKET_LIP = 'M0 290 Q 262 306 523 290 V 560 H 0 Z'
+
 export function Basket({ front = true, back = true }: { front?: boolean; back?: boolean }) {
+  const id = useId()
+  if (useArt().has('basket')) {
+    // задната част е цялата кошничка; предната — само плетката под предния ръб, за да е съкровището „в“ нея
+    const w = BASKET_H * artAspect('basket')
+    const dy = 6
+    const sprite = (clip?: string) => <SvgSprite name="basket" x={-w / 2} y={dy - BASKET_H} w={w} h={BASKET_H} fallback={null} className={clip ? 'mz-basket-front' : ''} />
+    return (
+      <g className="mz-basket is-art">
+        {back && sprite()}
+        {front && !back && (
+          <>
+            <clipPath id={`${id}-lip`}>
+              <path d={BASKET_LIP} transform={`translate(${-w / 2} ${dy - BASKET_H}) scale(${BASKET_H / 560})`} />
+            </clipPath>
+            <g clipPath={`url(#${id}-lip)`}>{sprite('lip')}</g>
+          </>
+        )}
+      </g>
+    )
+  }
   return (
     <g>
       {back && (
@@ -350,6 +374,12 @@ export function TreasureArt({ id }: { id: Treasure }) {
 
 /** Пиленце (височина ≈ 90). */
 export function Chick({ happy = false }: { happy?: boolean }) {
+  if (useArt().has('chick'))
+    return (
+      <g className={`mz-chick is-art${happy ? ' is-happy' : ''}`}>
+        <Ground name="chick" h={100} dy={4} />
+      </g>
+    )
   return (
     <g className="mz-chick">
       <ellipse cx="0" cy="0" rx="36" ry="7" fill={O} opacity="0.16" />
@@ -367,6 +397,12 @@ export function Chick({ happy = false }: { happy?: boolean }) {
 
 /** Кокошарник (декорация зад оградката). */
 export function Coop() {
+  if (useArt().has('coop'))
+    return (
+      <g className="mz-coop is-art">
+        <Ground name="coop" h={240} dy={8} />
+      </g>
+    )
   return (
     <g>
       <path d="M-90 0 V -110 L 0 -180 L 90 -110 V 0 Z" fill="#ffcf9a" stroke={O} strokeWidth="5" strokeLinejoin="round" />
@@ -379,7 +415,34 @@ export function Coop() {
 }
 
 /** Оградка (елипса): задна и предна част се рисуват поотделно, за да има „вътре“. */
+/** Рисуваната оградка: отрязъци около елипсата, всеки извит по допирателната (14 отрязъка, ширина ≈ 150). */
+const FENCE_N = 14
+const FENCE_W = 150
+
+function FenceArt({ rx, ry, part }: { rx: number; ry: number; part: 'back' | 'front' }) {
+  const h = FENCE_W / artAspect('fence')
+  const segs = Array.from({ length: FENCE_N }, (_, i) => ((i + 0.5) / FENCE_N) * Math.PI * 2)
+    .filter((a) => (part === 'back' ? Math.sin(a) < 0 : Math.sin(a) > 0))
+    .map((a) => ({ a, x: Math.cos(a) * rx, y: Math.sin(a) * ry }))
+    .sort((p, q) => p.y - q.y)
+  return (
+    <g className={`mz-fence mz-fence--${part} is-art`}>
+      {segs.map(({ a, x, y }, i) => {
+        const sx = Math.abs(Math.sin(a)) * (rx / 290)
+        const sh = -Math.sign(Math.sin(a)) * (ry / rx) * Math.cos(a) * (rx / 290)
+        return (
+          <g key={i} transform={`matrix(${sx} ${sh} 0 1 ${x} ${y})`}>
+            <SvgSprite name="fence" x={-FENCE_W / 2} y={10 - h} w={FENCE_W} h={h} flip={i % 2 === 1} fallback={null} />
+          </g>
+        )
+      })}
+    </g>
+  )
+}
+
 export function Fence({ rx, ry, part }: { rx: number; ry: number; part: 'back' | 'front' | 'ground' }) {
+  const art = useArt().has('fence')
+  if (art && part !== 'ground') return <FenceArt rx={rx} ry={ry} part={part} />
   if (part === 'ground') return <ellipse cx="0" cy="0" rx={rx} ry={ry} fill="#d9f2b8" stroke="#9fcf7f" strokeWidth="4" />
   const n = 22
   const posts = Array.from({ length: n }, (_, i) => (i / n) * Math.PI * 2).filter((a) => (part === 'back' ? Math.sin(a) < 0 : Math.sin(a) >= 0))
@@ -440,6 +503,12 @@ export function Stone({ lit = false }: { lit?: boolean }) {
 
 /** Жабка (височина ≈ 80). */
 export function Frog({ happy = false }: { happy?: boolean }) {
+  if (useArt().has('frog'))
+    return (
+      <g className={`mz-frog is-art${happy ? ' is-happy' : ''}`}>
+        <Ground name="frog" h={110} dy={4} />
+      </g>
+    )
   return (
     <g className="mz-frog">
       <ellipse cx="0" cy="-26" rx="42" ry="28" fill="#7ed957" stroke={O} strokeWidth="4" />
