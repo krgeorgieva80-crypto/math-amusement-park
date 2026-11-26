@@ -18,6 +18,7 @@ import { useKg } from '../../KgContext'
 import { KgTopBar } from '../../screens/KgTopBar'
 import { ArtProvider, useArt } from '../../art/sprites/Sprite'
 import { ART_GAME } from './art'
+import { PH, PW, isPhonePortrait, stonePortrait } from './portrait'
 import {
   Basket,
   BigMushroom,
@@ -542,9 +543,10 @@ function SceneBubble({ region, box, mood, kind, text }: { region: RefObject<HTML
     const r = region.current?.getBoundingClientRect()
     const b = ref.current?.getBoundingClientRect()
     if (!r || !b) return
-    const zones = [...(region.current?.querySelectorAll('[data-zone] .mz-hit') ?? [])].map((z) => {
+    // зоните за докосване и героите, които не бива да се закриват (катеричката, зайчето)
+    const zones = [...(region.current?.querySelectorAll('[data-zone] .mz-hit, [data-bubble-avoid]') ?? [])].map((z) => {
       const q = z.getBoundingClientRect()
-      return { x: q.left + q.width / 2 - r.left, y: q.top + q.height / 2 - r.top, rad: q.width / 2 }
+      return { x: q.left + q.width / 2 - r.left, y: q.top + q.height / 2 - r.top, rad: Math.max(q.width, q.height) / 2 }
     })
     const cand = { tl: [b.width / 2, b.height / 2], tr: [r.width - b.width / 2, b.height / 2], bl: [b.width / 2, r.height - b.height / 2], br: [r.width - b.width / 2, r.height - b.height / 2] } as const
     let best: keyof typeof cand = 'tl'
@@ -571,10 +573,20 @@ function SceneBubble({ region, box, mood, kind, text }: { region: RefObject<HTML
 // ───────────── общи елементи на сцените ─────────────
 
 /**
- * Подредба на проектното поле DW×DH в наличното място: рисунките се мащабират равномерно (k),
+ * Подредба на проектното поле DW×DH (на телефон вертикално — PW×PH, вж. portrait.ts) в наличното място: рисунките се мащабират равномерно (k),
  * а на висок (вертикален) екран местата се разпределят и по височината (ky ≥ k), за да няма празно поле.
  */
 function layout(box: { w: number; h: number }) {
+  if (isPhonePortrait(box)) {
+    // телефон вертикално: поле 600×1000 по цялата ширина; местата се разпределят и по височината (до ×1,2)
+    const k = Math.min(box.w / PW, box.h / PH)
+    const ky = Math.min(box.h / PH, k * 1.2)
+    const ox = (box.w - PW * k) / 2
+    const oy = box.h - PH * ky
+    const X = (x: number) => ox + x * k
+    const Y = (y: number) => oy + y * ky
+    return { k, ky, X, Y, P: true, at: (x: number, y: number, sc = 1) => `translate(${X(x)} ${Y(y)}) scale(${k * sc})` }
+  }
   const tall = box.h > box.w * 0.9
   // на тесен екран — цялата ширина на полето; иначе краищата (само декорация) може леко да се отрежат
   const k = Math.min(box.w / (DW * (tall ? 1 : 0.9)), box.h / DH)
@@ -583,7 +595,7 @@ function layout(box: { w: number; h: number }) {
   const oy = box.h - DH * ky
   const X = (x: number) => ox + x * k
   const Y = (y: number) => oy + y * ky
-  return { k, ky, X, Y, at: (x: number, y: number, sc = 1) => `translate(${X(x)} ${Y(y)}) scale(${k * sc})` }
+  return { k, ky, X, Y, P: false, at: (x: number, y: number, sc = 1) => `translate(${X(x)} ${Y(y)}) scale(${k * sc})` }
 }
 /** Зона за докосване: достъпна с клавиатура, с подсказка (светлина) и трептене при грешка. */
 function Zone({
@@ -654,34 +666,74 @@ function Mover({ x, y, k = 1, motion, children, className = '' }: { x: number; y
 
 // ───────────── 1. Разклонът (горе / долу) ─────────────
 
-const FORK = {
-  start: { x: 90, y: 400 },
-  join: { x: 330, y: 380 },
-  ends: { up: { x: 860, y: 175 }, down: { x: 860, y: 600 } } as Record<Vertical, { x: number; y: number }>,
+type Pt = { x: number; y: number }
+type Place3 = [number, number, number]
+/** Разклонът: хоризонтално поле и вертикален телефон. */
+const FORK_GEO = {
+  land: {
+    start: { x: 90, y: 400 },
+    join: { x: 330, y: 380 },
+    ends: { up: { x: 860, y: 175 }, down: { x: 860, y: 600 } } as Record<Vertical, Pt>,
+    trunk: [200, 260],
+    branch: [520, 560],
+    hedges: [
+      [600, 330, 420, 110],
+      [-20, 170, 300, 100],
+      [-20, 560, 260, 100],
+    ],
+    tree: [950, 195, 0.62] as Place3,
+    pond: [930, 670, 0.62] as Place3,
+    bush: [140, 690, 0.8] as Place3,
+    suns: [
+      [760, 40],
+      [700, 60],
+      [820, 30],
+    ],
+  },
+  portrait: {
+    start: { x: 80, y: 600 },
+    join: { x: 170, y: 600 },
+    ends: { up: { x: 470, y: 260 }, down: { x: 470, y: 870 } } as Record<Vertical, Pt>,
+    trunk: [110, 140],
+    branch: [300, 330],
+    hedges: [
+      [330, 500, 290, 110],
+      [-20, 330, 200, 90],
+      [-20, 760, 180, 90],
+    ],
+    tree: [480, 280, 0.75] as Place3,
+    pond: [440, 920, 0.8] as Place3,
+    bush: [95, 985, 0.7] as Place3,
+    suns: [
+      [480, 60],
+      [440, 70],
+      [520, 50],
+    ],
+  },
 }
 
 function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: { w: number; h: number } }) {
   const st = step as Extract<Step, { kind: 'fork' }>
   const L = layout(box)
   const { X, Y, k, at } = L
+  const FORK = L.P ? FORK_GEO.portrait : FORK_GEO.land
   const done = s.phase !== 'play'
   const pos = done ? FORK.ends[st.target] : FORK.start
   const variant = st.scene % 3
   // рисуваният фон има свое слънце
   const paintedSky = useArt().has('bg-garden')
   const J = FORK.join
-  const trunk = `M${X(FORK.start.x - 80)} ${Y(FORK.start.y)} C ${X(200)} ${Y(FORK.start.y)} ${X(260)} ${Y(J.y)} ${X(J.x)} ${Y(J.y)}`
+  const trunk = `M${X(FORK.start.x - 80)} ${Y(FORK.start.y)} C ${X(FORK.trunk[0])} ${Y(FORK.start.y)} ${X(FORK.trunk[1])} ${Y(J.y)} ${X(J.x)} ${Y(J.y)}`
   const branch = (v: Vertical) => {
     const e = FORK.ends[v]
-    return `M${X(J.x)} ${Y(J.y)} C ${X(520)} ${Y(J.y)} ${X(560)} ${Y(e.y)} ${X(e.x)} ${Y(e.y)}`
+    return `M${X(J.x)} ${Y(J.y)} C ${X(FORK.branch[0])} ${Y(J.y)} ${X(FORK.branch[1])} ${Y(e.y)} ${X(e.x)} ${Y(e.y)}`
   }
   // зона по втората половина на пътечката (двете не се застъпват при разклона)
   const branchHit = (v: Vertical) => {
     const e = FORK.ends[v]
-    return `M${X(560)} ${Y((J.y + e.y) / 2)} L ${X(e.x)} ${Y(e.y)}`
+    return `M${X(FORK.branch[1])} ${Y((J.y + e.y) / 2)} L ${X(e.x)} ${Y(e.y)}`
   }
   const paths = [trunk, branch('up'), branch('down')]
-  const hedge = (x: number, y: number, w: number, h: number) => <Hedge x={X(x)} y={Y(y)} w={w * k} h={h * k} />
   return (
     <g>
       {/* първо всички контури, после пясъкът — така разклонът е без шевове */}
@@ -695,28 +747,28 @@ function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { bo
         <path key={`d${i}`} d={d} fill="none" stroke="#e9c27a" strokeWidth={5 * k} strokeDasharray={`${6 * k} ${22 * k}`} strokeLinecap="round" />
       ))}
       {/* живият плет между пътечките */}
-      {hedge(600, 330, 420, 110)}
-      {hedge(-20, 170, 300, 100)}
-      {hedge(-20, 560, 260, 100)}
+      {FORK.hedges.map(([x, y, w, h], i) => (
+        <Hedge key={i} x={X(x)} y={Y(y)} w={w * k} h={h * k} />
+      ))}
       {/* горе — хълм със слънце; долу — езерце */}
       {!paintedSky && (
-        <g transform={at([760, 700, 820][variant], [40, 60, 30][variant])}>
+        <g transform={at(FORK.suns[variant][0], FORK.suns[variant][1])}>
           <Sun r={44} />
         </g>
       )}
       <Zone id="up" label="Горната пътечка" cx={X(FORK.ends.up.x - 40)} cy={Y(FORK.ends.up.y - 30)} r={150 * k} hint={hint} shake={shake} tap={tap} disabled={done}>
         <path d={branchHit('up')} className="mz-branch-hit" strokeWidth={150 * k} />
-        <g transform={at(FORK.ends.up.x + 90, FORK.ends.up.y + 20, 0.62)}>
+        <g transform={at(...FORK.tree)}>
           <HillTree />
         </g>
       </Zone>
       <Zone id="down" label="Долната пътечка" cx={X(FORK.ends.down.x - 40)} cy={Y(FORK.ends.down.y)} r={150 * k} hint={hint} shake={shake} tap={tap} disabled={done}>
         <path d={branchHit('down')} className="mz-branch-hit" strokeWidth={150 * k} />
-        <g transform={at(FORK.ends.down.x + 70, FORK.ends.down.y + 70, 0.62)}>
+        <g transform={at(...FORK.pond)}>
           <Pond />
         </g>
       </Zone>
-      <g transform={at(140, 690, 0.8)}>
+      <g transform={at(...FORK.bush)}>
         <Bush />
       </g>
       <Mover key={`${s.i}`} x={X(pos.x)} y={Y(pos.y) + 40 * k} k={0.95 * k} motion={motion}>
@@ -728,20 +780,47 @@ function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { bo
 
 // ───────────── 2. Съкровищата на катеричката (в / на / под) ─────────────
 
-/** Гъбата и кошничката стоят на земята (y = 660); местата са спрямо тях (без разтягане по височина). */
-const GROUND = 660
-const HIDE_AT: Record<Place, { x: number; y: number; zx: number; zy: number }> = {
-  on: { x: 470, y: 298, zx: 470, zy: 270 },
-  under: { x: 380, y: 610, zx: 400, zy: 585 },
-  in: { x: 820, y: 520, zx: 820, zy: 515 },
+/**
+ * Гъбата и кошничката стоят на земята; местата са спрямо земята на своя предмет (без разтягане по височина).
+ * Хоризонтално двете са на една линия (y = 660); на вертикален телефон кошничката е отпред, долу.
+ */
+const HIDE_GEO = {
+  land: {
+    mush: { x: 470, g: 660 },
+    basket: { x: 820, g: 660 },
+    at: {
+      on: { x: 470, y: 298, zx: 470, zy: 270 },
+      under: { x: 380, y: 610, zx: 400, zy: 585 },
+      in: { x: 820, y: 520, zx: 820, zy: 515 },
+    } as Record<Place, { x: number; y: number; zx: number; zy: number }>,
+    hedge: [-10, 330, 180, 90],
+    squirrel: [130, 680],
+  },
+  portrait: {
+    mush: { x: 300, g: 570 },
+    basket: { x: 445, g: 930 },
+    at: {
+      on: { x: 300, y: 208, zx: 300, zy: 180 },
+      under: { x: 210, y: 520, zx: 230, zy: 495 },
+      in: { x: 445, y: 790, zx: 445, zy: 785 },
+    } as Record<Place, { x: number; y: number; zx: number; zy: number }>,
+    hedge: [-10, 300, 150, 80],
+    squirrel: [115, 950],
+  },
 }
 const PLACE_LABEL: Record<Place, string> = { on: 'На гъбката', under: 'Под гъбката', in: 'В кошничката' }
 
 function HideScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: number; h: number } }) {
   const st = step as Extract<Step, { kind: 'hide' }>
-  const { X, Y, k, at } = layout(box)
-  // спрямо земята: предметите не се разтягат по височина
-  const G = (y: number) => Y(GROUND) + (y - GROUND) * k
+  const L = layout(box)
+  const { X, Y, k, at } = L
+  const H = L.P ? HIDE_GEO.portrait : HIDE_GEO.land
+  const HIDE_AT = H.at
+  // спрямо земята на предмета: предметите не се разтягат по височина
+  const G = (p: Place, y: number) => {
+    const g = p === 'in' ? H.basket.g : H.mush.g
+    return Y(g) + (y - g) * k
+  }
   const steps = s.missions[s.m].steps as Extract<Step, { kind: 'hide' }>[]
   const placed = steps.filter((_, i) => i < s.i || (i === s.i && s.phase !== 'play'))
   const done = s.phase !== 'play'
@@ -749,32 +828,32 @@ function HideScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: 
     placed
       .filter((x) => x.target === p)
       .map((x) => (
-        <g key={x.item} className="mz-placed" transform={`translate(${X(HIDE_AT[p].x)} ${G(HIDE_AT[p].y)}) scale(${0.9 * k})`}>
+        <g key={x.item} className="mz-placed" transform={`translate(${X(HIDE_AT[p].x)} ${G(p, HIDE_AT[p].y)}) scale(${0.9 * k})`}>
           <TreasureArt id={x.item} />
         </g>
       ))
   return (
     <g>
-      <Hedge x={X(-10)} y={Y(330)} w={180 * k} h={90 * k} />
-      <g transform={at(470, GROUND, 1.15)}>
+      <Hedge x={X(H.hedge[0])} y={Y(H.hedge[1])} w={H.hedge[2] * k} h={H.hedge[3] * k} />
+      <g transform={at(H.mush.x, H.mush.g, 1.15)}>
         <BigMushroom />
       </g>
-      <g transform={at(820, GROUND, 1.15)}>
+      <g transform={at(H.basket.x, H.basket.g, 1.15)}>
         <Basket front={false} />
       </g>
       {treasureAt('in')}
-      <g transform={at(820, GROUND, 1.15)}>
+      <g transform={at(H.basket.x, H.basket.g, 1.15)}>
         <Basket back={false} />
       </g>
       {treasureAt('on')}
       {treasureAt('under')}
       {(['on', 'under', 'in'] as Place[]).map((p) => (
-        <Zone key={p} id={p} label={PLACE_LABEL[p]} cx={X(HIDE_AT[p].zx)} cy={G(HIDE_AT[p].zy)} r={112 * k} hint={hint} shake={shake} tap={tap} disabled={done}>
+        <Zone key={p} id={p} label={PLACE_LABEL[p]} cx={X(HIDE_AT[p].zx)} cy={G(p, HIDE_AT[p].zy)} r={112 * k} hint={hint} shake={shake} tap={tap} disabled={done}>
           {/* меко „местенце“ — показва къде може да се сложи съкровището */}
-          {!done && !placed.some((x) => x.target === p) && <ellipse className="mz-spot" cx={X(HIDE_AT[p].x)} cy={G(HIDE_AT[p].y + 18)} rx={58 * k} ry={22 * k} />}
+          {!done && !placed.some((x) => x.target === p) && <ellipse className="mz-spot" cx={X(HIDE_AT[p].x)} cy={G(p, HIDE_AT[p].y + 18)} rx={58 * k} ry={22 * k} />}
         </Zone>
       ))}
-      <g transform={at(130, 680)}>
+      <g transform={at(H.squirrel[0], H.squirrel[1])} data-bubble-avoid={L.P || undefined}>
         <Squirrel>
           {!done && (
             <g className="mz-held">
@@ -789,12 +868,26 @@ function HideScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: 
 
 // ───────────── 3. Пиленцата у дома (вътре / вън) ─────────────
 
-const PEN = { x: 560, y: 470, rx: 290, ry: 140 }
-const CHICK_OUT: Record<ChickId, { x: number; y: number }> = { c1: { x: 110, y: 640 }, c2: { x: 150, y: 300 }, c3: { x: 930, y: 660 } }
-const CHICK_IN: Record<ChickId, { x: number; y: number }> = { c1: { x: 360, y: 470 }, c2: { x: 560, y: 520 }, c3: { x: 760, y: 460 } }
+const CHICKS_GEO = {
+  land: {
+    pen: { x: 560, y: 470, rx: 290, ry: 140 },
+    out: { c1: { x: 110, y: 640 }, c2: { x: 150, y: 300 }, c3: { x: 930, y: 660 } } as Record<ChickId, Pt>,
+    in: { c1: { x: 360, y: 470 }, c2: { x: 560, y: 520 }, c3: { x: 760, y: 460 } } as Record<ChickId, Pt>,
+    coop: 830,
+  },
+  portrait: {
+    pen: { x: 300, y: 640, rx: 270, ry: 140 },
+    out: { c1: { x: 95, y: 950 }, c2: { x: 110, y: 360 }, c3: { x: 505, y: 955 } } as Record<ChickId, Pt>,
+    in: { c1: { x: 110, y: 625 }, c2: { x: 300, y: 695 }, c3: { x: 490, y: 615 } } as Record<ChickId, Pt>,
+    coop: 455,
+  },
+}
 
 function ChicksScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: { w: number; h: number } }) {
-  const { X, Y, k, at } = layout(box)
+  const L = layout(box)
+  const { X, Y, k, at } = L
+  const C = L.P ? CHICKS_GEO.portrait : CHICKS_GEO.land
+  const PEN = C.pen
   // вътре в оградката — спрямо центъра ѝ (оградката не се разтяга по височина)
   const P = (p: { x: number; y: number }, isIn: boolean) => ({ x: X(p.x), y: isIn ? Y(PEN.y) + (p.y - PEN.y) * k : Y(p.y) })
   const inside = chicksInside(s)
@@ -804,7 +897,7 @@ function ChicksScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { 
   // местата отвън са встрани от оградата и предната ограда не ги закрива
   const chick = (c: ChickId) => {
     const isIn = inside.includes(c)
-    const p = P(isIn ? CHICK_IN[c] : CHICK_OUT[c], isIn)
+    const p = P(isIn ? C.in[c] : C.out[c], isIn)
     const label = isIn ? 'Пиленце вътре в оградката' : 'Пиленце вън от оградката'
     return (
       <Zone key={c} id={c} label={label} cx={p.x} cy={p.y - 45 * k} r={98 * k} hint={outsideHint && !isIn ? c : hint} shake={shake} tap={tap} disabled={done}>
@@ -816,7 +909,7 @@ function ChicksScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { 
   }
   return (
     <g data-inside={inside.join(',')} data-kind={step.kind}>
-      <g transform={`translate(${X(830)} ${Y(PEN.y) - 140 * k}) scale(${0.85 * k})`}>
+      <g transform={`translate(${X(C.coop)} ${Y(PEN.y) - PEN.ry * k}) scale(${0.85 * k})`}>
         <Coop />
       </g>
       <g transform={at(PEN.x, PEN.y)}>
@@ -833,10 +926,19 @@ function ChicksScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { 
 
 // ───────────── 4. Камъчетата в поточето (близо / далече) ─────────────
 
+const STONES_GEO = {
+  land: { stream: [95, 610], bushes: [[70, 690, 0.8], [930, 80, 0.7]] as Place3[], frog: [900, 680, 0.7] as Place3 },
+  portrait: { stream: [95, 610].map((y) => stonePortrait({ x: 0, y }).y), bushes: [[60, 985, 0.7], [540, 200, 0.6]] as Place3[], frog: [540, 985, 0.7] as Place3 },
+}
+
 function StonesScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: { w: number; h: number } }) {
-  const { X, Y, k, at } = layout(box)
+  const L0 = layout(box)
+  const { X, Y, k, at } = L0
+  const SG = L0.P ? STONES_GEO.portrait : STONES_GEO.land
   const steps = s.missions[s.m].steps as Extract<Step, { kind: 'stone' }>[]
-  const lay = stonesLayout(steps)
+  // на вертикален телефон местата се пренасят в полето 600×1000 (подредбата е същата)
+  const map = (p: Pt) => (L0.P ? stonePortrait(p) : p)
+  const lay = stonesLayout(steps).map((l) => ({ bunny: map(l.bunny), near: map(l.near), far: map(l.far), after: map(l.after) }))
   const L = lay[s.i]
   const done = s.phase !== 'play'
   const st = step as Extract<Step, { kind: 'stone' }>
@@ -846,13 +948,12 @@ function StonesScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { 
   return (
     <g>
       {/* поточето е през цялата ширина */}
-      <Stream x={-60} y={Y(95)} w={box.w + 120} h={Y(610) - Y(95)} />
-      <g transform={at(70, 690, 0.8)}>
-        <Bush />
-      </g>
-      <g transform={at(930, 80, 0.7)}>
-        <Bush />
-      </g>
+      <Stream x={-60} y={Y(SG.stream[0])} w={box.w + 120} h={Y(SG.stream[1]) - Y(SG.stream[0])} />
+      {SG.bushes.map((b, i) => (
+        <g key={i} transform={at(...b)}>
+          <Bush />
+        </g>
+      ))}
       {used.map((p, i) => (
         <g key={i} transform={at(p.x, p.y)}>
           <Stone />
@@ -874,7 +975,7 @@ function StonesScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { 
         )
       })}
       {!finalStep && (
-        <g transform={at(900, 680, 0.7)} aria-hidden="true">
+        <g transform={at(...SG.frog)} aria-hidden="true">
           <Frog />
         </g>
       )}
@@ -890,10 +991,40 @@ function StonesScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { 
 const DOOR = { x: 560, y: 680 }
 const SOCKET: Record<Vertical, { x: number; y: number }> = { up: { x: 560, y: 110 }, down: { x: 560, y: 560 } }
 
+/**
+ * На вертикален телефон (поле 600×1000): вратата с гнездата е вдясно, умалена 0,9 (вътре — същите координати);
+ * зайчето с балончето е вляво долу, жабчето и пиленцето — над тях.
+ */
+const DOOR_GEO = {
+  land: {
+    door: undefined as string | undefined,
+    hedges: [
+      [-200, 250, 520, 130],
+      [800, 250, 520, 130],
+      [-200, 420, 480, 130],
+      [840, 420, 480, 130],
+    ],
+    bunny: 'translate(180 690) scale(0.9)',
+    bubble: 'translate(180 395)',
+    frog: 'translate(900 690) scale(0.75)',
+    chick: 'translate(990 690) scale(0.8)',
+  },
+  portrait: {
+    door: 'translate(375 935) scale(0.9) translate(-560 -680)' as string | undefined,
+    hedges: [[-150, 330, 320, 120]],
+    bunny: 'translate(85 975) scale(0.9)',
+    bubble: 'translate(85 680)',
+    frog: 'translate(55 590) scale(0.75)',
+    chick: 'translate(125 470) scale(0.8)',
+  },
+}
+
 function DoorScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: number; h: number } }) {
   // вратата и гнездата са едно цяло — не се разтягат; стъпват на земята долу
-  const { X, Y, k } = layout(box)
-  const t = `translate(${X(0)} ${Y(DH) - DH * k}) scale(${k})`
+  const L = layout(box)
+  const { X, Y, k } = L
+  const D = L.P ? DOOR_GEO.portrait : DOOR_GEO.land
+  const t = L.P ? `translate(${X(0)} ${box.h - PH * k}) scale(${k})` : `translate(${X(0)} ${Y(DH) - DH * k}) scale(${k})`
   const st = step as Extract<Step, { kind: 'door' }>
   const steps = s.missions[s.m].steps as Extract<Step, { kind: 'door' }>[]
   // подаръците по местата: последният поставен горе и долу
@@ -907,31 +1038,32 @@ function DoorScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: 
   const open = s.phase === 'mission'
   return (
     <g transform={t}>
-      <Hedge x={-200} y={250} w={520} h={130} />
-      <Hedge x={800} y={250} w={520} h={130} />
-      <Hedge x={-200} y={420} w={480} h={130} />
-      <Hedge x={840} y={420} w={480} h={130} />
-      <g transform={`translate(${DOOR.x} ${DOOR.y}) scale(1)`}>
-        <MagicDoor open={open} stars={s.stars} />
-      </g>
-      {(['up', 'down'] as Vertical[]).map((v) => (
-        <Zone key={v} id={v} label={v === 'up' ? 'Горе, над вратата' : 'Долу, на вратата'} cx={SOCKET[v].x} cy={SOCKET[v].y} r={112} hint={hint} shake={shake} tap={tap} disabled={done}>
-          <g transform={`translate(${SOCKET[v].x} ${SOCKET[v].y})`}>
-            <Socket lit={hint === v}>
-              {placed[v] && (
-                <g className="mz-placed" key={placed[v]}>
-                  <GiftArt id={placed[v]!} />
-                </g>
-              )}
-            </Socket>
-          </g>
-        </Zone>
+      {D.hedges.map(([x, y, w, h], i) => (
+        <Hedge key={i} x={x} y={y} w={w} h={h} />
       ))}
-      <g transform="translate(180 690) scale(0.9)">
+      <g transform={D.door}>
+        <g transform={`translate(${DOOR.x} ${DOOR.y}) scale(1)`}>
+          <MagicDoor open={open} stars={s.stars} />
+        </g>
+        {(['up', 'down'] as Vertical[]).map((v) => (
+          <Zone key={v} id={v} label={v === 'up' ? 'Горе, над вратата' : 'Долу, на вратата'} cx={SOCKET[v].x} cy={SOCKET[v].y} r={112} hint={hint} shake={shake} tap={tap} disabled={done}>
+            <g transform={`translate(${SOCKET[v].x} ${SOCKET[v].y})`}>
+              <Socket lit={hint === v}>
+                {placed[v] && (
+                  <g className="mz-placed" key={placed[v]}>
+                    <GiftArt id={placed[v]!} />
+                  </g>
+                )}
+              </Socket>
+            </g>
+          </Zone>
+        ))}
+      </g>
+      <g transform={D.bunny} data-bubble-avoid={L.P || undefined}>
         <Bunny mood={done ? 'happy' : 'idle'} />
       </g>
       {holding && (
-        <g className="mz-bubble" transform="translate(180 395)">
+        <g className="mz-bubble" transform={D.bubble}>
           <circle r="66" fill="#fffdf6" stroke="#4a3560" strokeWidth="5" />
           <path d="M-14 60 L 0 92 L 14 60" fill="#fffdf6" stroke="#4a3560" strokeWidth="5" strokeLinejoin="round" />
           <g key={holding}>
@@ -939,10 +1071,10 @@ function DoorScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: 
           </g>
         </g>
       )}
-      <g transform="translate(900 690) scale(0.75)">
+      <g transform={D.frog}>
         <Frog happy={open} />
       </g>
-      <g transform="translate(990 690) scale(0.8)">
+      <g transform={D.chick}>
         <Chick happy={open} />
       </g>
     </g>
