@@ -197,6 +197,8 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   const region = useRef<HTMLDivElement>(null)
   const isDone = s.phase === 'done'
   const [box, setBox] = useState({ w: 0, h: 0 })
+  // телефон вертикално — по формата на целия екран, не на мястото за сцената (то се мени с дължината на указанието)
+  const sceneBox = { ...box, phone: isPhonePortrait({ w, h }) }
   useLayoutEffect(() => {
     const el = region.current
     if (!el) return
@@ -424,7 +426,7 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
             style={reveal ? ({ '--rx': `${reveal.x * 100}%`, '--ry': `${reveal.y * 100}%` } as CSSProperties) : undefined}
             viewBox={`0 0 ${box.w} ${box.h}`} width={box.w} height={box.h} role="group" aria-label={MISSION_TITLE[mission.id]}>
             <MazeDefs />
-            <Scene key={mission.id} {...sceneProps} box={box} />
+            <Scene key={mission.id} {...sceneProps} box={sceneBox} />
           </svg>
         )}
         {journey && box.w > 0 && box.h > 0 && (
@@ -576,8 +578,11 @@ function SceneBubble({ region, box, mood, kind, text }: { region: RefObject<HTML
  * Подредба на проектното поле DW×DH (на телефон вертикално — PW×PH, вж. portrait.ts) в наличното място: рисунките се мащабират равномерно (k),
  * а на висок (вертикален) екран местата се разпределят и по височината (ky ≥ k), за да няма празно поле.
  */
-function layout(box: { w: number; h: number }) {
-  if (isPhonePortrait(box)) {
+/** Мястото за сцената; phone — телефон във вертикално положение (решава се по целия екран, вж. portrait.ts). */
+type SceneBox = { w: number; h: number; phone?: boolean }
+
+function layout(box: SceneBox) {
+  if (box.phone) {
     // телефон вертикално: поле 600×1000 по цялата ширина; местата се разпределят и по височината (до ×1,2)
     const k = Math.min(box.w / PW, box.h / PH)
     const ky = Math.min(box.h / PH, k * 1.2)
@@ -712,7 +717,7 @@ const FORK_GEO = {
   },
 }
 
-function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: { w: number; h: number } }) {
+function ForkScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: SceneBox }) {
   const st = step as Extract<Step, { kind: 'fork' }>
   const L = layout(box)
   const { X, Y, k, at } = L
@@ -810,7 +815,7 @@ const HIDE_GEO = {
 }
 const PLACE_LABEL: Record<Place, string> = { on: 'На гъбката', under: 'Под гъбката', in: 'В кошничката' }
 
-function HideScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: number; h: number } }) {
+function HideScene({ s, step, hint, shake, tap, box }: SceneProps & { box: SceneBox }) {
   const st = step as Extract<Step, { kind: 'hide' }>
   const L = layout(box)
   const { X, Y, k, at } = L
@@ -883,7 +888,7 @@ const CHICKS_GEO = {
   },
 }
 
-function ChicksScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: { w: number; h: number } }) {
+function ChicksScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: SceneBox }) {
   const L = layout(box)
   const { X, Y, k, at } = L
   const C = L.P ? CHICKS_GEO.portrait : CHICKS_GEO.land
@@ -931,7 +936,7 @@ const STONES_GEO = {
   portrait: { stream: [95, 610].map((y) => stonePortrait({ x: 0, y }).y), bushes: [[60, 985, 0.7], [540, 200, 0.6]] as Place3[], frog: [540, 985, 0.7] as Place3 },
 }
 
-function StonesScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: { w: number; h: number } }) {
+function StonesScene({ s, step, hint, shake, tap, motion, box }: SceneProps & { box: SceneBox }) {
   const L0 = layout(box)
   const { X, Y, k, at } = L0
   const SG = L0.P ? STONES_GEO.portrait : STONES_GEO.land
@@ -1019,7 +1024,7 @@ const DOOR_GEO = {
   },
 }
 
-function DoorScene({ s, step, hint, shake, tap, box }: SceneProps & { box: { w: number; h: number } }) {
+function DoorScene({ s, step, hint, shake, tap, box }: SceneProps & { box: SceneBox }) {
   // вратата и гнездата са едно цяло — не се разтягат; стъпват на земята долу
   const L = layout(box)
   const { X, Y, k } = L
@@ -1156,75 +1161,17 @@ function VectorBackdrop({ w, h, portrait }: { w: number; h: number; portrait: bo
 function Finale({ seed, motion, groupMode, onRestart, onExit, onMap, w, h, portrait }: { seed: number; motion: boolean; groupMode: boolean; onRestart: () => void; onExit: () => void; onMap: () => void; w: number; h: number; portrait: boolean }) {
   const mood: BunnyMood = 'happy'
   const hasArt = useArt().has('bg-garden')
+  // телефон във вертикално положение: отделна, по-висока композиция на градината (зайчето е главният герой)
+  const tall = isPhonePortrait({ w, h })
   return (
-    <div className={`screen kg-screen kg-maze is-done ${motion ? '' : 'is-still'} ${hasArt ? 'has-art' : ''}`} data-phase="done">
+    <div className={`screen kg-screen kg-maze is-done ${motion ? '' : 'is-still'} ${hasArt ? 'has-art' : ''} ${tall ? 'is-tall' : ''}`} data-phase="done">
       <MazeBackdrop w={w} h={h} portrait={portrait} light={5} />
       <Confetti seed={seed + 31} />
       <KgTopBar onBack={onExit} backLabel="Към атракцията" />
       <div className="kg-done">
         <h1 className="kg-done__title">{groupMode ? 'Браво, деца!' : 'Ура!'} Зайчето е у дома!</h1>
         {/* градината оживява постепенно: домът, лехата с морковчета, цветята, приятелите, Златното морковче */}
-        <svg className="kg-maze__garden" viewBox="0 0 1200 560" aria-label="Домът на зайчето в Морковената градина: празник със Златното морковче" role="img" data-garden="1">
-          <MazeDefs />
-          <ellipse cx="600" cy="520" rx="590" ry="66" fill="#a9e0a6" stroke="#4a3560" strokeWidth="5" />
-          <g transform="translate(205 515) scale(0.95)">
-            <g className="mz-fin-rise">
-              <BunnyHome lit />
-            </g>
-          </g>
-          <ellipse cx="960" cy="452" rx="210" ry="34" fill="#b98656" stroke="#4a3560" strokeWidth="5" />
-          {[790, 850, 910, 970, 1030, 1090, 1140].map((x, i) => (
-            <g key={x} transform={`translate(${x} ${470 - (i % 2) * 14})`}>
-              <g className="mz-grow" style={{ animationDelay: `${0.35 + i * 0.1}s` } as CSSProperties}>
-                <Carrot s={0.62} />
-              </g>
-            </g>
-          ))}
-          {[40, 395, 575, 735, 1170].map((x, i) => (
-            <g key={x} transform={`translate(${x} ${545 - (i % 2) * 8})`}>
-              <g className="mz-grow" style={{ animationDelay: `${0.9 + i * 0.12}s` } as CSSProperties}>
-                <Flower color={['#ff7aa8', '#ffd25e', '#9b8cff', '#ff9f43', '#5ec8f0'][i]} s={1.3} />
-              </g>
-            </g>
-          ))}
-          <g transform="translate(660 505)">
-            <g className="mz-fin-pop" style={{ animationDelay: '1.2s' } as CSSProperties}>
-              <Cake />
-            </g>
-          </g>
-          <g transform="translate(470 522) scale(0.62)">
-            <g className="mz-fin-pop" style={{ animationDelay: '1.4s' } as CSSProperties}>
-              <Chick happy />
-            </g>
-          </g>
-          <g transform="translate(860 530) scale(0.8)">
-            <g className="mz-fin-pop" style={{ animationDelay: '1.55s' } as CSSProperties}>
-              <Squirrel />
-            </g>
-          </g>
-          <g transform="translate(1035 538) scale(0.7)">
-            <g className="mz-fin-pop" style={{ animationDelay: '1.7s' } as CSSProperties}>
-              <Frog happy />
-            </g>
-          </g>
-          <g transform="translate(345 530)">
-            <g className="mz-joy is-loop">
-              <Bunny mood={mood} />
-            </g>
-          </g>
-          <g transform="translate(640 165) scale(0.8)">
-            <g className="mz-fin-drop" style={{ animationDelay: '1.9s' } as CSSProperties}>
-              <GoldenCarrotBadge />
-            </g>
-          </g>
-          {Array.from({ length: 5 }, (_, i) => (
-            <g key={i} transform={`translate(${430 + i * 105} ${i % 2 ? 322 : 296}) scale(0.5)`}>
-              <g className="mz-fin-star" style={{ animationDelay: `${2.2 + i * 0.12}s` } as CSSProperties}>
-                <GiftArt id="star" />
-              </g>
-            </g>
-          ))}
-        </svg>
+        <FinaleGarden tall={tall} mood={mood} />
         <p className="kg-done__text">{mazeText(groupMode ? 'maze.end.group' : 'maze.end')}</p>
         <div className="kg-done__buttons">
           <GameButton color="green" size="lg" icon="refresh" onClick={onRestart}>
@@ -1239,5 +1186,112 @@ function Finale({ seed, motion, groupMode, onRestart, onExit, onMap, w, h, portr
         </div>
       </div>
     </div>
+  )
+}
+
+/**
+ * Градината на финала: домът, лехата, цветята, тортата, приятелите, зайчето, Златното морковче и петте звездички.
+ * Широк екран — досегашната композиция 1200×560. Телефон вертикално — 600×620: зайчето отпред в средата,
+ * приятелите около него, домът отзад, наградата и звездичките отгоре. Последователността на появяване е една и съща.
+ */
+const FINALE_GEO = {
+  wide: {
+    viewBox: '0 0 1200 560',
+    ground: [600, 520, 590, 66],
+    home: 'translate(205 515) scale(0.95)',
+    bed: [960, 452, 210, 34],
+    carrots: { xs: [790, 850, 910, 970, 1030, 1090, 1140], y: 470, dy: 14, s: 0.62 },
+    flowers: { at: [40, 395, 575, 735, 1170].map((x, i) => [x, 545 - (i % 2) * 8]), s: 1.3 },
+    cake: 'translate(660 505)',
+    chick: 'translate(470 522) scale(0.62)',
+    squirrel: 'translate(860 530) scale(0.8)',
+    frog: 'translate(1035 538) scale(0.7)',
+    bunny: 'translate(345 530)',
+    badge: 'translate(640 165) scale(0.8)',
+    stars: { at: Array.from({ length: 5 }, (_, i) => [430 + i * 105, i % 2 ? 322 : 296]), s: 0.5 },
+  },
+  tall: {
+    viewBox: '0 8 600 604',
+    ground: [300, 568, 296, 42],
+    home: 'translate(190 400) scale(0.72)',
+    bed: [445, 405, 125, 22],
+    carrots: { xs: [345, 385, 425, 465, 505, 545], y: 418, dy: 10, s: 0.5 },
+    flowers: { at: [[30, 596], [205, 602], [395, 600], [575, 596]], s: 1.1 },
+    cake: 'translate(125 595) scale(0.58)',
+    chick: 'translate(75 465) scale(0.95)',
+    squirrel: 'translate(455 598) scale(0.9)',
+    frog: 'translate(548 470) scale(0.85)',
+    bunny: 'translate(300 600) scale(1.1)',
+    badge: 'translate(300 92) scale(0.72)',
+    stars: { at: [[105, 214], [200, 200], [300, 236], [400, 200], [495, 214]], s: 0.55 },
+  },
+}
+
+function FinaleGarden({ tall, mood }: { tall: boolean; mood: BunnyMood }) {
+  const G = tall ? FINALE_GEO.tall : FINALE_GEO.wide
+  const [gx, gy, grx, gry] = G.ground
+  const [bx, by, brx, bry] = G.bed
+  return (
+    <svg className="kg-maze__garden" viewBox={G.viewBox} aria-label="Домът на зайчето в Морковената градина: празник със Златното морковче" role="img" data-garden="1" data-layout={tall ? 'tall' : 'wide'}>
+      <MazeDefs />
+      <ellipse cx={gx} cy={gy} rx={grx} ry={gry} fill="#a9e0a6" stroke="#4a3560" strokeWidth="5" />
+      <g transform={G.home}>
+        <g className="mz-fin-rise">
+          <BunnyHome lit />
+        </g>
+      </g>
+      <ellipse cx={bx} cy={by} rx={brx} ry={bry} fill="#b98656" stroke="#4a3560" strokeWidth="5" />
+      {G.carrots.xs.map((x, i) => (
+        <g key={x} transform={`translate(${x} ${G.carrots.y - (i % 2) * G.carrots.dy})`}>
+          <g className="mz-grow" style={{ animationDelay: `${0.35 + i * 0.1}s` } as CSSProperties}>
+            <Carrot s={G.carrots.s} />
+          </g>
+        </g>
+      ))}
+      {G.flowers.at.map(([x, y], i) => (
+        <g key={x} transform={`translate(${x} ${y})`}>
+          <g className="mz-grow" style={{ animationDelay: `${0.9 + i * 0.12}s` } as CSSProperties}>
+            <Flower color={['#ff7aa8', '#ffd25e', '#9b8cff', '#ff9f43', '#5ec8f0'][i]} s={G.flowers.s} />
+          </g>
+        </g>
+      ))}
+      <g transform={G.cake}>
+        <g className="mz-fin-pop" style={{ animationDelay: '1.2s' } as CSSProperties}>
+          <Cake />
+        </g>
+      </g>
+      <g transform={G.chick}>
+        <g className="mz-fin-pop" style={{ animationDelay: '1.4s' } as CSSProperties}>
+          <Chick happy />
+        </g>
+      </g>
+      <g transform={G.squirrel}>
+        <g className="mz-fin-pop" style={{ animationDelay: '1.55s' } as CSSProperties}>
+          <Squirrel />
+        </g>
+      </g>
+      <g transform={G.frog}>
+        <g className="mz-fin-pop" style={{ animationDelay: '1.7s' } as CSSProperties}>
+          <Frog happy />
+        </g>
+      </g>
+      <g transform={G.bunny}>
+        <g className="mz-joy is-loop">
+          <Bunny mood={mood} />
+        </g>
+      </g>
+      <g transform={G.badge}>
+        <g className="mz-fin-drop" style={{ animationDelay: '1.9s' } as CSSProperties}>
+          <GoldenCarrotBadge />
+        </g>
+      </g>
+      {G.stars.at.map(([x, y], i) => (
+        <g key={i} transform={`translate(${x} ${y}) scale(${G.stars.s})`}>
+          <g className="mz-fin-star" style={{ animationDelay: `${2.2 + i * 0.12}s` } as CSSProperties}>
+            <GiftArt id="star" />
+          </g>
+        </g>
+      ))}
+    </svg>
   )
 }

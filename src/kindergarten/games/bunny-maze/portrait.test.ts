@@ -5,16 +5,11 @@ import { PW, isPhonePortrait, stonePortrait } from './portrait'
 const dist = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y)
 
 describe('„Приказният лабиринт“ на вертикален телефон', () => {
-  it('отделното поле е само за телефон вертикално (мястото за сцената)', () => {
-    // размери в единиците на сцената (както ги мери играта)
-    expect(isPhonePortrait({ w: 876, h: 1667 })).toBe(true) // 390×844
-    expect(isPhonePortrait({ w: 876, h: 1707 })).toBe(true) // 360×800
-    expect(isPhonePortrait({ w: 876, h: 1318 })).toBe(true) // 375×667
-    expect(isPhonePortrait({ w: 876, h: 982 })).toBe(false) // таблет вертикално 768×1024
-    expect(isPhonePortrait({ w: 876, h: 1222 })).toBe(false) // малък таблет 600×960
-    expect(isPhonePortrait({ w: 1004, h: 600 })).toBe(false) // таблет хоризонтално
-    expect(isPhonePortrait({ w: 834, h: 270 })).toBe(false) // телефон хоризонтално
-    expect(isPhonePortrait({ w: 1260, h: 640 })).toBe(false) // компютър
+  it('отделното поле е само за телефон вертикално (по размерите на сцената на играта)', () => {
+    // сцената на играта: вертикално ширина 900, височина 1200–2000 според екрана (core/Stage.tsx)
+    const stage = (vw: number, vh: number) => (vh > vw ? { w: 900, h: Math.round(Math.min(2000, Math.max(1200, 900 / (vw / vh)))) } : { w: Math.round(Math.min(2100, Math.max(1200, 900 * (vw / vh)))), h: 900 })
+    for (const [vw, vh] of [[390, 844], [360, 800], [375, 667], [412, 915], [430, 932]]) expect(isPhonePortrait(stage(vw, vh)), `${vw}×${vh}`).toBe(true)
+    for (const [vw, vh] of [[768, 1024], [800, 1280], [600, 960], [1024, 768], [844, 390], [1280, 800], [1920, 1080]]) expect(isPhonePortrait(stage(vw, vh)), `${vw}×${vh}`).toBe(false)
   })
 
   it('мисия 4: при всички варианти „далечното“ е ясно по-далече, зоните не се застъпват и всичко е в полето', () => {

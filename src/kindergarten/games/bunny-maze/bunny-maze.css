@@ -585,6 +585,31 @@
   max-height: 54%;
 }
 
+/* телефон вертикално: заглавие → градината (по цялата ширина) → поздравлението → бутоните; ако не се побира — превъртане надолу */
+.kg-maze.is-done.is-tall .kg-done {
+  justify-content: flex-start;
+  gap: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 12px;
+}
+
+.kg-maze.is-done.is-tall .kg-done > * {
+  flex: 0 0 auto;
+}
+
+.kg-maze.is-done.is-tall .kg-maze__garden {
+  width: 100%;
+  max-height: none;
+}
+
+.kg-maze.is-done.is-tall .kg-done__buttons {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
 .mz-fin-star {
   animation: mz-appear 0.5s ease-out backwards;
 }
