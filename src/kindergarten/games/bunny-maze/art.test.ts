@@ -20,10 +20,10 @@ function webpSize(buf: Buffer): [number, number] {
 describe('„Приказният лабиринт“: художествени ресурси', () => {
   const manifest = JSON.parse(readFileSync(join(DIR, 'manifest.json'), 'utf8')) as { files: Record<string, string> }
 
-  it('каталогът е без повторения: 25 основни + 6 допълнителни', () => {
+  it('каталогът е без повторения: 26 основни (с дома) + 6 допълнителни', () => {
     const names = MAZE_ART.map((r) => r.name)
     expect(new Set(names).size).toBe(names.length)
-    expect(MAZE_ART.filter((r) => r.core).length).toBe(25)
+    expect(MAZE_ART.filter((r) => r.core).length).toBe(26)
     expect(MAZE_ART.filter((r) => !r.core).length).toBe(6)
   })
 
