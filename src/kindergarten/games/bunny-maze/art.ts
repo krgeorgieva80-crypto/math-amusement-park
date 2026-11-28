@@ -14,6 +14,8 @@ export interface MazeArtResource {
   note: string
   /** основен (лист 1–7) или допълнителен (лист 8) */
   core: boolean
+  /** рамката на вратата: прозрачният отвор като дял от изображението (ляво, дясно, горе, долу); мери се от prep.py */
+  opening?: { left: number; right: number; top: number; bottom: number }
 }
 
 export const MAZE_ART: MazeArtResource[] = [
@@ -35,16 +37,21 @@ export const MAZE_ART: MazeArtResource[] = [
   { name: 'squirrel', aspect: 1.2219, transparent: true, core: true, note: 'катеричка (мисия 2, финал); съкровището е в лапичките' },
   { name: 'gift-star', aspect: 1, transparent: true, core: true, note: 'златната звезда: напредъкът, вратата, картата, финала, подаръкът в мисия 5' },
   { name: 'home', aspect: 1.1077, transparent: true, core: true, note: 'приказният дом (финал, краят на картата на пътешествието)' },
-  ...['door-frame', 'door-leaf', 'key', 'acorn', 'cone', 'gift-flower', 'gift-heart', 'gift-leaf'].map((name) => ({
+  // вратата: рамката и двукрилата вратичка (разрязва се по средата на две крила); отворът се мери при обработката
+  { name: 'door-frame', aspect: 0, transparent: true, core: true, note: 'рамката на вратата (мисия 5); отворът е прозрачен', opening: { left: 0.17, right: 0.83, top: 0.16, bottom: 1 } },
+  { name: 'door-leaf', aspect: 0, transparent: true, core: true, note: 'двукрилата вратичка — пасва в отвора на рамката' },
+  ...['key', 'acorn', 'cone', 'gift-flower', 'gift-heart', 'gift-leaf'].map((name) => ({
     name,
     aspect: 0,
     transparent: true,
     core: true,
-    note: 'предстои (сега — векторна рисунка)',
+    note: 'съкровище / подарък: предстои (сега — векторна рисунка)',
   })),
   ...['carrot', 'golden-carrot', 'cake', 'flower', 'home-small', 'sparkle'].map((name) => ({ name, aspect: 0, transparent: true, core: false, note: 'допълнителен (сега — векторна рисунка)' })),
 ]
 
 const ASPECT = new Map(MAZE_ART.map((r) => [r.name, r.aspect]))
+/** Отворът на рамката на вратата (дял от изображението). */
+export const doorOpening = () => MAZE_ART.find((r) => r.name === 'door-frame')!.opening!
 /** Съотношение ширина/височина на готовия файл. */
 export const artAspect = (name: string) => ASPECT.get(name) || 1

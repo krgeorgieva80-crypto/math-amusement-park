@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { MAZE_ART } from './art'
+import { MAZE_ART, doorOpening } from './art'
 
 const DIR = join(process.cwd(), 'public/kg/art/bunny-maze')
 
@@ -38,5 +38,15 @@ describe('„Приказният лабиринт“: художествени 
 
   it('готовите ресурси (с размер в каталога) са в манифеста', () => {
     for (const r of MAZE_ART.filter((x) => x.aspect > 0)) expect(manifest.files[r.name], r.name).toBeTruthy()
+  })
+
+  it('отворът на рамката на вратата е смислен (вратичката и гнездата застават на същите места)', () => {
+    const o = doorOpening()
+    expect(o.left).toBeGreaterThan(0)
+    expect(o.right).toBeLessThan(1)
+    expect(o.right - o.left).toBeGreaterThan(0.4)
+    expect(o.top).toBeGreaterThan(0)
+    expect(o.bottom).toBeLessThanOrEqual(1)
+    expect(o.bottom - o.top).toBeGreaterThan(0.5)
   })
 })

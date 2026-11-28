@@ -91,16 +91,54 @@ for n, t, k in [('hill-tree', 640, 'h'), ('pond', 720, 'w'), ('mushroom', 720, '
     save(n, anchored(a), t, k)
     report[n]['cleaned'] = {'haze_px': haze, 'specks': specks}
 
-# етап 9: звездата — центрирана (не стъпва на земята), квадратно платно около предмета
-if want('gift-star'):
-    a, haze, specks = clean(load('gift-star'))
+# центрираните предмети (не стъпват на земята): квадратно платно около предмета
+def centered(name, size=256):
+    a, haze, specks = clean(load(name))
     x0, y0, x1, y1 = bbox(a[..., 3]); side = max(x1 - x0, y1 - y0) + 16
-    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
     out = np.zeros((side, side, 4), np.uint8)
-    sx, sy = cx - side // 2, cy - side // 2
-    out[max(0, -sy):, max(0, -sx):][: min(side, a.shape[0] - max(sy, 0)), : min(side, a.shape[1] - max(sx, 0))] = a[max(sy, 0):sy + side, max(sx, 0):sx + side]
-    save('gift-star', out, 256, 'w')
-    report['gift-star']['cleaned'] = {'haze_px': haze, 'specks': specks}
+    ox, oy = (side - (x1 - x0)) // 2, (side - (y1 - y0)) // 2
+    out[oy:oy + y1 - y0, ox:ox + x1 - x0] = a[y0:y1, x0:x1]
+    save(name, out, size, 'w')
+    report[name]['cleaned'] = {'haze_px': haze, 'specks': specks}
+
+def has(n):
+    return os.path.exists(f'{SRC}/{n}.png') or os.path.exists(f'{SRC}/{n}.webp')
+
+# етап 9: звездата; следващите: съкровищата и подаръците
+for n in ['gift-star', 'key', 'acorn', 'cone', 'gift-flower', 'gift-heart', 'gift-leaf']:
+    if want(n) and has(n):
+        centered(n)
+
+# вратата: рамката и вратичката — изрязани плътно по предмета; отворът на рамката се мери (за art.ts → opening)
+def tight(name, target, key):
+    a, haze, specks = clean(load(name))
+    x0, y0, x1, y1 = bbox(a[..., 3])
+    a = a[y0:y1, x0:x1]
+    save(name, a, target, key)
+    report[name]['cleaned'] = {'haze_px': haze, 'specks': specks}
+    return a
+
+if want('door-frame') and has('door-frame'):
+    fr = tight('door-frame', 900, 'h')
+    al = fr[..., 3]; H, W = al.shape; cx = W // 2
+    col = al[:, cx] < 40
+    runs, start = [], None
+    for y in range(H + 1):
+        if y < H and col[y] and start is None: start = y
+        if (y == H or not col[y]) and start is not None: runs.append((start, y)); start = None
+    if runs:
+        top, bottom = max(runs, key=lambda r: r[1] - r[0])
+        row = al[top + int((bottom - top) * 0.75)] < 40
+        left = cx
+        while left > 0 and row[left - 1]: left -= 1
+        right = cx
+        while right < W - 1 and row[right + 1]: right += 1
+        report['door-frame']['opening'] = {'left': round(left / W, 4), 'right': round((right + 1) / W, 4), 'top': round(top / H, 4), 'bottom': round(bottom / H, 4)}
+    else:
+        report['door-frame']['opening'] = 'НЕ Е НАМЕРЕН прозрачен отвор'
+
+if want('door-leaf') and has('door-leaf'):
+    tight('door-leaf', 760, 'h')
 
 # етап 9: фонът на финала — залезната градина 16:9, без увеличаване
 if want('bg-home'):

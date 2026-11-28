@@ -8,7 +8,7 @@
 import { useId, type ReactNode } from 'react'
 import { useArt } from '../../art/sprites/Sprite'
 import { SvgSprite } from '../../art/sprites/SvgSprite'
-import { artAspect } from './art'
+import { artAspect, doorOpening } from './art'
 import type { Gift, Treasure } from './logic'
 
 const O = '#4a3560'
@@ -356,6 +356,9 @@ export function Squirrel({ children }: { children?: ReactNode }) {
 
 /** Съкровищата на катеричката (около 70 × 70, центрирани). */
 export function TreasureArt({ id }: { id: Treasure }) {
+  // рисуваното съкровище (ако е готово) — в същото поле 80 × 80, центрирано
+  const art = useArt()
+  if (art.has(id)) return <SvgSprite name={id} x={-40} y={-40} w={80} h={80} fit="xMidYMid meet" fallback={null} />
   if (id === 'key')
     return (
       <g transform="rotate(-30)">
@@ -540,6 +543,8 @@ export function GiftArt({ id }: { id: Gift }) {
   const art = useArt()
   // рисуваната звезда: общ ресурс за напредъка, вратата, картата, финала и подаръка в мисия 5
   if (id === 'star' && art.has('gift-star')) return <SvgSprite name="gift-star" x={-44} y={-44} w={88} h={88} fit="xMidYMid meet" fallback={null} />
+  // цветето, сърцето и листото — рисувани, ако са готови (същото поле като звездата)
+  if (id !== 'star' && art.has(`gift-${id}`)) return <SvgSprite name={`gift-${id}`} x={-42} y={-42} w={84} h={84} fit="xMidYMid meet" fallback={null} />
   if (id === 'star') return <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" fill="url(#mz-gold)" stroke={O} strokeWidth="4.5" strokeLinejoin="round" />
   if (id === 'heart') return <path d="M0 34 C -22 18 -36 6 -36 -12 C -36 -28 -22 -36 -12 -36 C -4 -36 0 -30 0 -24 C 0 -30 4 -36 12 -36 C 22 -36 36 -28 36 -12 C 36 6 22 18 0 34 Z" fill="#ff7a9a" stroke={O} strokeWidth="4.5" strokeLinejoin="round" />
   if (id === 'leaf')
@@ -560,7 +565,80 @@ export function GiftArt({ id }: { id: Gift }) {
 }
 
 /** Вълшебната врата в живия плет. Вратата е от y=-430 до 0, ширина 300. */
+/** Петте звездички на напредъка по крилата на вратата (рисуваната звезда, ако е готова). */
+function DoorStars({ stars }: { stars: number }) {
+  return (
+    <>
+      {Array.from({ length: 5 }, (_, i) => {
+        const a = Math.PI * (0.15 + (i * 0.7) / 4)
+        return (
+          <g key={i} transform={`translate(${-Math.cos(a) * 110} ${-300 - Math.sin(a) * 92}) scale(0.42)`} opacity={i < stars ? 1 : 0.35}>
+            {i < stars ? <GiftArt id="star" /> : <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" fill="#c9b6e6" stroke={O} strokeWidth="4.5" strokeLinejoin="round" />}
+          </g>
+        )
+      })}
+    </>
+  )
+}
+
+/** Градината отвъд вратата, когато се отвори: сияние и морковчета. */
+function DoorBeyond() {
+  return (
+    <g>
+      {[-80, 0, 80].map((x) => (
+        <g key={x} transform={`translate(${x} -40)`}>
+          <path d="M-12 0 L 0 50 L 12 0 Z" fill="#ff9f43" stroke={O} strokeWidth="3" />
+          <path d="M0 0 q -14 -24 -4 -34 q 4 14 4 34 q 4 -20 14 -30 q 2 14 -14 30" fill="#7ed957" stroke={O} strokeWidth="2.5" />
+        </g>
+      ))}
+    </g>
+  )
+}
+
+/**
+ * Рисуваната врата на слоеве (когато рамката и вратичката са готови):
+ * отворът (векторен: тъмен / светъл, сияние и морковчета отвъд) → двете крила (вратичката, разрязана по средата;
+ * отварят се със същата анимация) → рамката (с прозрачен отвор) → звездичките на напредъка.
+ * Отворът на рамката е точно там, където е векторният (ширина 300, долу на y = 0), затова гнездата и зоните не се местят.
+ */
+function MagicDoorArt({ open, stars }: { open: boolean; stars: number }) {
+  const id = useId()
+  const op = doorOpening()
+  const FW = 300 / (op.right - op.left)
+  const FH = FW / artAspect('door-frame')
+  const fx = -150 - op.left * FW
+  const fy = -op.bottom * FH
+  const top = fy + op.top * FH
+  // заоблен връх на отвора (полукръг, ако височината позволява)
+  const r = Math.min(150, -top / 2)
+  const hole = `M-150 0 V ${top + r} A 150 ${r} 0 0 1 150 ${top + r} V 0 Z`
+  const leaf = <SvgSprite name="door-leaf" x={-150} y={top} w={300} h={-top} fit="none" fallback={null} />
+  return (
+    <g className={`mz-door is-art ${open ? 'is-open' : ''}`}>
+      <path d={hole} fill={open ? '#fff3c4' : '#6b4a8a'} />
+      {open && <path d={hole} fill="url(#mz-glow)" />}
+      {open && <DoorBeyond />}
+      <clipPath id={`${id}-l`}>
+        <rect x={-150} y={top} width={150} height={-top} />
+      </clipPath>
+      <clipPath id={`${id}-r`}>
+        <rect x={0} y={top} width={150} height={-top} />
+      </clipPath>
+      <g className="mz-door__wing mz-door__wing--l">
+        <g clipPath={`url(#${id}-l)`}>{leaf}</g>
+      </g>
+      <g className="mz-door__wing mz-door__wing--r">
+        <g clipPath={`url(#${id}-r)`}>{leaf}</g>
+      </g>
+      <SvgSprite name="door-frame" x={fx} y={fy} w={FW} h={FH} fit="none" fallback={null} />
+      <DoorStars stars={stars} />
+    </g>
+  )
+}
+
 export function MagicDoor({ open = false, stars = 0 }: { open?: boolean; stars?: number }) {
+  const art = useArt()
+  if (art.has('door-frame') && art.has('door-leaf')) return <MagicDoorArt open={open} stars={stars} />
   return (
     <g className={`mz-door ${open ? 'is-open' : ''}`}>
       {/* арка от цветя */}
@@ -575,12 +653,7 @@ export function MagicDoor({ open = false, stars = 0 }: { open?: boolean; stars?:
       {open && (
         <g>
           <path d="M-150 0 V -290 C -150 -450 150 -450 150 -290 V 0 Z" fill="url(#mz-glow)" />
-          {[-80, 0, 80].map((x) => (
-            <g key={x} transform={`translate(${x} -40)`}>
-              <path d="M-12 0 L 0 50 L 12 0 Z" fill="#ff9f43" stroke={O} strokeWidth="3" />
-              <path d="M0 0 q -14 -24 -4 -34 q 4 14 4 34 q 4 -20 14 -30 q 2 14 -14 30" fill="#7ed957" stroke={O} strokeWidth="2.5" />
-            </g>
-          ))}
+          <DoorBeyond />
         </g>
       )}
       {/* крилата на вратата */}
@@ -599,14 +672,7 @@ export function MagicDoor({ open = false, stars = 0 }: { open?: boolean; stars?:
         <circle cx="26" cy="-200" r="10" fill="url(#mz-gold)" stroke={O} strokeWidth="3" />
       </g>
       {/* петте звездички от мисиите */}
-      {Array.from({ length: 5 }, (_, i) => {
-        const a = Math.PI * (0.15 + (i * 0.7) / 4)
-        return (
-          <g key={i} transform={`translate(${-Math.cos(a) * 110} ${-300 - Math.sin(a) * 92}) scale(0.42)`} opacity={i < stars ? 1 : 0.35}>
-            {i < stars ? <GiftArt id="star" /> : <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" fill="#c9b6e6" stroke={O} strokeWidth="4.5" strokeLinejoin="round" />}
-          </g>
-        )
-      })}
+      <DoorStars stars={stars} />
     </g>
   )
 }
