@@ -2,6 +2,7 @@
   "files": {
     "basket": "basket.webp",
     "bg-garden": "bg-garden.webp",
+    "bg-home": "bg-home.webp",
     "bunny-happy": "bunny-happy.webp",
     "bunny-idle": "bunny-idle.webp",
     "bush": "bush.webp",
@@ -9,6 +10,7 @@
     "coop": "coop.webp",
     "fence": "fence.webp",
     "frog": "frog.webp",
+    "gift-star": "gift-star.webp",
     "hedge": "hedge.webp",
     "hill-tree": "hill-tree.webp",
     "home": "home.webp",

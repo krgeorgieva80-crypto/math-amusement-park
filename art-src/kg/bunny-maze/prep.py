@@ -91,6 +91,23 @@ for n, t, k in [('hill-tree', 640, 'h'), ('pond', 720, 'w'), ('mushroom', 720, '
     save(n, anchored(a), t, k)
     report[n]['cleaned'] = {'haze_px': haze, 'specks': specks}
 
+# етап 9: звездата — центрирана (не стъпва на земята), квадратно платно около предмета
+if want('gift-star'):
+    a, haze, specks = clean(load('gift-star'))
+    x0, y0, x1, y1 = bbox(a[..., 3]); side = max(x1 - x0, y1 - y0) + 16
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    out = np.zeros((side, side, 4), np.uint8)
+    sx, sy = cx - side // 2, cy - side // 2
+    out[max(0, -sy):, max(0, -sx):][: min(side, a.shape[0] - max(sy, 0)), : min(side, a.shape[1] - max(sx, 0))] = a[max(sy, 0):sy + side, max(sx, 0):sx + side]
+    save('gift-star', out, 256, 'w')
+    report['gift-star']['cleaned'] = {'haze_px': haze, 'specks': specks}
+
+# етап 9: фонът на финала — залезната градина 16:9, без увеличаване
+if want('bg-home'):
+    bh = Image.open(f'{SRC}/bg-home.png').convert('RGB')
+    bh.save(f'{OUT}/bg-home.webp', 'WEBP', quality=84, method=6)
+    report['bg-home'] = {'size': list(bh.size), 'aspect': round(bh.size[0] / bh.size[1], 4), 'kb': round(os.path.getsize(f'{OUT}/bg-home.webp') / 1024)}
+
 # фонът: непрозрачен квадрат, без увеличаване
 if want('bg-garden'):
   bg = Image.open(f'{SRC}/bg-garden.png').convert('RGB')

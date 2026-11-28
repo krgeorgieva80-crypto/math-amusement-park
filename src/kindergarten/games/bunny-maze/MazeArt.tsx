@@ -537,6 +537,9 @@ export function Frog({ happy = false }: { happy?: boolean }) {
 
 /** Подаръци за вълшебната врата (около 80 × 80, центрирани). */
 export function GiftArt({ id }: { id: Gift }) {
+  const art = useArt()
+  // рисуваната звезда: общ ресурс за напредъка, вратата, картата, финала и подаръка в мисия 5
+  if (id === 'star' && art.has('gift-star')) return <SvgSprite name="gift-star" x={-44} y={-44} w={88} h={88} fit="xMidYMid meet" fallback={null} />
   if (id === 'star') return <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" fill="url(#mz-gold)" stroke={O} strokeWidth="4.5" strokeLinejoin="round" />
   if (id === 'heart') return <path d="M0 34 C -22 18 -36 6 -36 -12 C -36 -28 -22 -36 -12 -36 C -4 -36 0 -30 0 -24 C 0 -30 4 -36 12 -36 C 22 -36 36 -28 36 -12 C 36 6 22 18 0 34 Z" fill="#ff7a9a" stroke={O} strokeWidth="4.5" strokeLinejoin="round" />
   if (id === 'leaf')

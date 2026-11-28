@@ -186,7 +186,8 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   const started = useRef(0)
   const saved = useRef(false)
   const mission = s.missions[s.m]
-  const hasArt = useArt().has('bg-garden')
+  const art = useArt()
+  const hasArt = art.has('bg-garden')
   const step = currentStep(s)
   const demo = !journey && s.phase === 'play' && s.i === 0 && s.part === 0 && s.wrong === 0 && demoSeen < s.m
   const nudgeKey = `${s.m}.${s.i}.${s.part}.${taps}`
@@ -345,11 +346,13 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
           : step.kind === 'door' && step.seq.length === 2 && s.part === 1 && s.phase === 'play'
             ? { text: mazeText('maze.select.next'), mood: 'encourage', kind: 'next' }
             : null
+  const starArt = art.url('gift-star')
   const stars = (
     <span className="kg-maze__stars" aria-label={`Мисия ${s.m + 1} от 5. Звездички: ${s.stars}`} data-stars={s.stars}>
       {s.missions.map((m, i) => (
-        <svg key={m.id} viewBox="-44 -44 88 88" className={i < s.stars ? `is-got ${i === s.stars - 1 && s.phase === 'mission' ? 'is-new' : ''}` : i === s.m ? 'is-now' : ''} aria-hidden="true">
-          <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" />
+        <svg key={m.id} viewBox="-44 -44 88 88" className={`${starArt ? 'is-art ' : ''}${i < s.stars ? `is-got ${i === s.stars - 1 && s.phase === 'mission' ? 'is-new' : ''}` : i === s.m ? 'is-now' : ''}`} aria-hidden="true">
+          {/* рисуваната звезда: неспечелената е избледняла, спечелената — цветна, с меко сияние (CSS) */}
+          {starArt ? <image href={starArt} x="-44" y="-44" width="88" height="88" /> : <path d="M0 -40 L 11 -13 L 40 -12 L 17 6 L 25 36 L 0 19 L -25 36 L -17 6 L -40 -12 L -11 -13 Z" />}
         </svg>
       ))}
     </span>
@@ -1104,8 +1107,11 @@ const PAN = [0.3, 0.42, 0.54, 0.66, 0.5, 0.5]
 const BG_HORIZON = 0.275
 
 /** Приказен фон: рисуваната поляна (ако я има) + светлината на мисията; иначе — векторният фон. */
-function MazeBackdrop({ w, h, portrait, light }: { w: number; h: number; portrait: boolean; light: number }) {
-  const bg = useArt().url('bg-garden')
+function MazeBackdrop({ w, h, portrait, light, home = false }: { w: number; h: number; portrait: boolean; light: number; home?: boolean }) {
+  const art = useArt()
+  const bg = art.url('bg-garden')
+  // финалът: залезната градина плавно се появява върху градината на мисиите (CSS; при намалено движение — веднага)
+  const homeBg = home ? art.url('bg-home') : null
   if (bg) {
     const S = Math.max(w, h) * 1.06
     const target = h * (portrait ? 0.25 : 0.32)
@@ -1117,6 +1123,7 @@ function MazeBackdrop({ w, h, portrait, light }: { w: number; h: number; portrai
         {LIGHT.map(([top, bottom], i) => (
           <div key={i} className={`kg-maze__light ${i === light ? 'is-on' : ''}`} style={{ background: `linear-gradient(180deg, ${top}, ${bottom} 70%)` }} />
         ))}
+        {homeBg && <img src={homeBg} alt="" draggable={false} decoding="async" className="kg-maze__home-img" data-sprite="bg-home" />}
       </div>
     )
   }
@@ -1164,9 +1171,15 @@ function Finale({ seed, motion, groupMode, onRestart, onExit, onMap, w, h, portr
   const hasArt = useArt().has('bg-garden')
   // телефон във вертикално положение: отделна, по-висока композиция на градината (зайчето е главният герой)
   const tall = isPhonePortrait({ w, h })
+  // преходът към финала: светлината на последната мисия → залез, после залезната градина
+  const [light, setLight] = useState(4)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setLight(5))
+    return () => cancelAnimationFrame(id)
+  }, [])
   return (
     <div className={`screen kg-screen kg-maze is-done ${motion ? '' : 'is-still'} ${hasArt ? 'has-art' : ''} ${tall ? 'is-tall' : ''}`} data-phase="done">
-      <MazeBackdrop w={w} h={h} portrait={portrait} light={5} />
+      <MazeBackdrop w={w} h={h} portrait={portrait} light={light} home />
       <Confetti seed={seed + 31} />
       <KgTopBar onBack={onExit} backLabel="Към атракцията" />
       <div className="kg-done">

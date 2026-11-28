@@ -18,7 +18,7 @@ export interface MazeArtResource {
 
 export const MAZE_ART: MazeArtResource[] = [
   { name: 'bg-garden', aspect: 1, transparent: false, core: true, note: 'общ фон на мисиите (квадрат, изрязва се за всеки екран)' },
-  { name: 'bg-home', aspect: 0, transparent: false, core: true, note: 'фон на финала: домът на зайчето' },
+  { name: 'bg-home', aspect: 1.7768, transparent: false, core: true, note: 'фон на финала: залезната градина (16:9, запълва екрана)' },
   { name: 'bunny-idle', aspect: 0.6868, transparent: true, core: true, note: 'зайчето спокойно' },
   { name: 'bunny-happy', aspect: 0.6868, transparent: true, core: true, note: 'зайчето радостно' },
   { name: 'hedge', aspect: 2.0785, transparent: true, core: true, note: 'отрязък жив плет' },
@@ -33,8 +33,9 @@ export const MAZE_ART: MazeArtResource[] = [
   { name: 'coop', aspect: 0.955, transparent: true, core: true, note: 'курничка (мисия 3)' },
   { name: 'fence', aspect: 1.3833, transparent: true, core: true, note: 'отрязък оградка (мисия 3): повтаря се около елипсата' },
   { name: 'squirrel', aspect: 1.2219, transparent: true, core: true, note: 'катеричка (мисия 2, финал); съкровището е в лапичките' },
+  { name: 'gift-star', aspect: 1, transparent: true, core: true, note: 'златната звезда: напредъкът, вратата, картата, финала, подаръкът в мисия 5' },
   { name: 'home', aspect: 1.1077, transparent: true, core: true, note: 'приказният дом (финал, краят на картата на пътешествието)' },
-  ...['door-frame', 'door-leaf', 'key', 'acorn', 'cone', 'gift-star', 'gift-flower', 'gift-heart', 'gift-leaf'].map((name) => ({
+  ...['door-frame', 'door-leaf', 'key', 'acorn', 'cone', 'gift-flower', 'gift-heart', 'gift-leaf'].map((name) => ({
     name,
     aspect: 0,
     transparent: true,
