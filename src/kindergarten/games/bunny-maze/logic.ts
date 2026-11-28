@@ -132,6 +132,17 @@ export const MAZE_PHRASES: { id: string; text: string }[] = [
   { id: 'maze.hint.far', text: 'Далечното камъче е най-далече от зайчето.' },
   { id: 'maze.hint.top', text: 'Горе е над вратата.' },
   { id: 'maze.hint.bottom', text: 'Долу е до тревата, при прага.' },
+  // подсказка, второ ниво (след втора грешка): мястото меко светва
+  { id: 'maze.hint2.up', text: 'Ето я горната пътечка.' },
+  { id: 'maze.hint2.down', text: 'Ето я долната пътечка.' },
+  { id: 'maze.hint2.in', text: 'Ето тук — в кошничката.' },
+  { id: 'maze.hint2.on', text: 'Ето тук — на гъбката.' },
+  { id: 'maze.hint2.under', text: 'Ето тук — под гъбката.' },
+  { id: 'maze.hint2.outside', text: 'Ето едно пиленце вън.' },
+  { id: 'maze.hint2.near', text: 'Ето близкото камъче.' },
+  { id: 'maze.hint2.far', text: 'Ето далечното камъче.' },
+  { id: 'maze.hint2.top', text: 'Ето горното място.' },
+  { id: 'maze.hint2.bottom', text: 'Ето долното място.' },
   { id: 'maze.retry', text: 'Опитай пак!' },
   // пример преди първата стъпка на всяка мисия — с други предмети, за да не издава отговора
   { id: 'maze.demo.fork', text: 'Виж! Горната пътечка води нагоре, към слънцето. Долната пътечка води надолу, към езерцето.' },
@@ -207,20 +218,32 @@ export interface MazeState {
   inside: ChickId[]
   /** Колко части от двустъпковото указание са изпълнени. */
   part: number
-  /** Неуспешни опити в текущата стъпка. */
+  /** Неуспешни опити в текущата стъпка (за отчета). */
   wrong: number
-  /** Подсказка: целта, която да се подчертае, и коя фраза да прозвучи. */
-  hint: { target: string; phrase: string } | null
+  /** Неуспешни опити в текущото действие (при двустъпково указание — във всяка част поотделно); определя нивото на подсказката. */
+  tries: number
+  /**
+   * Подсказка на две нива. Ниво 1 (първа грешка): само думи, които обясняват понятието — нищо не светва.
+   * Ниво 2 (втора и следваща грешка): правилното място меко светва (target), детето само го докосва.
+   */
+  hint: Hint | null
   /** Завършени мисии (звездички). */
   stars: number
   firstTry: number
   hinted: number
 }
 
+export interface Hint {
+  level: 1 | 2
+  /** Целта (светва само на ниво 2). */
+  target: string
+  phrase: string
+}
+
 export type MazeAction = { type: 'tap'; target: string; hintsOn: boolean } | { type: 'next' }
 
 export function newGame(missions: Mission[]): MazeState {
-  return { missions, m: 0, i: 0, phase: 'play', inside: [], part: 0, wrong: 0, hint: null, stars: 0, firstTry: 0, hinted: 0 }
+  return { missions, m: 0, i: 0, phase: 'play', inside: [], part: 0, wrong: 0, tries: 0, hint: null, stars: 0, firstTry: 0, hinted: 0 }
 }
 
 export const currentStep = (s: MazeState): Step => s.missions[s.m].steps[s.i]
@@ -232,8 +255,8 @@ export function chicksInside(s: MazeState): ChickId[] {
   return s.inside
 }
 
-/** Фраза-подсказка за грешен избор в текущата стъпка. */
-function hintFor(step: Step, part: number, tapped: string): { target: string; phrase: string } {
+/** Подсказка за грешен избор: целта и фразата от първо ниво (обяснява думата). */
+function hintBase(step: Step, part: number, tapped: string): { target: string; phrase: string } {
   switch (step.kind) {
     case 'fork':
       return { target: step.target, phrase: `maze.hint.${step.target}` }
@@ -252,6 +275,16 @@ function hintFor(step: Step, part: number, tapped: string): { target: string; ph
   }
 }
 
+/** Подсказка според поредната грешка в текущото действие: първата — само думи; втората и следващите — и светване. */
+export function hintFor(step: Step, part: number, tapped: string, tries: number): Hint {
+  const b = hintBase(step, part, tapped)
+  if (tries < 2) return { level: 1, ...b }
+  // второ ниво: за „пиленце вътре“ при прибирането — пак „търсим отвън“
+  const key = b.phrase.replace('maze.hint.', '')
+  const second = key === 'inside' ? 'outside' : key
+  return { level: 2, target: b.target, phrase: `maze.hint2.${second}` }
+}
+
 const finishStep = (s: MazeState, hintsOn: boolean): MazeState => ({
   ...s,
   phase: 'success',
@@ -265,7 +298,10 @@ export function mazeReducer(s: MazeState, a: MazeAction): MazeState {
     case 'tap': {
       if (s.phase !== 'play') return s
       const step = currentStep(s)
-      const miss = (): MazeState => ({ ...s, wrong: s.wrong + 1, hint: a.hintsOn ? hintFor(step, s.part, a.target) : null })
+      const miss = (): MazeState => {
+        const tries = s.tries + 1
+        return { ...s, wrong: s.wrong + 1, tries, hint: a.hintsOn ? hintFor(step, s.part, a.target, tries) : null }
+      }
       switch (step.kind) {
         case 'fork':
         case 'hide':
@@ -277,13 +313,13 @@ export function mazeReducer(s: MazeState, a: MazeAction): MazeState {
           if (!CHICKS.includes(c)) return s
           if (s.inside.includes(c)) return miss()
           const inside = [...s.inside, c]
-          const next = { ...s, inside, hint: null }
+          const next = { ...s, inside, hint: null, tries: 0 }
           return inside.length === CHICKS.length ? finishStep(next, a.hintsOn) : next
         }
         case 'door': {
           if (a.target !== step.seq[s.part].target) return miss()
           const part = s.part + 1
-          return part === step.seq.length ? finishStep({ ...s, part }, a.hintsOn) : { ...s, part, hint: null }
+          return part === step.seq.length ? finishStep({ ...s, part }, a.hintsOn) : { ...s, part, hint: null, tries: 0 }
         }
       }
       return s
@@ -292,11 +328,11 @@ export function mazeReducer(s: MazeState, a: MazeAction): MazeState {
       if (s.phase === 'success') {
         const lastStep = s.i === s.missions[s.m].steps.length - 1
         if (lastStep) return { ...s, phase: 'mission', stars: s.stars + 1 }
-        return { ...s, i: s.i + 1, phase: 'play', part: 0, wrong: 0, hint: null }
+        return { ...s, i: s.i + 1, phase: 'play', part: 0, wrong: 0, tries: 0, hint: null }
       }
       if (s.phase === 'mission') {
         if (s.m === s.missions.length - 1) return { ...s, phase: 'done' }
-        return { ...s, m: s.m + 1, i: 0, phase: 'play', part: 0, wrong: 0, hint: null, inside: [] }
+        return { ...s, m: s.m + 1, i: 0, phase: 'play', part: 0, wrong: 0, tries: 0, hint: null, inside: [] }
       }
       return s
     }
@@ -325,7 +361,7 @@ export function restoreGame(raw: unknown): MazeState | null {
   const inside = Array.isArray(s.inside) ? CHICKS.filter((c) => s.inside!.includes(c)) : []
   // грешките в текущата стъпка се пазят (за честен брой „от първия път“); подсказката — не
   const wrong = int(s.wrong, 0, 99) ? s.wrong! : 0
-  return { ...(s as MazeState), inside, wrong, hint: null, part: s.phase === 'play' ? 0 : (s.part ?? 0) }
+  return { ...(s as MazeState), inside, wrong, tries: 0, hint: null, part: s.phase === 'play' ? 0 : (s.part ?? 0) }
 }
 
 // ───────────── разположение в мисия 4 (в проектното поле 1000×700) ─────────────

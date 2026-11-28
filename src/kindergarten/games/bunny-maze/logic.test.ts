@@ -100,12 +100,39 @@ describe('„Зайчето в лабиринта“ — приключение�
     const st = currentStep(s) as Extract<Step, { kind: 'fork' }>
     s = tap(s, st.target === 'up' ? 'down' : 'up')
     expect(s.phase).toBe('play')
-    expect(s.hint).toEqual({ target: st.target, phrase: `maze.hint.${st.target}` })
+    // първа грешка: ниво 1 — само думи (мястото не светва; сцената показва светване само на ниво 2)
+    expect(s.hint).toEqual({ level: 1, target: st.target, phrase: `maze.hint.${st.target}` })
     expect(mazeText(s.hint!.phrase).length).toBeGreaterThan(5)
+    // втора грешка: ниво 2 — мястото меко светва, с кратка фраза „Ето…“
+    s = tap(s, st.target === 'up' ? 'down' : 'up')
+    expect(s.hint).toEqual({ level: 2, target: st.target, phrase: `maze.hint2.${st.target}` })
+    expect(mazeText(s.hint!.phrase)).toMatch(/^Ето/)
+    expect(s.wrong).toBe(2)
     // без подсказки — само нов опит
     const off = tap(newGame(makeAdventure(seeded(3))), st.target === 'up' ? 'down' : 'up', false)
     expect(off.hint).toBeNull()
     expect(off.wrong).toBe(1)
+  })
+
+  it('двустъпковото указание: подсказката се брои за всяка част поотделно', () => {
+    let s = newGame(makeAdventure(seeded(4)))
+    while (currentStep(s).kind !== 'door' || (currentStep(s) as Extract<Step, { kind: 'door' }>).seq.length < 2) {
+      const st = currentStep(s)
+      const t = st.kind === 'fork' || st.kind === 'hide' || st.kind === 'stone' || st.kind === 'chicks-out' ? st.target : st.kind === 'door' ? st.seq[s.part].target : CHICKS.find((c) => !s.inside.includes(c))!
+      s = tap(s, t)
+      if (s.phase !== 'play') s = mazeReducer(s, { type: 'next' })
+    }
+    const st = currentStep(s) as Extract<Step, { kind: 'door' }>
+    const wrong = (v: string) => (v === 'up' ? 'down' : 'up')
+    s = tap(s, wrong(st.seq[0].target))
+    s = tap(s, wrong(st.seq[0].target))
+    expect(s.hint?.level).toBe(2)
+    s = tap(s, st.seq[0].target)
+    // втората част започва отначало: без подсказка, първата грешка в нея пак е ниво 1
+    expect([s.part, s.tries, s.hint]).toEqual([1, 0, null])
+    s = tap(s, wrong(st.seq[1].target))
+    expect(s.hint?.level).toBe(1)
+    expect(s.wrong).toBe(3)
   })
 
   it('пиленцата: всяко пиленце отвън влиза; пиленце отвътре е грешка; накрая всички са вътре', () => {
@@ -187,7 +214,7 @@ describe('„Зайчето в лабиринта“ — приключение�
     s = next(s)
     s = tap(s, ['in', 'on', 'under'].find((x) => x !== correct(s))!) // грешка
     const r2 = restoreGame(JSON.parse(JSON.stringify(s)))!
-    expect([r2.m, r2.i, r2.phase, r2.stars, r2.wrong, r2.hint]).toEqual([1, 0, 'play', 1, 1, null])
+    expect([r2.m, r2.i, r2.phase, r2.stars, r2.wrong, r2.tries, r2.hint]).toEqual([1, 0, 'play', 1, 1, 0, null])
     // приключението се довършва от записа
     let z = r2
     for (let g = 0; g < 200 && z.phase !== 'done'; g++) z = z.phase === 'play' ? tap(z, correct(z)) : next(z)

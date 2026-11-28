@@ -1,9 +1,10 @@
 /**
- * Указания с картинки и примери за „Зайчето в лабиринта“ — за деца, които още не четат,
- * докато няма гласови записи. Картинката повтаря указанието (не е подсказка), а примерите
- * преди всяка мисия показват понятията с други предмети, за да не издават отговора.
+ * Указания с картинки и примери за „Зайчето в лабиринта“.
+ * Картинката до указанието е неутрална: показва КАКВО (предмета, героя, местата), но не и КЪДЕ.
+ * Стрелката и светлото петно към правилното място се появяват едва като подсказка от второ ниво (reveal).
+ * Примерите преди всяка мисия показват понятията с други предмети, за да не издават отговора.
  */
-import type { ReactNode } from 'react'
+import { createContext, useContext, type ReactNode } from 'react'
 import { Basket, BigMushroom, Bunny, Chick, Fence, Frog, GiftArt, HillTree, MagicDoor, MazeDefs, Pond, Socket, Stone, Sun, TreasureArt } from './MazeArt'
 import type { Gift, MissionId, Step, Vertical } from './logic'
 
@@ -11,7 +12,7 @@ const O = '#4a3560'
 const GLOW = '#ffc93c'
 
 /** Стрелка от (x1, y1) до (x2, y2). */
-function Arrow({ x1, y1, x2, y2, w = 7, color = '#ff7aa8' }: { x1: number; y1: number; x2: number; y2: number; w?: number; color?: string }) {
+function ArrowMark({ x1, y1, x2, y2, w = 7, color = '#ff7aa8' }: { x1: number; y1: number; x2: number; y2: number; w?: number; color?: string }) {
   const a = Math.atan2(y2 - y1, x2 - x1)
   const h = w * 2.6
   const p = (d: number, s: number) => `${x2 - Math.cos(a) * h + Math.cos(a + (s * Math.PI) / 2) * d} ${y2 - Math.sin(a) * h + Math.sin(a + (s * Math.PI) / 2) * d}`
@@ -25,7 +26,7 @@ function Arrow({ x1, y1, x2, y2, w = 7, color = '#ff7aa8' }: { x1: number; y1: n
 }
 
 /** Светло петно за мястото, за което става дума. */
-const Spot = ({ cx, cy, r = 22 }: { cx: number; cy: number; r?: number }) => <circle cx={cx} cy={cy} r={r} fill="rgba(255,246,176,0.6)" stroke={GLOW} strokeWidth="5" />
+const SpotMark = ({ cx, cy, r = 22 }: { cx: number; cy: number; r?: number }) => <circle cx={cx} cy={cy} r={r} fill="rgba(255,246,176,0.6)" stroke={GLOW} strokeWidth="5" />
 
 function Card({ children, faded = false, done = false }: { children: ReactNode; faded?: boolean; done?: boolean }) {
   return (
@@ -51,27 +52,40 @@ function DoorPic({ gift, target }: { gift: Gift; target: Vertical }) {
   )
 }
 
+/**
+ * Стрелката и петното към мястото: в картинката до указанието — само на второ ниво на подсказката;
+ * в примерите преди мисиите — винаги (те показват понятията с други предмети).
+ */
+const Reveal = createContext(true)
+function Arrow(p: Parameters<typeof ArrowMark>[0]) {
+  return useContext(Reveal) ? <ArrowMark {...p} /> : null
+}
+function Spot(p: Parameters<typeof SpotMark>[0]) {
+  return useContext(Reveal) ? <SpotMark {...p} /> : null
+}
+
 /** Картинка към указанието на стъпката (за двустъпковото — две картинки, текущата е отпред). */
-export function StepPicture({ step, part }: { step: Step; part: number }) {
+export function StepPicture({ step, part, reveal = false }: { step: Step; part: number; reveal?: boolean }) {
+  return (
+    <Reveal.Provider value={reveal}>
+      <StepPictureInner step={step} part={part} reveal={reveal} />
+    </Reveal.Provider>
+  )
+}
+
+function StepPictureInner({ step, part, reveal }: { step: Step; part: number; reveal: boolean }) {
   switch (step.kind) {
     case 'fork': {
       const up = step.target === 'up'
+      // неутрално: и двете пътечки са еднакви; на второ ниво — търсената се откроява
+      const on = (u: boolean) => !reveal || u === up
       return (
         <Card>
           <g transform="translate(14 92) scale(0.3)">
             <Bunny mood="look" />
           </g>
-          <path d="M40 54 H 70 C 92 54 96 22 150 20" fill="none" stroke={up ? '#f3d79e' : '#e8e2d6'} strokeWidth="14" strokeLinecap="round" opacity={up ? 1 : 0.55} />
-          <path d="M40 54 H 70 C 92 54 96 86 150 86" fill="none" stroke={up ? '#e8e2d6' : '#f3d79e'} strokeWidth="14" strokeLinecap="round" opacity={up ? 0.55 : 1} />
-          {up ? (
-            <g transform="translate(140 16) scale(0.16)">
-              <Sun r={44} />
-            </g>
-          ) : (
-            <g transform="translate(140 90) scale(0.16)">
-              <Pond />
-            </g>
-          )}
+          <path d="M40 54 H 70 C 92 54 96 22 150 20" fill="none" stroke={on(true) ? '#f3d79e' : '#e8e2d6'} strokeWidth="14" strokeLinecap="round" opacity={on(true) ? 1 : 0.55} />
+          <path d="M40 54 H 70 C 92 54 96 86 150 86" fill="none" stroke={on(false) ? '#f3d79e' : '#e8e2d6'} strokeWidth="14" strokeLinecap="round" opacity={on(false) ? 1 : 0.55} />
           <Arrow x1={92} y1={up ? 50 : 58} x2={122} y2={up ? 24 : 84} />
         </Card>
       )
@@ -85,14 +99,25 @@ export function StepPicture({ step, part }: { step: Step; part: number }) {
           <g transform="translate(26 54) scale(0.55)">
             <TreasureArt id={step.item} />
           </g>
-          {inBasket ? (
-            <g transform="translate(118 96) scale(0.36)">
-              <Basket />
-            </g>
+          {reveal ? (
+            inBasket ? (
+              <g transform="translate(118 96) scale(0.36)">
+                <Basket />
+              </g>
+            ) : (
+              <g transform="translate(118 98) scale(0.27)">
+                <BigMushroom />
+              </g>
+            )
           ) : (
-            <g transform="translate(118 98) scale(0.27)">
-              <BigMushroom />
-            </g>
+            <>
+              <g transform="translate(96 98) scale(0.25)">
+                <BigMushroom />
+              </g>
+              <g transform="translate(140 96) scale(0.24)">
+                <Basket />
+              </g>
+            </>
           )}
           <Spot cx={sp.x} cy={sp.y} r={13} />
           <Arrow x1={50} y1={54} x2={sp.x - 15} y2={sp.y} w={5} />
@@ -144,10 +169,21 @@ export function StepPicture({ step, part }: { step: Step; part: number }) {
             <Bunny mood="look" />
           </g>
           <rect x="34" y="62" width="126" height="34" rx="10" fill="url(#mz-water)" />
-          <g transform={`translate(${near ? 62 : 138} 84) scale(0.22)`}>
-            <Stone />
-          </g>
-          {!near && (
+          {reveal ? (
+            <g transform={`translate(${near ? 62 : 138} 84) scale(0.22)`}>
+              <Stone />
+            </g>
+          ) : (
+            <>
+              <g transform="translate(62 84) scale(0.22)">
+                <Stone />
+              </g>
+              <g transform="translate(138 84) scale(0.22)">
+                <Stone />
+              </g>
+            </>
+          )}
+          {!near && reveal && (
             <g transform="translate(138 78) scale(0.32)">
               <Frog />
             </g>
@@ -162,7 +198,9 @@ export function StepPicture({ step, part }: { step: Step; part: number }) {
         <span className="mz-pics">
           {step.seq.map((g, i) => (
             <Card key={i} faded={step.seq.length > 1 && i !== part} done={i < part}>
-              <DoorPic gift={g.item} target={g.target} />
+              <Reveal.Provider value={reveal && i === part}>
+                <DoorPic gift={g.item} target={g.target} />
+              </Reveal.Provider>
             </Card>
           ))}
         </span>

@@ -322,7 +322,9 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
 
   if (s.phase === 'done') return <Finale seed={seed} motion={motion} groupMode={groupMode} onRestart={() => (play('click'), onRestart())} onExit={onExit} onMap={onMap} w={w} h={h} portrait={portrait} />
 
-  const sceneProps: SceneProps = { s, step, hint: s.hint?.target ?? null, shake, tap, motion }
+  // мястото светва само на второ ниво на подсказката (първата грешка — само думи)
+  const hintShown = s.hint?.level === 2
+  const sceneProps: SceneProps = { s, step, hint: hintShown ? s.hint!.target : null, shake, tap, motion }
   const Scene = { fork: ForkScene, hide: HideScene, chicks: ChicksScene, stones: StonesScene, door: DoorScene }[mission.id]
   const instr = stepText(step)
   // балончето на Звездичка в сцената: похвала, подсказка, насочване или „Сега второто!“
@@ -389,7 +391,7 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
   ) : (
     <div className="kg-maze__bar" aria-live="polite" data-bar>
       <span className="kg-maze__pic">
-        <StepPicture step={step} part={s.part} />
+        <StepPicture step={step} part={s.part} reveal={hintShown} />
       </span>
       <p className="kg-maze__text">{emphasize(step, instr)}</p>
       {!portrait && stars}
@@ -411,6 +413,7 @@ function MazeRound({ seed, onExit, onMap, onRestart }: { seed: number; onExit: (
       data-index={`${s.m}.${s.i}`}
       data-phase={s.phase}
       data-part={s.part}
+      data-hint={s.hint?.level ?? 0}
       data-demo-open={demo ? '1' : '0'}
     >
       <MazeBackdrop w={w} h={h} portrait={portrait} light={s.m} />
