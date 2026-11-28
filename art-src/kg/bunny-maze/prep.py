@@ -82,9 +82,10 @@ if want('bunny-idle'):
   save('bunny-idle', fit(L), 760, 'h'); save('bunny-happy', fit(R), 760, 'h')
   report['bunny-idle']['cleaned'] = {'haze_px': haze, 'specks': specks}
 
-# етап 4: природа; етап 5: животинките и предметите (катеричката предстои)
+# етап 4: природа; етап 5: животинките и предметите; етап 8: катеричката и домът
 for n, t, k in [('hill-tree', 640, 'h'), ('pond', 720, 'w'), ('mushroom', 720, 'h'), ('bush', 520, 'w'), ('stone', 440, 'w'), ('hedge', 900, 'w'),
-                ('chick', 360, 'h'), ('frog', 360, 'h'), ('basket', 560, 'h'), ('coop', 600, 'h'), ('fence', 480, 'w')]:
+                ('chick', 360, 'h'), ('frog', 360, 'h'), ('basket', 560, 'h'), ('coop', 600, 'h'), ('fence', 480, 'w'),
+                ('squirrel', 640, 'h'), ('home', 720, 'w')]:
     if not want(n) or not (os.path.exists(f'{SRC}/{n}.png') or os.path.exists(f'{SRC}/{n}.webp')): continue
     a, haze, specks = clean(load(n))
     save(n, anchored(a), t, k)

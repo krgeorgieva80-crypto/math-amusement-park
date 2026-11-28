@@ -321,7 +321,18 @@ export function Basket({ front = true, back = true }: { front?: boolean; back?: 
 }
 
 /** Катеричка (височина ≈ 190), гледа надясно. */
+/** Рисуваната катеричка: височина и мястото на отворените лапички (в единиците на векторната). */
+const SQUIRREL_H = 200
+const SQUIRREL_PAWS = 'translate(73 -95) scale(0.7)'
+
 export function Squirrel({ children }: { children?: ReactNode }) {
+  if (useArt().has('squirrel'))
+    return (
+      <g className="mz-squirrel is-art">
+        <Ground name="squirrel" h={SQUIRREL_H} />
+        {children && <g transform={SQUIRREL_PAWS}>{children}</g>}
+      </g>
+    )
   return (
     <g>
       <ellipse cx="0" cy="0" rx="60" ry="10" fill={O} opacity="0.15" />
@@ -712,6 +723,12 @@ export function BunnyCard({ size = 120 }: { size?: number }) {
 
 /** Домът на зайчето: хълмче с кръгла вратичка, прозорче и морковена табелка. Началото е на земята, в средата. */
 export function BunnyHome({ lit = false }: { lit?: boolean }) {
+  if (useArt().has('home'))
+    return (
+      <g className={`mz-home is-art ${lit ? 'is-lit' : ''}`}>
+        <Ground name="home" h={280} dy={4} />
+      </g>
+    )
   return (
     <g className={`mz-home ${lit ? 'is-lit' : ''}`}>
       <ellipse cx="0" cy="0" rx="170" ry="16" fill={O} opacity="0.16" />

@@ -810,7 +810,8 @@ const HIDE_GEO = {
       in: { x: 445, y: 790, zx: 445, zy: 785 },
     } as Record<Place, { x: number; y: number; zx: number; zy: number }>,
     hedge: [-10, 300, 150, 80],
-    squirrel: [115, 950],
+    // рисуваната катеричка е по-широка (опашката) — малко навътре, за да не се отрязва
+    squirrel: [130, 950],
   },
 }
 const PLACE_LABEL: Record<Place, string> = { on: 'На гъбката', under: 'Под гъбката', in: 'В кошничката' }
@@ -1213,7 +1214,7 @@ const FINALE_GEO = {
   tall: {
     viewBox: '0 8 600 604',
     ground: [300, 568, 296, 42],
-    home: 'translate(190 400) scale(0.72)',
+    home: 'translate(190 400) scale(0.62)',
     bed: [445, 405, 125, 22],
     carrots: { xs: [345, 385, 425, 465, 505, 545], y: 418, dy: 10, s: 0.5 },
     flowers: { at: [[30, 596], [205, 602], [395, 600], [575, 596]], s: 1.1 },

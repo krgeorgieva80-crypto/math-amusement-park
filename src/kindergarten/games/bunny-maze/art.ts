@@ -32,7 +32,9 @@ export const MAZE_ART: MazeArtResource[] = [
   { name: 'basket', aspect: 0.9339, transparent: true, core: true, note: 'кошничка (мисия 2); предната част се изрязва по ръба' },
   { name: 'coop', aspect: 0.955, transparent: true, core: true, note: 'курничка (мисия 3)' },
   { name: 'fence', aspect: 1.3833, transparent: true, core: true, note: 'отрязък оградка (мисия 3): повтаря се около елипсата' },
-  ...['squirrel', 'door-frame', 'door-leaf', 'key', 'acorn', 'cone', 'gift-star', 'gift-flower', 'gift-heart', 'gift-leaf', 'home'].map((name) => ({
+  { name: 'squirrel', aspect: 1.2219, transparent: true, core: true, note: 'катеричка (мисия 2, финал); съкровището е в лапичките' },
+  { name: 'home', aspect: 1.1077, transparent: true, core: true, note: 'приказният дом (финал, краят на картата на пътешествието)' },
+  ...['door-frame', 'door-leaf', 'key', 'acorn', 'cone', 'gift-star', 'gift-flower', 'gift-heart', 'gift-leaf'].map((name) => ({
     name,
     aspect: 0,
     transparent: true,
